@@ -56,6 +56,13 @@
 //!   type Qa = sqrid::Qa<6, 7>;
 //!   const MY_FIRST : Qa = Qa::new::<12, 4>();
 //!   ```
+//! - Calling [`Qa::iter`] to iterate all coorinates in the grid:
+//!   ```rust
+//!   type Qa = sqrid::Qa<6, 7>;
+//!   for qa in Qa::iter() {
+//!       println!("{}", qa);
+//!   }
+//!   ```
 
 pub mod _sqrid;
 pub use self::_sqrid::*;

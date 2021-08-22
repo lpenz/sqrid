@@ -56,6 +56,13 @@ We can get [`Qa`] instances by:
   type Qa = sqrid::Qa<6, 7>;
   const MY_FIRST : Qa = Qa::new::<12, 4>();
   ```
+- Calling [`Qa::iter`] to iterate all coorinates in the grid:
+  ```rust
+  type Qa = sqrid::Qa<6, 7>;
+  for qa in Qa::iter() {
+      println!("{}", qa);
+  }
+  ```
 
 
 [`Qa`]: https://docs.rs/sqrid/0/sqrid/struct.Qa.html

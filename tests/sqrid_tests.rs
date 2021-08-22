@@ -45,3 +45,11 @@ fn test_out_of_bounds() -> Result<()> {
     assert_eq!(q3result.unwrap_err(), sqrid::Error::OutOfBounds);
     Ok(())
 }
+
+#[test]
+fn test_iter() -> Result<()> {
+    for qa in Qa::iter() {
+        println!("{}", qa);
+    }
+    Ok(())
+}

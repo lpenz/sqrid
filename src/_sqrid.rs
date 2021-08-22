@@ -12,6 +12,7 @@
 //! crate dependency.
 
 use std::convert;
+use std::convert::TryFrom;
 use std::error;
 use std::fmt;
 
@@ -58,6 +59,17 @@ impl<const W: i16, const H: i16> Qa<W, H> {
         const ASSERT: [(); 1] = [(); 1];
         let _ = ASSERT[(X < 0 || X >= W || Y < 0 || Y >= H) as usize];
         Self { x: X, y: Y }
+    }
+
+    /// Return the next Qa in sequence (English read sequence), or None if `self` is the last one.
+    pub fn next(self) -> Option<Self> {
+        let i = usize::from(self) + 1;
+        Self::try_from(i).ok()
+    }
+
+    /// Return an iterator that returns all Qa's within the grid dimensions.
+    pub fn iter() -> QaIterator<W, H> {
+        QaIterator::<W, H>::default()
     }
 }
 
@@ -111,6 +123,40 @@ impl<const W: i16, const H: i16> convert::TryFrom<usize> for Qa<W, H> {
 impl<const W: i16, const H: i16> From<Qa<W, H>> for usize {
     fn from(qa: Qa<W, H>) -> Self {
         qa.y as usize * W as usize + qa.x as usize
+    }
+}
+
+/* Iterator */
+
+/// Iterator for sqrid coordinates
+///
+/// Example that prints all coordinates in a 4x4 grid:
+///
+/// ```
+/// type Qa = sqrid::Qa<4,4>;
+///
+/// for i in Qa::iter() {
+///     println!("{}", i);
+/// }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct QaIterator<const W: i16, const H: i16>(Option<Qa<W, H>>);
+
+impl<const W: i16, const H: i16> Default for QaIterator<W, H> {
+    fn default() -> Self {
+        QaIterator(Some(Default::default()))
+    }
+}
+
+impl<const W: i16, const H: i16> Iterator for QaIterator<W, H> {
+    type Item = Qa<W, H>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(i) = self.0.take() {
+            self.0 = i.next();
+            Some(i)
+        } else {
+            None
+        }
     }
 }
 
