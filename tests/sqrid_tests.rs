@@ -48,7 +48,9 @@ fn test_out_of_bounds() -> Result<()> {
 
 #[test]
 fn test_iter() -> Result<()> {
-    for qa in Qa::iter() {
+    let iter = Qa::iter();
+    println!("{:?}", iter);
+    for qa in iter {
         println!("{}", qa);
     }
     Ok(())

@@ -99,9 +99,15 @@ impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
     }
 }
 
+impl<const W: i16, const H: i16> From<&Qa<W, H>> for (i16, i16) {
+    fn from(qa: &Qa<W, H>) -> Self {
+        (qa.x, qa.y)
+    }
+}
+
 impl<const W: i16, const H: i16> From<Qa<W, H>> for (i16, i16) {
     fn from(qa: Qa<W, H>) -> Self {
-        (qa.x, qa.y)
+        <(i16, i16)>::from(&qa)
     }
 }
 
