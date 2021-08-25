@@ -9,5 +9,13 @@ readme = "README.md"
 homepage = "https://github.com/lpenz/sqrid"
 repository = "https://github.com/lpenz/sqrid"
 
+[lib]
+bench = false
+
 [dev-dependencies]
 anyhow = "1"
+criterion = { version="0.3", features=["html_reports"] }
+
+[[bench]]
+name = "qaqr_benchmark"
+harness = false

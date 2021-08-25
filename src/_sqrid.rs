@@ -15,6 +15,7 @@ use std::convert;
 use std::convert::TryFrom;
 use std::error;
 use std::fmt;
+use std::ops;
 
 /* Qa: absolute coordinates, positioning ****************************/
 
@@ -350,6 +351,17 @@ impl<const D: bool> Iterator for QrIterator<D> {
         } else {
             (4, Some(4))
         }
+    }
+}
+
+/* Interaction between Qa and Qr: ***********************************/
+
+impl<const W: i16, const H: i16> ops::Add<Qr> for Qa<W, H> {
+    type Output = Option<Self>;
+    fn add(self, rhs: Qr) -> Self::Output {
+        let qat = <(i16, i16)>::from(self);
+        let qrt = <(i16, i16)>::from(rhs);
+        Qa::<W, H>::try_from((qat.0 + qrt.0, qat.1 + qrt.1)).ok()
     }
 }
 
