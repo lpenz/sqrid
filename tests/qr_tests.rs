@@ -8,61 +8,66 @@ use sqrid::Qr;
 use anyhow::Result;
 use std::convert::TryFrom;
 
-fn do_test_basic<const D: bool>() -> Result<()> {
-    let qr0 = Qr::<D>::default();
-    let qr1 = Qr::<D>::N;
-    let qr2 = Qr::<D>::new::<0, -1>();
+#[test]
+fn test_basic() -> Result<()> {
+    let qr0 = Qr::default();
+    let qr1 = Qr::N;
+    let qr2 = Qr::new::<0, -1>();
     assert_eq!(qr0, qr1);
     assert_eq!(qr0, qr2);
     assert_eq!(<(i16, i16)>::from(qr1), (0, -1));
-    let qr3 = Qr::<D>::try_from((-1_i16, 0_i16));
-    assert_eq!(qr3, Ok(Qr::<D>::W));
-    Ok(())
-}
-
-#[test]
-fn test_basic() -> Result<()> {
-    do_test_basic::<true>()?;
-    do_test_basic::<false>()?;
+    let qr3 = Qr::try_from((-1_i16, 0_i16));
+    assert_eq!(qr3, Ok(Qr::W));
     Ok(())
 }
 
 #[test]
 fn test_errors() -> Result<()> {
-    let qr1result = Qr::<true>::try_from((2_i16, 0_i16));
+    let qr1result = Qr::try_from((2_i16, 0_i16));
     println!("{}", qr1result.clone().unwrap_err());
     assert_eq!(qr1result.unwrap_err(), sqrid::Error::InvalidDirection);
-    let qr2result = Qr::<false>::try_from((1_i16, 1_i16));
-    println!("{}", qr2result.clone().unwrap_err());
-    assert_eq!(qr2result.unwrap_err(), sqrid::Error::UnsupportedDiagonal);
-    Ok(())
-}
-
-#[test]
-fn test_all() -> Result<()> {
-    assert_eq!(Qr::<true>::array_all().len(), 8);
-    assert_eq!(Qr::<false>::array_all().len(), 4);
     Ok(())
 }
 
 fn do_test_iter<const D: bool>() -> Result<()> {
-    let iter = Qr::<D>::iter();
+    let iter = Qr::iter::<D>();
     println!("{:?}", iter);
+    let div = if D { 1 } else { 2 };
     for (i, qr) in iter.enumerate() {
-        assert_eq!(usize::from(qr), i);
-        assert_eq!(qr, Qr::<D>::from(qr));
+        println!("i {}, qr {}, from {}", i, qr, usize::from(qr));
+        assert_eq!(usize::from(qr) / div, i);
+        assert_eq!(qr, Qr::from(qr));
         println!("{}", qr);
     }
     let arr = iter.collect::<Vec<_>>();
-    assert_eq!(arr.len(), Qr::<D>::SIZE);
-    assert_eq!(arr, Qr::<D>::array_all());
-    let mut iter = Qr::<D>::iter();
-    for i in 0..Qr::<D>::SIZE * 2 {
-        if i < Qr::<D>::SIZE {
-            assert_eq!(usize::from(iter.next().unwrap()), i);
+    assert_eq!(arr.len(), Qr::SIZE / div);
+    let mut iter = Qr::iter::<D>();
+    for i in 0..Qr::SIZE * 2 / div {
+        if i < Qr::SIZE / div {
+            assert_eq!(usize::from(iter.next().unwrap()) / div, i);
         } else {
             assert_eq!(iter.next(), None);
         }
+    }
+    let mut iter = Qr::iter::<D>();
+    if D {
+        assert_eq!(iter.next(), Some(Qr::N));
+        assert_eq!(iter.next(), Some(Qr::NE));
+        assert_eq!(iter.next(), Some(Qr::E));
+        assert_eq!(iter.next(), Some(Qr::SE));
+        assert_eq!(iter.next(), Some(Qr::S));
+        assert_eq!(iter.next(), Some(Qr::SW));
+        assert_eq!(iter.next(), Some(Qr::W));
+        assert_eq!(iter.next(), Some(Qr::NW));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+    } else {
+        assert_eq!(iter.next(), Some(Qr::N));
+        assert_eq!(iter.next(), Some(Qr::E));
+        assert_eq!(iter.next(), Some(Qr::S));
+        assert_eq!(iter.next(), Some(Qr::W));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
     Ok(())
 }
@@ -71,5 +76,18 @@ fn do_test_iter<const D: bool>() -> Result<()> {
 fn test_iter() -> Result<()> {
     do_test_iter::<true>()?;
     do_test_iter::<false>()?;
+    Ok(())
+}
+
+#[test]
+fn test_is_diagonal() -> Result<()> {
+    assert!(!Qr::N.is_diagonal());
+    assert!(Qr::NE.is_diagonal());
+    assert!(!Qr::E.is_diagonal());
+    assert!(Qr::SE.is_diagonal());
+    assert!(!Qr::S.is_diagonal());
+    assert!(Qr::SW.is_diagonal());
+    assert!(!Qr::W.is_diagonal());
+    assert!(Qr::NW.is_diagonal());
     Ok(())
 }

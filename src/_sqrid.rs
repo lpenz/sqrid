@@ -172,26 +172,23 @@ impl<const W: i16, const H: i16> Iterator for QaIterator<W, H> {
 
 /// Square grid "relative" coordinates
 ///
-/// This type represents a relative movement of one square. It can
-/// only be one of the 4 cardinal directions (N, E, S, W) if the
-/// `DIAG` argument is false, or one of the 8 directions when it's
-/// true.
+/// This type represents a relative movement of one square.
 ///
 /// It's a building block for paths, iterating on a [`Qa`] neighbors,
 /// etc. It effectively represents the edges in a graph where the
 /// [`Qa`] type represents nodes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Qr<const DIAGS: bool> {
+pub struct Qr {
     dx: i16,
     dy: i16,
 }
 
-impl<const D: bool> Default for Qr<D> {
+impl Default for Qr {
     fn default() -> Self {
         Qr { dx: 0, dy: -1 }
     }
 }
-impl<const D: bool> Qr<D> {
+impl Qr {
     /// North, or up
     pub const N: Self = Qr { dx: 0, dy: -1 };
     /// Northeast
@@ -208,25 +205,11 @@ impl<const D: bool> Qr<D> {
     pub const W: Self = Qr { dx: -1, dy: 0 };
     /// Nortwest
     pub const NW: Self = Qr { dx: -1, dy: -1 };
-    /// The size of this Qr type: either 4 or 8 when diagonals are included.
-    pub const SIZE: usize = if D { 8 } else { 4 };
+    /// Number of possible directions
+    pub const SIZE: usize = 8;
 
-    /// Create a new [`Qr`] instance.
-    /// Can be used in const context.
-    /// Bounds are checked at compile-time, if possible.
-    pub const fn new<const DX: i16, const DY: i16>() -> Self {
-        // Trick for compile-time check of X and Y:
-        const ASSERT_FALSE: [(); 1] = [(); 1];
-        let _ =
-            ASSERT_FALSE[(DX < -1 || DX > 1 || DY < -1 || DY > 1 || (DX == 0 && DY == 0)) as usize];
-        if !D {
-            let _ = ASSERT_FALSE[(DX != 0 && DY != 0) as usize];
-        }
-        Self { dx: DX, dy: DY }
-    }
-
-    /// All 8 possible values, assuming diagonals are enabled.
-    const ALL8: [Self; 8] = [
+    /// All 8 possible values
+    pub const ALL: [Self; 8] = [
         Self::N,
         Self::NE,
         Self::E,
@@ -236,137 +219,93 @@ impl<const D: bool> Qr<D> {
         Self::W,
         Self::NW,
     ];
-    /// All 4 possible values, assuming diagonals are disabled.
-    const ALL4: [Self; 4] = [Self::N, Self::E, Self::S, Self::W];
 
-    /// Returns a slice with all (8/4) possible values for the current Qr type.
+    /// Inverse of ALL, shifted right
     ///
-    /// The slices are used internally to map indexes (usize) to Qr values.
-    pub const fn array_all() -> &'static [Self] {
-        if D {
-            &Self::ALL8
-        } else {
-            &Self::ALL4
-        }
+    /// An array used to convert a tuple into the inner value of
+    /// [`Qr`].
+    const INVERSE: [usize; 9] = [7, 0, 1, 6, usize::MAX, 2, 5, 4, 3];
+
+    /// Create a new [`Qr`] instance.
+    /// Can be used in const context.
+    /// Bounds are checked at compile-time, if possible.
+    pub const fn new<const DX: i16, const DY: i16>() -> Self {
+        // Trick for compile-time check of X and Y:
+        const ASSERT_FALSE: [(); 1] = [(); 1];
+        let _ =
+            ASSERT_FALSE[(DX < -1 || DX > 1 || DY < -1 || DY > 1 || (DX == 0 && DY == 0)) as usize];
+        Self { dx: DX, dy: DY }
     }
 
-    /// Inverse of ALL8, shifted right
-    ///
-    /// An array used to convert a [`Qr`] into a
-    /// `usize` which is the index of the corresponding [`Qr`] in
-    /// [`ALL8`], assuming diagonals are enabled.
-    const INVERSE8: [[usize; 3]; 3] = [[7, 0, 1], [6, usize::MAX, 2], [5, 4, 3]];
-    /// Inverse of ALL4, shifted right
-    ///
-    /// An array used to convert a [`Qr`] into a
-    /// `usize` which is the index of the corresponding [`Qr`] in
-    /// [`ALL4`], assuming diagonals are disabled.
-    const INVERSE4: [[usize; 3]; 3] = [
-        [usize::MAX, 0, usize::MAX],
-        [3, usize::MAX, 1],
-        [usize::MAX, 2, usize::MAX],
-    ];
+    /// The names of all corresponding values
+    const NAMES: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
-    /// Returns the inverse of [`array_all`], shifted right.
-    ///
-    /// Returns an array that can be used to convert a [`Qr`] value
-    /// into a `usize` which is the index of the corresponding [`Qr`] in
-    /// the array returned by [`array_all`].
-    ///
-    /// The slices are used internally to map indexes (usize) to Qr values.
-    const fn array_inverse() -> &'static [[usize; 3]; 3] {
-        if D {
-            &Self::INVERSE8
-        } else {
-            &Self::INVERSE4
-        }
-    }
-
-    /// The names of all 8 possible values, assuming diagonals are enabled.
-    /// They match the indexes of [`ALL8`].
-    const NAMES8: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-    /// The names of all 4 possible values, assuming diagonals are disabled.
-    /// They match the indexes of [`ALL4`].
-    const NAMES4: [&'static str; 4] = ["N", "E", "S", "W"];
-
-    /// Returns a slice with all (8/4) names for the current Qr type.
-    /// They match the indexes of the array returned by [`array_all`].
-    ///
-    /// The slices are used internally to map indexes (usize) to Qr values.
-    const fn array_names() -> &'static [&'static str] {
-        if D {
-            &Self::NAMES8
-        } else {
-            &Self::NAMES4
-        }
+    /// Returns true if the Qr is a diagonal: NE, SE, SW or NW.
+    pub const fn is_diagonal(&self) -> bool {
+        self.dx != 0 && self.dy != 0
     }
 
     /// Returns an iterator that returns all possible values for the
     /// [`Qr`] type used, in clockwise order.
-    pub fn iter() -> QrIterator<D> {
+    pub fn iter<const D: bool>() -> QrIterator<D> {
         QrIterator::<D>::default()
     }
 }
 
 // TryFrom / Into tuple
 
-impl<const D: bool> convert::TryFrom<(i16, i16)> for Qr<D> {
+impl convert::TryFrom<(i16, i16)> for Qr {
     type Error = Error;
     fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
         Self::try_from(&xy)
     }
 }
 
-impl<const D: bool> convert::TryFrom<&(i16, i16)> for Qr<D> {
+impl convert::TryFrom<&(i16, i16)> for Qr {
     type Error = Error;
     fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
         if xy.0 < -1 || xy.0 > 1 || xy.1 < -1 || xy.1 > 1 || (xy.0 == 0 && xy.1 == 0) {
             Err(Error::InvalidDirection)
-        } else if !D && xy.0 != 0 && xy.1 != 0 {
-            Err(Error::UnsupportedDiagonal)
         } else {
             Ok(Qr { dx: xy.0, dy: xy.1 })
         }
     }
 }
 
-impl<const D: bool> From<&Qr<D>> for (i16, i16) {
-    fn from(qr: &Qr<D>) -> Self {
+impl From<&Qr> for (i16, i16) {
+    fn from(qr: &Qr) -> Self {
         (qr.dx, qr.dy)
     }
 }
 
-impl<const D: bool> From<Qr<D>> for (i16, i16) {
-    fn from(qr: Qr<D>) -> Self {
+impl From<Qr> for (i16, i16) {
+    fn from(qr: Qr) -> Self {
         <(i16, i16)>::from(&qr)
     }
 }
 
-impl<const D: bool> TryFrom<usize> for Qr<D> {
+impl TryFrom<usize> for Qr {
     type Error = Error;
     fn try_from(i: usize) -> Result<Self, Self::Error> {
-        Qr::<D>::array_all()
-            .get(i)
-            .cloned()
-            .ok_or(Error::OutOfBounds)
+        Qr::ALL.get(i).cloned().ok_or(Error::OutOfBounds)
     }
 }
 
-impl<const D: bool> From<&Qr<D>> for usize {
-    fn from(qr: &Qr<D>) -> usize {
-        Qr::<D>::array_inverse()[(qr.dy + 1) as usize][(qr.dx + 1) as usize]
+impl From<&Qr> for usize {
+    fn from(qr: &Qr) -> usize {
+        Qr::INVERSE[((qr.dy + 1) * 3 + qr.dx + 1) as usize]
     }
 }
 
-impl<const D: bool> From<Qr<D>> for usize {
-    fn from(qr: Qr<D>) -> usize {
+impl From<Qr> for usize {
+    fn from(qr: Qr) -> usize {
         usize::from(&qr)
     }
 }
 
-impl<const D: bool> fmt::Display for Qr<D> {
+impl fmt::Display for Qr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Qr::<D>::array_names()[usize::from(self)])
+        write!(f, "{}", Qr::NAMES[usize::from(self)])
     }
 }
 
@@ -378,7 +317,7 @@ impl<const D: bool> fmt::Display for Qr<D> {
 /// Example that prints all 4 cardinal directions:
 ///
 /// ```
-/// for qr in sqrid::Qr::<false>::iter() {
+/// for qr in sqrid::Qr::iter::<false>() {
 ///     println!("{}", qr);
 /// }
 /// ```
@@ -387,7 +326,7 @@ impl<const D: bool> fmt::Display for Qr<D> {
 /// diagonals:
 ///
 /// ```
-/// for qr in sqrid::Qr::<true>::iter() {
+/// for qr in sqrid::Qr::iter::<true>() {
 ///     println!("{}", qr);
 /// }
 /// ```
@@ -401,13 +340,13 @@ impl<const D: bool> Default for QrIterator<D> {
 }
 
 impl<const D: bool> Iterator for QrIterator<D> {
-    type Item = Qr<D>;
+    type Item = Qr;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
-            if i < Qr::<D>::SIZE {
-                self.0 = Some(i + 1);
+            if i < Qr::SIZE {
+                self.0 = Some(i + if D { 1 } else { 2 });
             }
-            Qr::<D>::try_from(i).ok()
+            Qr::try_from(i).ok()
         } else {
             None
         }
@@ -426,9 +365,6 @@ pub enum Error {
     /// Attempted to create a [`Qr`] instannce with a tuple that
     /// doesn't represent a unitary direction.
     InvalidDirection,
-    /// Attempted to create a "diagonal" [`Qr`] instance with the type
-    /// that doesn't support diagonals (`Qr::<false>`)
-    UnsupportedDiagonal,
 }
 
 impl error::Error for Error {}
@@ -438,7 +374,6 @@ impl fmt::Display for Error {
         match self {
             Error::OutOfBounds => write!(f, "value is out-of-bounds"),
             Error::InvalidDirection => write!(f, "invalid direction for Qr"),
-            Error::UnsupportedDiagonal => write!(f, "diagonal not supported in Qr"),
         }
     }
 }

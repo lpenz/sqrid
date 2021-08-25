@@ -26,8 +26,8 @@ We can get [`Qa`] instances by:
 - Using one of the const associated items:
   ```rust
   type Qa = sqrid::Qa<6, 7>;
-  const MyFirst : Qa = Qa::FIRST;
-  const MyLast : Qa = Qa::LAST;
+  const MY_FIRST : Qa = Qa::FIRST;
+  const MY_LAST : Qa = Qa::LAST;
   ```
 - Using `try_from` with a `(i16, i16)` tuple or a tuple reference:
   ```rust
@@ -35,7 +35,6 @@ We can get [`Qa`] instances by:
   use std::error::Error;
 
   type Qa = sqrid::Qa<6, 7>;
-  const MyFirst : Qa = Qa::FIRST;
 
   fn main() -> Result<(), Box<dyn Error>> {
       let qa1 = Qa::try_from((2_i16, 3_i16))?;
@@ -65,9 +64,8 @@ We can get [`Qa`] instances by:
 ## `Qr`: relative coordinates, direction, movement
 
 This type represents a relative movement of one square. It can
-only be one of the 4 cardinal directions (N, E, S, W) if the
-`DIAG` argument is false, or one of the 8 directions when it's
-true.
+only be one of the 8 cardinal and intercardinal directions (N, NE,
+E, SE, S, SW, W, NW).
 
 It's a building block for paths, iterating on a [`Qa`] neighbors,
 etc. It effectively represents the edges in a graph where the
@@ -78,8 +76,8 @@ We can get [`Qr`] instances by:
   cardinal directions (recommended):
   ```rust
   use sqrid::Qr;
-  const Right : Qr<false> = Qr::E;
-  const Down : Qr<false> = Qr::S;
+  const RIGHT : Qr = Qr::E;
+  const DOWN : Qr = Qr::S;
   ```
 - Using `try_from` with a `(i16, i16)` tuple or a tuple reference:
   ```rust
@@ -90,29 +88,32 @@ We can get [`Qr`] instances by:
 
   fn main() -> Result<(), Box<dyn Error>> {
       // Re-create West:
-      let qr1 = Qr::<false>::try_from((0_i16, -1_i16))?;
+      let qr1 = Qr::try_from((0_i16, -1_i16))?;
       // Re-create Northeast:
-      let qr2 = Qr::<true>::try_from((-1_i16, 1_i16))?;
+      let qr2 = Qr::try_from((-1_i16, 1_i16))?;
       Ok(())
   }
   ```
 - Calling [`Qr::new`], which checks the bounds in const contexts:
   ```rust
   use sqrid::Qr;
-  const DOWNRIGHT : Qr<true> = Qr::<true>::new::<1, 1>();
+  const DOWNRIGHT : Qr = Qr::new::<1, 1>();
   ```
-  The following, for instance, doesn't compile due to the argument
-  being false, which means that diagonals are not supported:
-  ```rust
+  The following, for instance, doesn't compile due to the
+  arguments not being units:
+  ```compile_fail
   use sqrid::Qr;
-  const DOWNRIGHT : Qr<false> = Qr::<false>::new::<1, 1>();
+  const DOWNRIGHT2 : Qr = Qr::new::<2, 2>();
   ```
 - Calling [`Qr::iter`] to iterate all directions:
   ```rust
-  for qr in sqrid::Qr::<true>::iter() {
+  for qr in sqrid::Qr::iter::<true>() {
       println!("{}", qr);
   }
   ```
+  The const argument to Qr::iter signals it to iterate over the
+  intercardinal directions too. Passing `false` gets us only the 4
+  cardinal directions.
 
 
 [`Qa`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html
