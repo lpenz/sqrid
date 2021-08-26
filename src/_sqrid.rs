@@ -93,7 +93,7 @@ impl<const W: i16, const H: i16> convert::TryFrom<(i16, i16)> for Qa<W, H> {
 impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
     type Error = Error;
     fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
-        if xy.0 >= W || xy.1 >= H {
+        if xy.0 < 0 || xy.1 < 0 || xy.0 >= W || xy.1 >= H {
             Err(Error::OutOfBounds)
         } else {
             Ok(Qa { x: xy.0, y: xy.1 })

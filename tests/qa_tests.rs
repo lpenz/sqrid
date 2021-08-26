@@ -43,6 +43,8 @@ fn test_out_of_bounds() -> Result<()> {
     assert_eq!(q2result.unwrap_err(), sqrid::Error::OutOfBounds);
     let q3result = Qa::try_from(Qa::SIZE);
     assert_eq!(q3result.unwrap_err(), sqrid::Error::OutOfBounds);
+    let q4result = Qa::try_from((-1_i16, 0_i16));
+    assert_eq!(q4result.unwrap_err(), sqrid::Error::OutOfBounds);
     Ok(())
 }
 
