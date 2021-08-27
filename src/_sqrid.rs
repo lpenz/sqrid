@@ -84,13 +84,6 @@ impl<const W: i16, const H: i16> fmt::Display for Qa<W, H> {
 
 // TryFrom / Into tuple
 
-impl<const W: i16, const H: i16> convert::TryFrom<(i16, i16)> for Qa<W, H> {
-    type Error = Error;
-    fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
-        Self::try_from(&xy)
-    }
-}
-
 impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
     type Error = Error;
     fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
@@ -99,6 +92,13 @@ impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
         } else {
             Ok(Qa { x: xy.0, y: xy.1 })
         }
+    }
+}
+
+impl<const W: i16, const H: i16> convert::TryFrom<(i16, i16)> for Qa<W, H> {
+    type Error = Error;
+    fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
+        Self::try_from(&xy)
     }
 }
 
@@ -182,38 +182,40 @@ impl<const W: i16, const H: i16> Iterator for QaIterator<W, H> {
 /// It's a building block for paths, iterating on a [`Qa`] neighbors,
 /// etc. It effectively represents the edges in a graph where the
 /// [`Qa`] type represents nodes.
+///
+/// Internally, 0 reprents N, 1 is NE and so forth until 7.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Qr {
-    dx: i16,
-    dy: i16,
+pub enum Qr {
+    /// North, or up
+    N = 0,
+    /// Northeast
+    NE,
+    /// East, or right
+    E,
+    /// Southeast
+    SE,
+    /// South, or down
+    S,
+    /// Southwest
+    SW,
+    /// West, or left
+    W,
+    /// Norwest
+    NW,
 }
 
 impl Default for Qr {
     fn default() -> Self {
-        Qr { dx: 0, dy: -1 }
+        Qr::N
     }
 }
 impl Qr {
-    /// North, or up
-    pub const N: Self = Qr { dx: 0, dy: -1 };
-    /// Northeast
-    pub const NE: Self = Qr { dx: 1, dy: -1 };
-    /// East, or right
-    pub const E: Self = Qr { dx: 1, dy: 0 };
-    /// Southeast
-    pub const SE: Self = Qr { dx: 1, dy: 1 };
-    /// South, or down
-    pub const S: Self = Qr { dx: 0, dy: 1 };
-    /// Southwest
-    pub const SW: Self = Qr { dx: -1, dy: 1 };
-    /// West, or left
-    pub const W: Self = Qr { dx: -1, dy: 0 };
-    /// Nortwest
-    pub const NW: Self = Qr { dx: -1, dy: -1 };
     /// Number of possible directions
     pub const SIZE: usize = 8;
 
-    /// All 8 possible values
+    /// All 8 possible values in enum order
+    ///
+    /// Used to convert a usize into a [`Qr`] value via indexing.
     pub const ALL: [Self; 8] = [
         Self::N,
         Self::NE,
@@ -225,28 +227,84 @@ impl Qr {
         Self::NW,
     ];
 
+    /// All corresponding tuples
+    ///
+    /// Used to convert a [`Qr`] value into a (i16, i16) tuple via indexing.
+    pub const TUPLES: [(i16, i16); 8] = [
+        (0, -1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+        (0, 1),
+        (-1, 1),
+        (-1, 0),
+        (-1, -1),
+    ];
+
     /// Inverse of ALL, shifted right
     ///
     /// An array used to convert a tuple into the inner value of
     /// [`Qr`].
-    const INVERSE: [usize; 9] = [7, 0, 1, 6, usize::MAX, 2, 5, 4, 3];
+    const INVERSE: [Qr; 9] = [
+        Self::NW,
+        Self::N,
+        Self::NE,
+        Self::W,
+        Self::N, // Note: this is wrong but we need a value here
+        Self::E,
+        Self::SW,
+        Self::S,
+        Self::SE,
+    ];
 
-    /// The names of all corresponding values
-    const NAMES: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    /// The names of all corresponding [`Qr`] values.
+    ///
+    /// Used to convert a [`Qr`] value into a &'static str via indexing.
+    pub const NAMES: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
     /// Returns true if the Qr is a diagonal: NE, SE, SW or NW.
     pub const fn is_diagonal(&self) -> bool {
-        self.dx != 0 && self.dy != 0
+        (*self as u8) % 2 == 1
+    }
+
+    /// Return the next Qr in clockwise order, or None if `self` is
+    /// the last one
+    ///
+    /// This function takes a generic const argument `D` that
+    /// indicates if diagonals should be considered or not. If
+    /// considered, the last Qr is NW, otherwise it's S.
+    pub fn next<const D: bool>(self) -> Option<Self> {
+        if (D && self == Qr::NW) || (!D && self == Qr::W) {
+            None
+        } else if D {
+            Some(Qr::ALL[(self as usize) + 1])
+        } else {
+            Some(Qr::ALL[(self as usize) + 2])
+        }
     }
 
     /// Returns an iterator that returns all possible values for the
     /// [`Qr`] type used, in clockwise order.
+    ///
+    /// This function takes a generic const argument `D` that
+    /// indicates if diagonals should be in the iteration or not.
     pub fn iter<const D: bool>() -> QrIterator<D> {
         QrIterator::<D>::default()
     }
 }
 
 // TryFrom / Into tuple
+
+impl convert::TryFrom<&(i16, i16)> for Qr {
+    type Error = Error;
+    fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
+        if xy.0 < -1 || xy.0 > 1 || xy.1 < -1 || xy.1 > 1 || (xy.0 == 0 && xy.1 == 0) {
+            Err(Error::InvalidDirection)
+        } else {
+            Ok(Qr::INVERSE[((xy.1 + 1) * 3 + xy.0 + 1) as usize])
+        }
+    }
+}
 
 impl convert::TryFrom<(i16, i16)> for Qr {
     type Error = Error;
@@ -255,20 +313,9 @@ impl convert::TryFrom<(i16, i16)> for Qr {
     }
 }
 
-impl convert::TryFrom<&(i16, i16)> for Qr {
-    type Error = Error;
-    fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
-        if xy.0 < -1 || xy.0 > 1 || xy.1 < -1 || xy.1 > 1 || (xy.0 == 0 && xy.1 == 0) {
-            Err(Error::InvalidDirection)
-        } else {
-            Ok(Qr { dx: xy.0, dy: xy.1 })
-        }
-    }
-}
-
 impl From<&Qr> for (i16, i16) {
     fn from(qr: &Qr) -> Self {
-        (qr.dx, qr.dy)
+        Qr::TUPLES[*qr as usize]
     }
 }
 
@@ -278,22 +325,15 @@ impl From<Qr> for (i16, i16) {
     }
 }
 
-impl TryFrom<usize> for Qr {
-    type Error = Error;
-    fn try_from(i: usize) -> Result<Self, Self::Error> {
-        Qr::ALL.get(i).cloned().ok_or(Error::OutOfBounds)
-    }
-}
-
 impl From<&Qr> for usize {
     fn from(qr: &Qr) -> usize {
-        Qr::INVERSE[((qr.dy + 1) * 3 + qr.dx + 1) as usize]
+        *qr as usize
     }
 }
 
 impl From<Qr> for usize {
     fn from(qr: Qr) -> usize {
-        usize::from(&qr)
+        qr as usize
     }
 }
 
@@ -325,7 +365,7 @@ impl fmt::Display for Qr {
 /// }
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct QrIterator<const D: bool>(Option<usize>);
+pub struct QrIterator<const D: bool>(Option<Qr>);
 
 impl<const D: bool> Default for QrIterator<D> {
     fn default() -> Self {
@@ -337,10 +377,8 @@ impl<const D: bool> Iterator for QrIterator<D> {
     type Item = Qr;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
-            if i < Qr::SIZE {
-                self.0 = Some(i + if D { 1 } else { 2 });
-            }
-            Qr::try_from(i).ok()
+            self.0 = i.next::<D>();
+            Some(i)
         } else {
             None
         }
