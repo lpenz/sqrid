@@ -12,12 +12,10 @@ use std::convert::TryFrom;
 fn test_basic() -> Result<()> {
     let qr0 = Qr::default();
     let qr1 = Qr::N;
-    let qr2 = Qr::new::<0, -1>();
     assert_eq!(qr0, qr1);
-    assert_eq!(qr0, qr2);
     assert_eq!(<(i16, i16)>::from(qr1), (0, -1));
-    let qr3 = Qr::try_from((-1_i16, 0_i16));
-    assert_eq!(qr3, Ok(Qr::W));
+    let qr2 = Qr::try_from((-1_i16, 0_i16));
+    assert_eq!(qr2, Ok(Qr::W));
     Ok(())
 }
 
@@ -41,6 +39,8 @@ fn do_test_iter<const D: bool>() -> Result<()> {
     }
     let arr = iter.collect::<Vec<_>>();
     assert_eq!(arr.len(), Qr::SIZE / div);
+    assert_eq!(arr.len(), iter.size_hint().0);
+    assert_eq!(arr.len(), iter.size_hint().1.unwrap());
     let mut iter = Qr::iter::<D>();
     for i in 0..Qr::SIZE * 2 / div {
         if i < Qr::SIZE / div {

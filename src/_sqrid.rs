@@ -166,6 +166,10 @@ impl<const W: i16, const H: i16> Iterator for QaIterator<W, H> {
             None
         }
     }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = W as usize * H as usize;
+        (size, Some(size))
+    }
 }
 
 /* Qr: relative coordinates, motion *********************************/
@@ -225,17 +229,6 @@ impl Qr {
     /// An array used to convert a tuple into the inner value of
     /// [`Qr`].
     const INVERSE: [usize; 9] = [7, 0, 1, 6, usize::MAX, 2, 5, 4, 3];
-
-    /// Create a new [`Qr`] instance.
-    /// Can be used in const context.
-    /// Bounds are checked at compile-time, if possible.
-    pub const fn new<const DX: i16, const DY: i16>() -> Self {
-        // Trick for compile-time check of X and Y:
-        const ASSERT_FALSE: [(); 1] = [(); 1];
-        let _ =
-            ASSERT_FALSE[(DX < -1 || DX > 1 || DY < -1 || DY > 1 || (DX == 0 && DY == 0)) as usize];
-        Self { dx: DX, dy: DY }
-    }
 
     /// The names of all corresponding values
     const NAMES: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
@@ -349,6 +342,13 @@ impl<const D: bool> Iterator for QrIterator<D> {
             Qr::try_from(i).ok()
         } else {
             None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if D {
+            (8, Some(8))
+        } else {
+            (4, Some(4))
         }
     }
 }

@@ -94,17 +94,6 @@
 //!       Ok(())
 //!   }
 //!   ```
-//! - Calling [`Qr::new`], which checks the bounds in const contexts:
-//!   ```rust
-//!   use sqrid::Qr;
-//!   const DOWNRIGHT : Qr = Qr::new::<1, 1>();
-//!   ```
-//!   The following, for instance, doesn't compile due to the
-//!   arguments not being units:
-//!   ```compile_fail
-//!   use sqrid::Qr;
-//!   const DOWNRIGHT2 : Qr = Qr::new::<2, 2>();
-//!   ```
 //! - Calling [`Qr::iter`] to iterate all directions:
 //!   ```rust
 //!   for qr in sqrid::Qr::iter::<true>() {

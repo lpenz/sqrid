@@ -55,6 +55,9 @@ fn test_iter() -> Result<()> {
     for qa in iter {
         println!("{}", qa);
     }
+    let v = Qa::iter().collect::<Vec<_>>();
+    assert_eq!(v.len(), iter.size_hint().0);
+    assert_eq!(v.len(), iter.size_hint().1.unwrap());
     Ok(())
 }
 
