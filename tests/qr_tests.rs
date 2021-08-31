@@ -13,15 +13,15 @@ fn test_basic() -> Result<()> {
     let qr0 = Qr::default();
     let qr1 = Qr::N;
     assert_eq!(qr0, qr1);
-    assert_eq!(<(i16, i16)>::from(qr1), (0, -1));
-    let qr2 = Qr::try_from((-1_i16, 0_i16));
+    assert_eq!(<(i8, i8)>::from(qr1), (0, -1));
+    let qr2 = Qr::try_from((-1_i8, 0_i8));
     assert_eq!(qr2, Ok(Qr::W));
     Ok(())
 }
 
 #[test]
 fn test_errors() -> Result<()> {
-    let qr1result = Qr::try_from((2_i16, 0_i16));
+    let qr1result = Qr::try_from((2_i8, 0_i8));
     println!("{}", qr1result.clone().unwrap_err());
     assert_eq!(qr1result.unwrap_err(), sqrid::Error::InvalidDirection);
     Ok(())

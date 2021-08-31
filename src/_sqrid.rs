@@ -32,17 +32,17 @@ use std::ops;
 /// type Qa = sqrid::Qa<4, 4>;
 /// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct Qa<const WIDTH: i16, const HEIGHT: i16> {
-    x: i16,
-    y: i16,
+pub struct Qa<const WIDTH: u16, const HEIGHT: u16> {
+    x: u16,
+    y: u16,
 }
 
-impl<const W: i16, const H: i16> Qa<W, H> {
+impl<const W: u16, const H: u16> Qa<W, H> {
     /// Width of the grid: exclusive max of the x coordinate.
-    pub const WIDTH: i16 = W;
+    pub const WIDTH: u16 = W;
 
     /// Height of the grid: exclusive max of the y coordinate.
-    pub const HEIGHT: i16 = H;
+    pub const HEIGHT: u16 = H;
 
     /// Size of the grid, i.e. how many squares.
     pub const SIZE: usize = W as usize * H as usize;
@@ -57,11 +57,10 @@ impl<const W: i16, const H: i16> Qa<W, H> {
     /// Create a new [`Qa`] instance.
     /// Can be used in const context.
     /// Bounds are checked at compile-time, if possible.
-    #[inline]
-    pub const fn new<const X: i16, const Y: i16>() -> Self {
+    pub const fn new<const X: u16, const Y: u16>() -> Self {
         // Trick for compile-time check of X and Y:
         const ASSERT_FALSE: [(); 1] = [(); 1];
-        let _ = ASSERT_FALSE[(X < 0 || X >= W || Y < 0 || Y >= H) as usize];
+        let _ = ASSERT_FALSE[(X >= W || Y >= H) as usize];
         Self { x: X, y: Y }
     }
 
@@ -78,7 +77,7 @@ impl<const W: i16, const H: i16> Qa<W, H> {
     }
 }
 
-impl<const W: i16, const H: i16> fmt::Display for Qa<W, H> {
+impl<const W: u16, const H: u16> fmt::Display for Qa<W, H> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({},{})", self.x, self.y)
     }
@@ -86,11 +85,11 @@ impl<const W: i16, const H: i16> fmt::Display for Qa<W, H> {
 
 // TryFrom / Into tuple
 
-impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
+impl<const W: u16, const H: u16> convert::TryFrom<&(u16, u16)> for Qa<W, H> {
     type Error = Error;
     #[inline]
-    fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
-        if xy.0 < 0 || xy.1 < 0 || xy.0 >= W || xy.1 >= H {
+    fn try_from(xy: &(u16, u16)) -> Result<Self, Self::Error> {
+        if xy.0 >= W || xy.1 >= H {
             Err(Error::OutOfBounds)
         } else {
             Ok(Qa { x: xy.0, y: xy.1 })
@@ -98,48 +97,92 @@ impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
     }
 }
 
-impl<const W: i16, const H: i16> convert::TryFrom<(i16, i16)> for Qa<W, H> {
+impl<const W: u16, const H: u16> convert::TryFrom<(u16, u16)> for Qa<W, H> {
     type Error = Error;
     #[inline]
-    fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
+    fn try_from(xy: (u16, u16)) -> Result<Self, Self::Error> {
         Self::try_from(&xy)
     }
 }
 
-impl<const W: i16, const H: i16> From<&Qa<W, H>> for (i16, i16) {
+impl<const W: u16, const H: u16> convert::TryFrom<&(i32, i32)> for Qa<W, H> {
+    type Error = Error;
+    #[inline]
+    fn try_from(xy: &(i32, i32)) -> Result<Self, Self::Error> {
+        if xy.0 < 0 || xy.1 < 0 || xy.0 >= W as i32 || xy.1 >= H as i32 {
+            Err(Error::OutOfBounds)
+        } else {
+            Ok(Qa {
+                x: xy.0 as u16,
+                y: xy.1 as u16,
+            })
+        }
+    }
+}
+
+impl<const W: u16, const H: u16> convert::TryFrom<(i32, i32)> for Qa<W, H> {
+    type Error = Error;
+    #[inline]
+    fn try_from(xy: (i32, i32)) -> Result<Self, Self::Error> {
+        Self::try_from(&xy)
+    }
+}
+
+impl<const W: u16, const H: u16> From<&Qa<W, H>> for (u16, u16) {
     #[inline]
     fn from(qa: &Qa<W, H>) -> Self {
         (qa.x, qa.y)
     }
 }
 
-impl<const W: i16, const H: i16> From<Qa<W, H>> for (i16, i16) {
+impl<const W: u16, const H: u16> From<Qa<W, H>> for (u16, u16) {
     #[inline]
     fn from(qa: Qa<W, H>) -> Self {
-        <(i16, i16)>::from(&qa)
+        <(u16, u16)>::from(&qa)
+    }
+}
+
+impl<const W: u16, const H: u16> From<&Qa<W, H>> for (i32, i32) {
+    #[inline]
+    fn from(qa: &Qa<W, H>) -> Self {
+        (qa.x as i32, qa.y as i32)
+    }
+}
+
+impl<const W: u16, const H: u16> From<Qa<W, H>> for (i32, i32) {
+    #[inline]
+    fn from(qa: Qa<W, H>) -> Self {
+        <(i32, i32)>::from(&qa)
     }
 }
 
 // TryFrom / Into usize index
 
-impl<const W: i16, const H: i16> convert::TryFrom<usize> for Qa<W, H> {
+impl<const W: u16, const H: u16> convert::TryFrom<usize> for Qa<W, H> {
     type Error = Error;
     #[inline]
     fn try_from(i: usize) -> Result<Self, Self::Error> {
         if i >= Qa::<W, H>::SIZE {
             Err(Error::OutOfBounds)
         } else {
-            let x = (i % W as usize) as i16;
-            let y = (i / W as usize) as i16;
+            let x = (i % W as usize) as u16;
+            let y = (i / W as usize) as u16;
             Ok(Qa { x, y })
         }
     }
 }
 
-impl<const W: i16, const H: i16> From<Qa<W, H>> for usize {
+impl<const W: u16, const H: u16> From<&Qa<W, H>> for usize {
+    #[inline]
+    fn from(qa: &Qa<W, H>) -> Self {
+        qa.y as usize * W as usize + qa.x as usize
+    }
+}
+
+impl<const W: u16, const H: u16> From<Qa<W, H>> for usize {
     #[inline]
     fn from(qa: Qa<W, H>) -> Self {
-        qa.y as usize * W as usize + qa.x as usize
+        usize::from(&qa)
     }
 }
 
@@ -157,15 +200,15 @@ impl<const W: i16, const H: i16> From<Qa<W, H>> for usize {
 /// }
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct QaIterator<const W: i16, const H: i16>(Option<Qa<W, H>>);
+pub struct QaIterator<const W: u16, const H: u16>(Option<Qa<W, H>>);
 
-impl<const W: i16, const H: i16> Default for QaIterator<W, H> {
+impl<const W: u16, const H: u16> Default for QaIterator<W, H> {
     fn default() -> Self {
         QaIterator(Some(Default::default()))
     }
 }
 
-impl<const W: i16, const H: i16> Iterator for QaIterator<W, H> {
+impl<const W: u16, const H: u16> Iterator for QaIterator<W, H> {
     type Item = Qa<W, H>;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -239,7 +282,7 @@ impl Qr {
     /// All corresponding tuples
     ///
     /// Used to convert a [`Qr`] value into a (i16, i16) tuple via indexing.
-    pub const TUPLES: [(i16, i16); 8] = [
+    pub const TUPLES: [(i8, i8); 8] = [
         (0, -1),
         (1, -1),
         (1, 0),
@@ -306,10 +349,10 @@ impl Qr {
 
 // TryFrom / Into tuple
 
-impl convert::TryFrom<&(i16, i16)> for Qr {
+impl convert::TryFrom<&(i8, i8)> for Qr {
     type Error = Error;
     #[inline]
-    fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
+    fn try_from(xy: &(i8, i8)) -> Result<Self, Self::Error> {
         if xy.0 < -1 || xy.0 > 1 || xy.1 < -1 || xy.1 > 1 || (xy.0 == 0 && xy.1 == 0) {
             Err(Error::InvalidDirection)
         } else {
@@ -318,25 +361,40 @@ impl convert::TryFrom<&(i16, i16)> for Qr {
     }
 }
 
-impl convert::TryFrom<(i16, i16)> for Qr {
+impl convert::TryFrom<(i8, i8)> for Qr {
     type Error = Error;
     #[inline]
-    fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
+    fn try_from(xy: (i8, i8)) -> Result<Self, Self::Error> {
         Self::try_from(&xy)
     }
 }
 
-impl From<&Qr> for (i16, i16) {
+impl From<&Qr> for (i8, i8) {
     #[inline]
     fn from(qr: &Qr) -> Self {
         Qr::TUPLES[*qr as usize]
     }
 }
 
-impl From<Qr> for (i16, i16) {
+impl From<Qr> for (i8, i8) {
     #[inline]
     fn from(qr: Qr) -> Self {
-        <(i16, i16)>::from(&qr)
+        <(i8, i8)>::from(&qr)
+    }
+}
+
+impl From<&Qr> for (i32, i32) {
+    #[inline]
+    fn from(qr: &Qr) -> Self {
+        let tuple = Qr::TUPLES[*qr as usize];
+        (tuple.0 as i32, tuple.1 as i32)
+    }
+}
+
+impl From<Qr> for (i32, i32) {
+    #[inline]
+    fn from(qr: Qr) -> Self {
+        <(i32, i32)>::from(&qr)
     }
 }
 
@@ -350,7 +408,7 @@ impl From<&Qr> for usize {
 impl From<Qr> for usize {
     #[inline]
     fn from(qr: Qr) -> usize {
-        qr as usize
+        usize::from(&qr)
     }
 }
 
@@ -412,11 +470,12 @@ impl<const D: bool> Iterator for QrIterator<D> {
 
 /* Interaction between Qa and Qr: ***********************************/
 
-impl<const W: i16, const H: i16> ops::Add<Qr> for Qa<W, H> {
+impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
     type Output = Option<Self>;
+    #[inline]
     fn add(self, rhs: Qr) -> Self::Output {
-        let qat = <(i16, i16)>::from(self);
-        let qrt = <(i16, i16)>::from(rhs);
+        let qat = <(i32, i32)>::from(self);
+        let qrt = <(i32, i32)>::from(rhs);
         Qa::<W, H>::try_from((qat.0 + qrt.0, qat.1 + qrt.1)).ok()
     }
 }

@@ -11,17 +11,17 @@ type Qa = sqrid::Qa<6, 7>;
 
 #[test]
 fn test_basic() -> Result<()> {
-    let q1 = Qa::try_from((2_i16, 3_i16))?;
+    let q1 = Qa::try_from((2_u16, 3_u16))?;
     println!("{:?} {}", q1, q1);
-    assert_eq!((2_i16, 3_i16), q1.into());
-    let q2 = Qa::try_from(&(3_i16, 4_i16))?;
-    assert_eq!((3_i16, 4_i16), q2.into());
-    let q3 = Qa::try_from(&(5_i16, 6_i16));
-    assert_eq!((5_i16, 6_i16), q3.unwrap().into());
+    assert_eq!((2_u16, 3_u16), q1.into());
+    let q2 = Qa::try_from(&(3_u16, 4_u16))?;
+    assert_eq!((3_u16, 4_u16), q2.into());
+    let q3 = Qa::try_from(&(5_u16, 6_u16));
+    assert_eq!((5_u16, 6_u16), q3.unwrap().into());
     const Q4: Qa = Qa::new::<5, 4>();
-    assert_eq!((5_i16, 4_i16), Q4.into());
+    assert_eq!((5_u16, 4_u16), Q4.into());
     let q5 = Qa::new::<4, 3>();
-    assert_eq!((4_i16, 3_i16), q5.into());
+    assert_eq!((4_u16, 3_u16), q5.into());
     Ok(())
 }
 
@@ -34,17 +34,15 @@ fn test_usize() -> Result<()> {
 
 #[test]
 fn test_out_of_bounds() -> Result<()> {
-    let q1result = Qa::try_from((6_i16, 3_i16));
+    let q1result = Qa::try_from((6_u16, 3_u16));
     assert!(q1result.is_err());
     println!("{:?}", q1result);
     println!("{}", q1result.unwrap_err());
-    let q2result = Qa::try_from((0_i16, 7_i16));
+    let q2result = Qa::try_from((0_u16, 7_u16));
     assert!(q2result.is_err());
     assert_eq!(q2result.unwrap_err(), sqrid::Error::OutOfBounds);
     let q3result = Qa::try_from(Qa::SIZE);
     assert_eq!(q3result.unwrap_err(), sqrid::Error::OutOfBounds);
-    let q4result = Qa::try_from((-1_i16, 0_i16));
-    assert_eq!(q4result.unwrap_err(), sqrid::Error::OutOfBounds);
     Ok(())
 }
 

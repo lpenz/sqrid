@@ -37,7 +37,7 @@
 //!   type Qa = sqrid::Qa<6, 7>;
 //!
 //!   fn main() -> Result<(), Box<dyn Error>> {
-//!       let qa1 = Qa::try_from((2_i16, 3_i16))?;
+//!       let qa1 = Qa::try_from((2_u16, 3_u16))?;
 //!
 //!       println!("qa1: {}", qa1);
 //!       Ok(())
@@ -88,9 +88,9 @@
 //!
 //!   fn main() -> Result<(), Box<dyn Error>> {
 //!       // Re-create West:
-//!       let qr1 = Qr::try_from((0_i16, -1_i16))?;
+//!       let qr1 = Qr::try_from((0_i8, -1_i8))?;
 //!       // Re-create Northeast:
-//!       let qr2 = Qr::try_from((-1_i16, 1_i16))?;
+//!       let qr2 = Qr::try_from((-1_i8, 1_i8))?;
 //!       Ok(())
 //!   }
 //!   ```
