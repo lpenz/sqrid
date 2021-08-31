@@ -57,3 +57,16 @@ fn test_iter() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn test_max() -> Result<()> {
+    type Qa = sqrid::Qa<0x7fff, 0x7fff>;
+    assert_eq!(Qa::SIZE, 0x7fff * 0x7fff);
+    assert_eq!(usize::from(Qa::LAST), 0x7fff * 0x7fff - 1);
+    assert_eq!(Qa::new::<0x7ffe, 0x7ffe>(), Qa::LAST);
+    assert_eq!(Qa::try_from((0x7ffe, 0x7ffe)), Ok(Qa::LAST));
+    assert_eq!(Qa::try_from(usize::from(Qa::LAST)), Ok(Qa::LAST));
+    let prevlast = Qa::new::<0x7ffd, 0x7ffe>();
+    assert_eq!(prevlast.next(), Some(Qa::LAST));
+    Ok(())
+}

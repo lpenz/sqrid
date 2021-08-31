@@ -121,8 +121,8 @@ impl<const W: i16, const H: i16> convert::TryFrom<usize> for Qa<W, H> {
         if i >= Qa::<W, H>::SIZE {
             Err(Error::OutOfBounds)
         } else {
-            let x = i as i16 % W;
-            let y = i as i16 / W;
+            let x = (i % W as usize) as i16;
+            let y = (i / W as usize) as i16;
             Ok(Qa { x, y })
         }
     }
