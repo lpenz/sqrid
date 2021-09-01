@@ -57,6 +57,7 @@ impl<const W: i16, const H: i16> Qa<W, H> {
     /// Create a new [`Qa`] instance.
     /// Can be used in const context.
     /// Bounds are checked at compile-time, if possible.
+    #[inline]
     pub const fn new<const X: i16, const Y: i16>() -> Self {
         // Trick for compile-time check of X and Y:
         const ASSERT_FALSE: [(); 1] = [(); 1];
@@ -65,6 +66,7 @@ impl<const W: i16, const H: i16> Qa<W, H> {
     }
 
     /// Return the next Qa in sequence (English read sequence), or None if `self` is the last one.
+    #[inline]
     pub fn next(self) -> Option<Self> {
         let i = usize::from(self) + 1;
         Self::try_from(i).ok()
@@ -86,6 +88,7 @@ impl<const W: i16, const H: i16> fmt::Display for Qa<W, H> {
 
 impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
     type Error = Error;
+    #[inline]
     fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
         if xy.0 < 0 || xy.1 < 0 || xy.0 >= W || xy.1 >= H {
             Err(Error::OutOfBounds)
@@ -97,18 +100,21 @@ impl<const W: i16, const H: i16> convert::TryFrom<&(i16, i16)> for Qa<W, H> {
 
 impl<const W: i16, const H: i16> convert::TryFrom<(i16, i16)> for Qa<W, H> {
     type Error = Error;
+    #[inline]
     fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
         Self::try_from(&xy)
     }
 }
 
 impl<const W: i16, const H: i16> From<&Qa<W, H>> for (i16, i16) {
+    #[inline]
     fn from(qa: &Qa<W, H>) -> Self {
         (qa.x, qa.y)
     }
 }
 
 impl<const W: i16, const H: i16> From<Qa<W, H>> for (i16, i16) {
+    #[inline]
     fn from(qa: Qa<W, H>) -> Self {
         <(i16, i16)>::from(&qa)
     }
@@ -118,6 +124,7 @@ impl<const W: i16, const H: i16> From<Qa<W, H>> for (i16, i16) {
 
 impl<const W: i16, const H: i16> convert::TryFrom<usize> for Qa<W, H> {
     type Error = Error;
+    #[inline]
     fn try_from(i: usize) -> Result<Self, Self::Error> {
         if i >= Qa::<W, H>::SIZE {
             Err(Error::OutOfBounds)
@@ -130,6 +137,7 @@ impl<const W: i16, const H: i16> convert::TryFrom<usize> for Qa<W, H> {
 }
 
 impl<const W: i16, const H: i16> From<Qa<W, H>> for usize {
+    #[inline]
     fn from(qa: Qa<W, H>) -> Self {
         qa.y as usize * W as usize + qa.x as usize
     }
@@ -159,6 +167,7 @@ impl<const W: i16, const H: i16> Default for QaIterator<W, H> {
 
 impl<const W: i16, const H: i16> Iterator for QaIterator<W, H> {
     type Item = Qa<W, H>;
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
             self.0 = i.next();
@@ -273,6 +282,7 @@ impl Qr {
     /// This function takes a generic const argument `D` that
     /// indicates if diagonals should be considered or not. If
     /// considered, the last Qr is NW, otherwise it's S.
+    #[inline]
     pub fn next<const D: bool>(self) -> Option<Self> {
         if (D && self == Qr::NW) || (!D && self == Qr::W) {
             None
@@ -288,6 +298,7 @@ impl Qr {
     ///
     /// This function takes a generic const argument `D` that
     /// indicates if diagonals should be in the iteration or not.
+    #[inline]
     pub fn iter<const D: bool>() -> QrIterator<D> {
         QrIterator::<D>::default()
     }
@@ -297,6 +308,7 @@ impl Qr {
 
 impl convert::TryFrom<&(i16, i16)> for Qr {
     type Error = Error;
+    #[inline]
     fn try_from(xy: &(i16, i16)) -> Result<Self, Self::Error> {
         if xy.0 < -1 || xy.0 > 1 || xy.1 < -1 || xy.1 > 1 || (xy.0 == 0 && xy.1 == 0) {
             Err(Error::InvalidDirection)
@@ -308,30 +320,35 @@ impl convert::TryFrom<&(i16, i16)> for Qr {
 
 impl convert::TryFrom<(i16, i16)> for Qr {
     type Error = Error;
+    #[inline]
     fn try_from(xy: (i16, i16)) -> Result<Self, Self::Error> {
         Self::try_from(&xy)
     }
 }
 
 impl From<&Qr> for (i16, i16) {
+    #[inline]
     fn from(qr: &Qr) -> Self {
         Qr::TUPLES[*qr as usize]
     }
 }
 
 impl From<Qr> for (i16, i16) {
+    #[inline]
     fn from(qr: Qr) -> Self {
         <(i16, i16)>::from(&qr)
     }
 }
 
 impl From<&Qr> for usize {
+    #[inline]
     fn from(qr: &Qr) -> usize {
         *qr as usize
     }
 }
 
 impl From<Qr> for usize {
+    #[inline]
     fn from(qr: Qr) -> usize {
         qr as usize
     }
@@ -375,6 +392,7 @@ impl<const D: bool> Default for QrIterator<D> {
 
 impl<const D: bool> Iterator for QrIterator<D> {
     type Item = Qr;
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
             self.0 = i.next::<D>();
