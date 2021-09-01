@@ -480,6 +480,274 @@ impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
     }
 }
 
+/* Grid: a Qa-indexed array *****************************************/
+
+/// A grid is a generic array that can be indexed by a Qa
+///
+/// We can also interact with specific lines with [`Grid::line`] and
+/// [`Grid::line_mut`], or with the whole underlying array with
+/// [`as_ref`](std::convert::AsRef::as_ref) and
+/// [`as_mut`](std::convert::AsMut::as_mut).
+///
+/// At the moment we have to provide a `SIZE` argument = `WIDTH` *
+/// `HEIGHT`. This value is checked at compile time, but can't be
+/// ellided at the moment, due to rust const generics limitations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
+    const _ASSERT_SIZE_IS_W_TIMES_H: usize = 0 - ((W as usize * H as usize == SIZE) as usize);
+
+    /// "Dismantle" a Grid into the inner array; consumes self.
+    #[inline]
+    pub fn into_inner(self) -> [T; SIZE] {
+        self.0
+    }
+
+    /// Return a specific grid line as a &slice
+    #[inline]
+    pub fn line(&self, lineno: u16) -> &[T] {
+        let start = lineno as usize * W as usize;
+        let end = start + W as usize;
+        &self.0[start..end]
+    }
+
+    /// Return a specific grid line as a &mut slice
+    ///
+    /// Allows quick assignment operations on whole lines.
+    #[inline]
+    pub fn line_mut(&mut self, lineno: u16) -> &mut [T] {
+        let start = lineno as usize * W as usize;
+        let end = start + W as usize;
+        &mut self.0[start..end]
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE>
+where
+    T: Default + Copy,
+{
+    fn default() -> Self {
+        Grid([Default::default(); SIZE])
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> ops::Index<&Qa<W, H>>
+    for Grid<T, W, H, SIZE>
+{
+    type Output = T;
+    #[inline]
+    fn index(&self, qa: &Qa<W, H>) -> &Self::Output {
+        // No need to check, limits are guaranteed at the type level:
+        unsafe { self.0.get_unchecked(usize::from(qa)) }
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> ops::Index<Qa<W, H>>
+    for Grid<T, W, H, SIZE>
+{
+    type Output = T;
+    #[inline]
+    fn index(&self, qa: Qa<W, H>) -> &Self::Output {
+        // No need to check, limits are guaranteed at the type level:
+        unsafe { self.0.get_unchecked(usize::from(qa)) }
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> ops::IndexMut<&Qa<W, H>>
+    for Grid<T, W, H, SIZE>
+{
+    #[inline]
+    fn index_mut(&mut self, qa: &Qa<W, H>) -> &mut T {
+        // No need to check, limits are guaranteed at the type level:
+        unsafe { self.0.get_unchecked_mut(usize::from(qa)) }
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> ops::IndexMut<Qa<W, H>>
+    for Grid<T, W, H, SIZE>
+{
+    #[inline]
+    fn index_mut(&mut self, qa: Qa<W, H>) -> &mut T {
+        // No need to check, limits are guaranteed at the type level:
+        unsafe { self.0.get_unchecked_mut(usize::from(qa)) }
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsRef<[T; SIZE]>
+    for Grid<T, W, H, SIZE>
+{
+    #[inline]
+    fn as_ref(&self) -> &[T; SIZE] {
+        &self.0
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsMut<[T; SIZE]>
+    for Grid<T, W, H, SIZE>
+{
+    #[inline]
+    fn as_mut(&mut self) -> &mut [T; SIZE] {
+        &mut self.0
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> From<&Grid<T, W, H, SIZE>> for [T; SIZE]
+where
+    T: Copy,
+{
+    fn from(grid: &Grid<T, W, H, SIZE>) -> [T; SIZE] {
+        grid.0
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> From<Grid<T, W, H, SIZE>> for [T; SIZE] {
+    fn from(grid: Grid<T, W, H, SIZE>) -> [T; SIZE] {
+        grid.0
+    }
+}
+
+impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
+    for &'a Grid<T, W, H, SIZE>
+{
+    type Item = &'a T;
+    type IntoIter = std::slice::Iter<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
+    for &'a mut Grid<T, W, H, SIZE>
+{
+    type Item = &'a mut T;
+    type IntoIter = std::slice::IterMut<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter_mut()
+    }
+}
+
+impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
+    core::iter::FromIterator<&'a T> for Grid<T, W, H, SIZE>
+{
+    fn from_iter<I: core::iter::IntoIterator<Item = &'a T>>(intoiter: I) -> Self {
+        intoiter.into_iter().cloned().collect()
+    }
+}
+
+/// FromIterator implementation for Grid that assumes we are getting
+/// exactly all grid elements; it panics otherwise.
+///
+/// Use the `(Qa, Item)` `FromIterator` implementation if not all elements
+/// are available, or a combination of
+/// [`repeat`](std::iter::repeat) and
+/// [`take`](std::iter::Take::take).
+impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> core::iter::FromIterator<T>
+    for Grid<T, W, H, SIZE>
+{
+    fn from_iter<I: core::iter::IntoIterator<Item = T>>(intoiter: I) -> Self {
+        let mut grid = Grid::<T, W, H, SIZE>(
+            #[allow(clippy::uninit_assumed_init)]
+            unsafe {
+                std::mem::MaybeUninit::uninit().assume_init()
+            },
+        );
+        let mut iter = intoiter.into_iter();
+        for item in &mut grid {
+            if let Some(fromiter) = iter.next() {
+                *item = fromiter;
+            } else {
+                panic!("iterator too short for grid type");
+            }
+        }
+        if iter.next().is_some() {
+            panic!("iterator too long for grid type");
+        }
+        grid
+    }
+}
+
+/// [`FromIterator`](std::iter::FromIterator) implementation that
+/// creates a default [`Grid`] with the iterated elements filled.
+impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
+    core::iter::FromIterator<&'a (Qa<W, H>, T)> for Grid<T, W, H, SIZE>
+{
+    fn from_iter<I: core::iter::IntoIterator<Item = &'a (Qa<W, H>, T)>>(intoiter: I) -> Self {
+        intoiter.into_iter().cloned().collect()
+    }
+}
+
+/// [`FromIterator`](std::iter::FromIterator) implementation that
+/// creates a default [`Grid`] with the iterated elements filled.
+impl<T: Copy + Default, const W: u16, const H: u16, const SIZE: usize>
+    core::iter::FromIterator<(Qa<W, H>, T)> for Grid<T, W, H, SIZE>
+{
+    fn from_iter<I: core::iter::IntoIterator<Item = (Qa<W, H>, T)>>(intoiter: I) -> Self {
+        let mut grid = Grid::<T, W, H, SIZE>::default();
+        for (qa, member) in intoiter.into_iter() {
+            grid[qa] = member;
+        }
+        grid
+    }
+}
+
+/// Pretty-printer [`Grid`] display implementation
+///
+/// The [`Display`](std::fmt::Display) implementation of grid was made
+/// to print an ascii-like grid.
+/// It does that in one pass, and uses the padding parameter as the
+/// size to reserve for each member.
+impl<T: fmt::Display, const W: u16, const H: u16, const SIZE: usize> fmt::Display
+    for Grid<T, W, H, SIZE>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Max digits for column numbers:
+        let ndigits_x = format!("{}", W).len();
+        // Max digits for line numbers:
+        let ndigits_y = format!("{}", H).len();
+        // Column labels as a vec of vec of chars, which we will
+        // output vertically:
+        let str_x = (0..W)
+            .map(|i| {
+                format!("{:width$}", i, width = ndigits_x)
+                    .chars()
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        // Print the column labels; we do this both on top and on the
+        // bottom of the grid:
+        let headerfooter = |f: &mut fmt::Formatter<'_>| {
+            for digit in 0..ndigits_x {
+                f.write_fmt(format_args!("{:width$} ", "", width = ndigits_y))?;
+                for cell in str_x.iter() {
+                    f.pad(&cell[digit].to_string())?;
+                }
+                f.write_str("\n")?;
+            }
+            Ok(())
+        };
+        headerfooter(f)?;
+        // Print the cells of the grid, qa by qa, controlling for new lines:
+        let mut last_y = H;
+        for qa in Qa::iter() {
+            if qa.y != last_y {
+                // We are printing a new line:
+                if qa.y > 0 {
+                    // End the current line before first:
+                    f.write_str("\n")?;
+                }
+                // Print the line number as a label:
+                f.write_fmt(format_args!("{:width$} ", qa.y, width = ndigits_y))?;
+                last_y = qa.y;
+            }
+            let s = format!("{}", self[qa]);
+            f.pad(&s)?;
+        }
+        f.write_str("\n")?;
+        headerfooter(f)
+    }
+}
+
 /* Errors: **********************************************************/
 
 /// sqrid errors enum
