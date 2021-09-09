@@ -49,7 +49,7 @@ fn test_basic2() -> Result<()> {
 #[test]
 fn test_into_iter_ok() -> Result<()> {
     let v = (0..15_i32).collect::<Vec<_>>();
-    let grid = v.iter().collect::<Grid>();
+    let grid = v.into_iter().collect::<Grid>();
     assert_eq!(
         grid.as_ref(),
         &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
@@ -73,9 +73,8 @@ fn test_into_iter_overflow() {
 
 #[test]
 fn test_line_mut() -> Result<()> {
-    let mut grid = Qa::iter()
-        .map(|qa| (qa, <(i32, i32)>::from(qa).1))
-        .collect::<Grid>();
+    let mut grid = Grid::default();
+    grid.extend(Qa::iter().map(|qa| (qa, <(i32, i32)>::from(qa).1)));
     assert_eq!(grid.line(1), [1, 1, 1, 1, 1]);
     assert_eq!(grid.line_mut(2), [2, 2, 2, 2, 2]);
     grid.as_mut()[0] = 7;
@@ -89,10 +88,11 @@ fn test_line_mut() -> Result<()> {
 #[test]
 fn test_qa_iter_ref() -> Result<()> {
     let v = vec![(Qa::try_from((1, 0))?, 5), (Qa::try_from((2, 0))?, 7)];
-    let grid = (&v).iter().collect::<Grid>();
-    let arr: [i32; 15] = (&grid).into();
-    assert_eq!(arr, [0, 5, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    let arr: [i32; 15] = grid.into();
-    assert_eq!(arr, [0, 5, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    let mut grid = Grid::default();
+    grid.extend((&v).iter());
+    assert_eq!(
+        grid.into_inner(),
+        [0, 5, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
     Ok(())
 }

@@ -15,7 +15,7 @@ fn test_basic() -> Result<()> {
     println!("{:?} {}", q1, q1);
     assert_eq!((2_u16, 3_u16), q1.into());
     let q2 = Qa::try_from(&(3_u16, 4_u16))?;
-    assert_eq!((3_u16, 4_u16), q2.into());
+    assert_eq!((3_u16, 4_u16), (&q2).into());
     let q3 = Qa::try_from(&(5_u16, 6_u16));
     assert_eq!((5_u16, 6_u16), q3.unwrap().into());
     const Q4: Qa = Qa::new::<5, 4>();
@@ -63,7 +63,7 @@ fn test_iter() -> Result<()> {
 fn test_max() -> Result<()> {
     type Qa = sqrid::Qa<0x7fff, 0x7fff>;
     assert_eq!(Qa::SIZE, 0x7fff * 0x7fff);
-    assert_eq!(usize::from(Qa::LAST), 0x7fff * 0x7fff - 1);
+    assert_eq!(usize::from(&Qa::LAST), 0x7fff * 0x7fff - 1);
     assert_eq!(Qa::new::<0x7ffe, 0x7ffe>(), Qa::LAST);
     assert_eq!(Qa::try_from((0x7ffe, 0x7ffe)), Ok(Qa::LAST));
     assert_eq!(Qa::try_from(usize::from(Qa::LAST)), Ok(Qa::LAST));

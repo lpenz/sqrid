@@ -14,6 +14,9 @@ fn test_basic() -> Result<()> {
     let qr1 = Qr::N;
     assert_eq!(qr0, qr1);
     assert_eq!(<(i8, i8)>::from(qr1), (0, -1));
+    assert_eq!(<(i8, i8)>::from(&qr1), (0, -1));
+    assert_eq!(<(i32, i32)>::from(qr1), (0, -1));
+    assert_eq!(<(i32, i32)>::from(&qr1), (0, -1));
     let qr2 = Qr::try_from((-1_i8, 0_i8));
     assert_eq!(qr2, Ok(Qr::W));
     Ok(())
@@ -21,7 +24,7 @@ fn test_basic() -> Result<()> {
 
 #[test]
 fn test_errors() -> Result<()> {
-    let qr1result = Qr::try_from((2_i8, 0_i8));
+    let qr1result = Qr::try_from(&(2_i8, 0_i8));
     println!("{}", qr1result.clone().unwrap_err());
     assert_eq!(qr1result.unwrap_err(), sqrid::Error::InvalidDirection);
     Ok(())
