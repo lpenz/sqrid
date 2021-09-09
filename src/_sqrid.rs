@@ -31,7 +31,7 @@ use std::ops;
 /// ```
 /// type Qa = sqrid::Qa<4, 4>;
 /// ```
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Qa<const WIDTH: u16, const HEIGHT: u16> {
     x: u16,
     y: u16,
@@ -236,7 +236,7 @@ impl<const W: u16, const H: u16> Iterator for QaIterator<W, H> {
 /// [`Qa`] type represents nodes.
 ///
 /// Internally, 0 reprents N, 1 is NE and so forth until 7.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Qr {
     /// North, or up
     N = 0,
