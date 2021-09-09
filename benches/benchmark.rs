@@ -30,8 +30,21 @@ fn qaqr_mutual() {
     }
 }
 
+fn grid_index() {
+    type Qa = sqrid::Qa<256, 257>;
+    type Grid = sqrid::Grid<usize, 256, 257, { 256 * 257 }>;
+    let mut g = Grid::default();
+    for qa in Qa::iter() {
+        g[qa] = qa.to_usize();
+    }
+    for qa in Qa::iter() {
+        assert_eq!(g[qa], qa.to_usize());
+    }
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("qaqr_mutual", |b| b.iter(|| qaqr_mutual()));
+    c.bench_function("grid_index", |b| b.iter(|| grid_index()));
 }
 
 criterion_group!(benches, criterion_benchmark);

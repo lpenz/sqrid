@@ -17,5 +17,5 @@ anyhow = "1"
 criterion = { version="0.3", features=["html_reports"] }
 
 [[bench]]
-name = "qaqr_benchmark"
+name = "benchmark"
 harness = false

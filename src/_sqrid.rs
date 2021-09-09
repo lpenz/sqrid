@@ -498,6 +498,9 @@ pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; S
 impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     const _ASSERT_SIZE_IS_W_TIMES_H: usize = 0 - ((W as usize * H as usize == SIZE) as usize);
 
+    /// Number of elements in the grid.
+    pub const SIZE: usize = SIZE;
+
     /// "Dismantle" a Grid into the inner array; consumes self.
     #[inline]
     pub fn into_inner(self) -> [T; SIZE] {
