@@ -566,7 +566,7 @@ impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
 
 /* Grid: a Qa-indexed array *****************************************/
 
-/// A grid is a generic array that can be indexed by a Qa
+/// A grid is a generic array that can be indexed by a [`Qa`]
 ///
 /// We can also interact with specific lines with [`Grid::line`] and
 /// [`Grid::line_mut`], or with the whole underlying array with
@@ -576,6 +576,9 @@ impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
 /// At the moment we have to provide a `SIZE` argument = `WIDTH` *
 /// `HEIGHT`. This value is checked at compile time, but can't be
 /// ellided at the moment, due to rust const generics limitations.
+///
+/// We can use the [`grid_create`] macro to use a [`Qa`] as a source
+/// of these values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
 
@@ -828,7 +831,7 @@ impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<
     }
 }
 
-// extend
+// Extend
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W, H>, T)>
     for Grid<T, W, H, SIZE>
