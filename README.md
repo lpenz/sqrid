@@ -18,6 +18,7 @@ types it provides:
   Addition is implemented in the form of `Qa + Qr = Option<Qa>`,
   which can be `None` if the result is outside the grid.
 - [`Grid`]: a `Qa`-indexed array.
+- [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
 
 All these types have the standard `iter`, `iter_mut`, `extend`,
 `as_ref`, and conversion operations that should be expected.
@@ -162,6 +163,46 @@ for (qa, &i) in gridnums.iter_qa() {
 gridnums.as_mut().reverse();
 ```
 
+# `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
+
+`Gridbool` is a compact abstraction of a grid of booleans.
+
+The type itself can be created with [`gridbool_create`] macro.
+It's optimized for getting and setting values at specific
+coordinates, but we can also get all `true`/`false` coordinates
+with suboptimal performance - in this case, the time is
+proportional to the size of the grid and not to the quantity of
+`true`/`false` values.
+
+Usage example:
+
+```rust
+type Qa = sqrid::Qa<3, 3>;
+type Gridbool = sqrid::gridbool_create!(Qa);
+
+// We can create a gridbool from a Qa iterator via `collect`:
+let mut gb = Qa::iter().filter(|qa| qa.is_corner()).collect::<Gridbool>();
+
+// We can also set values from an iterator:
+gb.set_iter_t(Qa::iter().filter(|qa| qa.is_side()));
+
+// Iterate on the true/false values:
+for b in gb.iter() {
+    println!("{}", b);
+}
+
+// Iterate on the true coordinates:
+for qa in gb.iter_t() {
+    assert!(qa.is_side());
+}
+
+// Iterate on (coordinate, bool):
+for (qa, b) in gb.iter_qa() {
+    println!("[{}] = {}", qa, b);
+}
+```
+
+
 [`Qa`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html
 [`Qa::new`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#method.new
 [`Qa::iter`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#method.iter
@@ -172,4 +213,6 @@ gridnums.as_mut().reverse();
 [`grid_create`]: https://docs.rs/sqrid/0/sqrid/macro.grid_create.html
 [`Grid::line`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Grid.html#method.line
 [`Grid::line_mut`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Grid.html#method.line_mut
+[`Gridbool`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Gridbool.html
+[`gridbool_create`]: https://docs.rs/sqrid/0/sqrid/macro.gridbool_create.html
 
