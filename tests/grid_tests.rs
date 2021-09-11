@@ -58,6 +58,15 @@ fn test_into_iter_ok() -> Result<()> {
 }
 
 #[test]
+fn test_into_from_iter_qa() -> Result<()> {
+    let grid = (0..15_i32).collect::<Grid>();
+    let mut grid2 = Grid::default();
+    grid2.extend(grid.iter_qa());
+    assert_eq!(grid.as_ref(), grid2.as_ref());
+    Ok(())
+}
+
+#[test]
 #[should_panic]
 fn test_into_iter_underflow() {
     let v = (0..14_i32).collect::<Vec<_>>();

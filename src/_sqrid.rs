@@ -22,12 +22,14 @@ use std::ops;
 
 // Compile-time assertion hacks:
 
+/// Assert const generic expressions inside `impl` blocks
 macro_rules! impl_assert {
     ($label:ident; $x:expr $(,)?) => {
         const $label: usize = 0 - !$x as usize;
     };
 }
 
+/// Assert const generic expressions inside const functions
 macro_rules! const_assert {
     ($x:expr $(,)?) => {
         const ASSERT_FALSE: [(); 1] = [(); 1];
@@ -65,23 +67,23 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     /// Size of the grid, i.e. how many squares.
     pub const SIZE: usize = W as usize * H as usize;
 
-    /// Coordinates of the first element of the grid: (0, 0).
+    /// Coordinates of the first element of the grid: `(0, 0)`.
     /// Also known as origin.
     pub const FIRST: Qa<W, H> = Qa { x: 0, y: 0 };
 
-    /// Coordinates of the last element of the grid: (Width - 1, Height - 1).
+    /// Coordinates of the last element of the grid.
     pub const LAST: Qa<W, H> = Qa { x: W - 1, y: H - 1 };
 
     /// Center the (approximate) center coordinate.
     pub const CENTER: Qa<W, H> = Qa { x: W / 2, y: H / 2 };
 
-    /// Coordinate of the top-left coordinate.
+    /// Coordinates of the top-left coordinate.
     pub const TOP_LEFT: Qa<W, H> = Qa { x: 0, y: 0 };
-    /// Coordinate of the top-right coordinate.
+    /// Coordinates of the top-right coordinate.
     pub const TOP_RIGHT: Qa<W, H> = Qa { x: W - 1, y: 0 };
-    /// Coordinate of the bottom-left coordinate.
+    /// Coordinates of the bottom-left coordinate.
     pub const BOTTOM_LEFT: Qa<W, H> = Qa { x: 0, y: H - 1 };
-    /// Coordinate of the bottom-right coordinate.
+    /// Coordinates of the bottom-right coordinate.
     pub const BOTTOM_RIGHT: Qa<W, H> = Qa { x: W - 1, y: H - 1 };
 
     /// Create a new [`Qa`] instance.
@@ -92,13 +94,14 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         Self { x: X, y: Y }
     }
 
-    /// Return the corresponding (u16, u16) tuple
+    /// Return the corresponding `(u16, u16)` tuple.
     #[inline]
     pub fn tuple(&self) -> (u16, u16) {
         (self.x, self.y)
     }
 
-    /// Create a new Qa from the provided (u16, u16), if possible
+    /// Create a new `Qa` from the provided `(u16, u16)`, if
+    /// possible; return an error otherwise.
     #[inline]
     pub fn tryfrom_tuple(xyref: impl Borrow<(u16, u16)>) -> Result<Qa<W, H>, Error> {
         let xy = xyref.borrow();
@@ -109,7 +112,8 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         }
     }
 
-    /// Create a new Qa from the provided (u16, u16), if possible
+    /// Create a new `Qa` from the provided `usize`, if possible;
+    /// return an error otherwise.
     #[inline]
     pub fn tryfrom_usize(iref: impl Borrow<usize>) -> Result<Qa<W, H>, Error> {
         let i = iref.borrow();
@@ -122,20 +126,22 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         }
     }
 
-    /// Return a usize index corresponding to the Qa
+    /// Return a usize index corresponding to the `Qa`.
     #[inline]
     pub fn to_usize(&self) -> usize {
         self.y as usize * W as usize + self.x as usize
     }
 
-    /// Return the next Qa in sequence (English read sequence), or None if `self` is the last one.
+    /// Return the next `Qa` in sequence (English read sequence), or
+    /// None if `self` is the last one.
     #[inline]
     pub fn next(self) -> Option<Self> {
         let i = usize::from(self) + 1;
         Self::try_from(i).ok()
     }
 
-    /// Return an iterator that returns all Qa's within the grid dimensions.
+    /// Return an iterator that returns all `Qa`'s within the grid
+    /// dimensions.
     pub fn iter() -> QaIter<W, H> {
         QaIter::<W, H>::default()
     }
@@ -244,6 +250,8 @@ impl<const W: u16, const H: u16> From<Qa<W, H>> for usize {
 
 /// Iterator for sqrid coordinates
 ///
+/// Returns all [`Qa`] values of a certain type.
+///
 /// Example that prints all coordinates in a 4x4 grid:
 ///
 /// ```
@@ -286,8 +294,8 @@ impl<const W: u16, const H: u16> Iterator for QaIter<W, H> {
 /// This type represents a relative movement of one square.
 ///
 /// It's a building block for paths, iterating on a [`Qa`] neighbors,
-/// etc. It effectively represents the edges in a graph where the
-/// [`Qa`] type represents nodes.
+/// etc. It effectively represents the edges in a graph, while the
+/// `Qa` type represents nodes.
 ///
 /// Internally, 0 reprents N, 1 is NE and so forth until 7.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -321,7 +329,7 @@ impl Qr {
 
     /// All 8 possible values in enum order
     ///
-    /// Used to convert a usize into a [`Qr`] value via indexing.
+    /// Used to convert a usize into a `Qr` value via indexing.
     pub const ALL: [Self; 8] = [
         Self::N,
         Self::NE,
@@ -335,7 +343,7 @@ impl Qr {
 
     /// All corresponding tuples
     ///
-    /// Used to convert a [`Qr`] value into a (i16, i16) tuple via indexing.
+    /// Used to convert a `Qr` value into a `(i8, i8)` tuple via indexing.
     pub const TUPLES: [(i8, i8); 8] = [
         (0, -1),
         (1, -1),
@@ -350,7 +358,7 @@ impl Qr {
     /// Inverse of ALL, shifted right
     ///
     /// An array used to convert a tuple into the inner value of
-    /// [`Qr`].
+    /// `Qr`.
     const INVERSE: [Qr; 9] = [
         Self::NW,
         Self::N,
@@ -363,23 +371,24 @@ impl Qr {
         Self::SE,
     ];
 
-    /// The names of all corresponding [`Qr`] values.
+    /// The names of all corresponding `Qr` values.
     ///
-    /// Used to convert a [`Qr`] value into a &'static str via indexing.
+    /// Used to convert a `Qr` value into a &'static str via indexing.
     pub const NAMES: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
-    /// Returns true if the Qr is a diagonal: NE, SE, SW or NW.
+    /// Return true if the `Qr` is one of the diagonals: NE, SE, SW or NW.
     pub const fn is_diagonal(&self) -> bool {
         (*self as u8) % 2 == 1
     }
 
-    /// Return the corresponding (i8, i8) tuple
+    /// Return the corresponding `(i8, i8)` tuple.
     #[inline]
     pub fn tuple(&self) -> (i8, i8) {
         Qr::TUPLES[self.to_usize()]
     }
 
-    /// Create a new Qr from the provided (i8, i8), if possible
+    /// Create a new Qr from the provided `(i8, i8)`, if possible;
+    /// otherwise return an error.
     #[inline]
     pub fn tryfrom_tuple(xyref: impl Borrow<(i8, i8)>) -> Result<Qr, Error> {
         let xy = xyref.borrow();
@@ -390,18 +399,18 @@ impl Qr {
         }
     }
 
-    /// Return a usize index corresponding to the Qr
+    /// Return a usize index corresponding to the `Qr`.
     #[inline]
     pub fn to_usize(&self) -> usize {
         *self as usize
     }
 
-    /// Return the next Qr in clockwise order, or None if `self` is
-    /// the last one
+    /// Return the next `Qr` in clockwise order, or None if `self`
+    /// is the last one.
     ///
     /// This function takes a generic const argument `D` that
     /// indicates if diagonals should be considered or not. If
-    /// considered, the last Qr is NW, otherwise it's S.
+    /// considered, the last `Qr` is [`NW`], otherwise it's [`S`].
     #[inline]
     pub fn next<const D: bool>(self) -> Option<Self> {
         if (D && self == Qr::NW) || (!D && self == Qr::W) {
@@ -414,7 +423,7 @@ impl Qr {
     }
 
     /// Returns an iterator that returns all possible values for the
-    /// [`Qr`] type used, in clockwise order.
+    /// `Qr` type used, in clockwise order.
     ///
     /// This function takes a generic const argument `D` that
     /// indicates if diagonals should be in the iteration or not.
@@ -677,6 +686,24 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
         }
         grid
     }
+
+    /// Returns an iterator over the grid values
+    #[inline]
+    pub fn iter(&self) -> std::slice::Iter<'_, T> {
+        self.0.iter()
+    }
+
+    /// Returns an iterator that allows modifying each value
+    #[inline]
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
+        self.0.iter_mut()
+    }
+
+    /// Returns an iterator over the grid coordinates and values
+    #[inline]
+    pub fn iter_qa(&self) -> impl iter::Iterator<Item = (Qa<W, H>, &'_ T)> {
+        Qa::<W, H>::iter().map(move |qa| (qa, &self[qa]))
+    }
 }
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE>
@@ -687,6 +714,8 @@ where
         Self::repeat(Default::default())
     }
 }
+
+// Indexing
 
 impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::Index<AQA> for Grid<T, W, H, SIZE>
 where
@@ -710,6 +739,8 @@ where
     }
 }
 
+// as_ref, as_mut
+
 impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsRef<[T; SIZE]>
     for Grid<T, W, H, SIZE>
 {
@@ -728,6 +759,8 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsMut<[T; SIZE]>
     }
 }
 
+// into_iter
+
 impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     for &'a Grid<T, W, H, SIZE>
 {
@@ -735,7 +768,7 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     type IntoIter = std::slice::Iter<'a, T>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
+        self.iter()
     }
 }
 
@@ -746,9 +779,11 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     type IntoIter = std::slice::IterMut<'a, T>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
+        self.iter_mut()
     }
 }
+
+// from_iter
 
 impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<&'a T>
     for Grid<T, W, H, SIZE>
@@ -774,7 +809,9 @@ impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<
     }
 }
 
-impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W, H>, T)>
+// extend
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W, H>, T)>
     for Grid<T, W, H, SIZE>
 {
     #[inline]
@@ -784,6 +821,20 @@ impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W,
     {
         for (qa, member) in iter.into_iter() {
             self[qa] = member;
+        }
+    }
+}
+
+impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
+    iter::Extend<(Qa<W, H>, &'a T)> for Grid<T, W, H, SIZE>
+{
+    #[inline]
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: iter::IntoIterator<Item = (Qa<W, H>, &'a T)>,
+    {
+        for (qa, member) in iter.into_iter() {
+            self[qa] = *member;
         }
     }
 }
