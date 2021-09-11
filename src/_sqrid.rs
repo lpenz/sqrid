@@ -410,7 +410,8 @@ impl Qr {
     ///
     /// This function takes a generic const argument `D` that
     /// indicates if diagonals should be considered or not. If
-    /// considered, the last `Qr` is [`NW`], otherwise it's [`S`].
+    /// considered, the last `Qr` is [`Qr::NW`], otherwise it's
+    /// [`Qr::S`].
     #[inline]
     pub fn next<const D: bool>(self) -> Option<Self> {
         if (D && self == Qr::NW) || (!D && self == Qr::W) {
@@ -577,6 +578,24 @@ impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
 /// ellided at the moment, due to rust const generics limitations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
+
+/// Helper macro for grid type creation.
+///
+/// More often than not we want to create a grid form an associated
+/// [`Qa`] type. This macros makes the process easier.
+///
+/// Example usage:
+/// ```
+/// type Qa = sqrid::Qa<3, 3>;
+/// type Grid = sqrid::grid_create!(i32, Qa);
+/// ```
+#[macro_export]
+macro_rules! grid_create {
+    ($member: ty, $qa: ty) => {
+        sqrid::Grid<$member, { <$qa>::WIDTH }, { <$qa>::HEIGHT },
+                    { (<$qa>::WIDTH * <$qa>::HEIGHT) as usize }>
+    };
+}
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     // Create the _ASSERTS constant to check W * H == SIZE

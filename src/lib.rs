@@ -4,9 +4,24 @@
 
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
 
 //! *sqrid* provides square grid coordinates and related operations,
 //! in a single-file create, with no dependencies.
+//!
+//! It's easier to explain the features of this crate in terms of the
+//! types it provides:
+//! - [`Qa`]: position, as absolute coordinates in a grid of fixed
+//!   size. The dimensions of the grid are const generics type
+//!   parameters; invalid coordinates can't be created.
+//! - [`Qr`]: "movement", relative coordinates. These are the cardinal
+//!   (and intercardinal) directions.
+//!   Addition is implemented in the form of `Qa + Qr = Option<Qa>`,
+//!   which can be `None` if the result is outside the grid.
+//! - [`Grid`]: a `Qa`-indexed array.
+//!
+//! All these types have the standard `iter`, `iter_mut`, `extend`,
+//! `as_ref`, and conversion operations that should be expected.
 //!
 //! # `Qa`: absolute coordinates, position
 //!
@@ -103,6 +118,50 @@
 //!   The const argument to Qr::iter signals it to iterate over the
 //!   intercardinal directions too. Passing `false` gets us only the 4
 //!   cardinal directions.
+//!
+//! # `Grid`: a `Qa`-indexed array
+//!
+//! A grid is a generic array that can be indexed by a [`Qa`]
+//!
+//! We can create the type from a suitable [`Qa`] type by using the
+//! [`grid_create`] macro. We can then interact with specific lines
+//! with [`Grid::line`] and [`Grid::line_mut`], or with the whole
+//! underlying array with [`as_ref`](std::convert::AsRef) and
+//! [`as_mut`](std::convert::AsMut).
+//!
+//! Usage example:
+//!
+//! ```rust
+//! type Qa = sqrid::Qa<3, 3>;
+//! type Grid = sqrid::grid_create!(i32, Qa);
+//!
+//! // The grid create macro above is currently equivalent to:
+//! type Grid2 = sqrid::Grid<i32, { Qa::WIDTH }, { Qa::HEIGHT },
+//!                               { (Qa::WIDTH * Qa::HEIGHT) as usize }>;
+//!
+//! // We can create grids from iterators via `collect`:
+//! let mut gridnums = (0..9).collect::<Grid>();
+//!
+//! // Iterate on their members:
+//! for i in &gridnums {
+//!     println!("i {}", i);
+//! }
+//!
+//! // Change the members in a loop:
+//! for i in &mut gridnums {
+//!     *i *= 10;
+//! }
+//!
+//! // Iterate on (coordinate, member) tuples:
+//! for (qa, &i) in gridnums.iter_qa() {
+//!     println!("[{}] = {}", qa, i);
+//! }
+//!
+//! // And we can always use `as_ref` or `as_mut` to interact with the
+//! // inner array directly. To reverse it, for example, with the
+//! // [`std::slice::reverse`] function:
+//! gridnums.as_mut().reverse();
+//! ```
 
 pub mod _sqrid;
 pub use self::_sqrid::*;
