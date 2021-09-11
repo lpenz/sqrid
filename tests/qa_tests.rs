@@ -71,3 +71,22 @@ fn test_max() -> Result<()> {
     assert_eq!(prevlast.next(), Some(Qa::LAST));
     Ok(())
 }
+
+#[test]
+fn test_corner_side() -> Result<()> {
+    let v = vec![
+        Qa::TOP_LEFT,
+        Qa::TOP_RIGHT,
+        Qa::BOTTOM_LEFT,
+        Qa::BOTTOM_RIGHT,
+    ];
+    assert_eq!(v.len(), 4);
+    for qa in &v {
+        assert!(qa.is_corner());
+    }
+    let v2 = Qa::iter().filter(|qa| qa.is_corner()).collect::<Vec<_>>();
+    assert_eq!(v, v2);
+    let v3 = Qa::iter().filter(|qa| qa.is_side()).collect::<Vec<_>>();
+    assert_eq!(v3.len(), 22);
+    Ok(())
+}

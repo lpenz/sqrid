@@ -94,6 +94,18 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         Self { x: X, y: Y }
     }
 
+    /// Return true if self is a corner of the grid.
+    #[inline]
+    pub fn is_corner(&self) -> bool {
+        (self.x == 0 || self.x == W - 1) && (self.y == 0 || self.y == H - 1)
+    }
+
+    /// Return true if self is on the side of the grid.
+    #[inline]
+    pub fn is_side(&self) -> bool {
+        self.x == 0 || self.x == W - 1 || self.y == 0 || self.y == H - 1
+    }
+
     /// Return the corresponding `(u16, u16)` tuple.
     #[inline]
     pub fn tuple(&self) -> (u16, u16) {
