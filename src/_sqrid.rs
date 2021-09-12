@@ -157,6 +157,26 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     pub fn iter() -> QaIter<W, H> {
         QaIter::<W, H>::default()
     }
+
+    /// Return the manhattan distance between 2 `Qa`s of the same type
+    pub fn manhattan<AQA>(aqa1: AQA, aqa2: AQA) -> usize
+    where
+        AQA: Borrow<Qa<W, H>>,
+    {
+        let qa1 = aqa1.borrow();
+        let qa2 = aqa2.borrow();
+        let dx = if qa1.x > qa2.x {
+            qa1.x as usize - qa2.x as usize
+        } else {
+            qa2.x as usize - qa1.x as usize
+        };
+        let dy = if qa1.y > qa2.y {
+            qa1.y as usize - qa2.y as usize
+        } else {
+            qa2.y as usize - qa1.y as usize
+        };
+        dx + dy
+    }
 }
 
 impl<const W: u16, const H: u16> fmt::Display for Qa<W, H> {
