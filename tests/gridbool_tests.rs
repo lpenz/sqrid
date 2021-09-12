@@ -12,6 +12,9 @@ type Gbool1 = sqrid::gridbool_create!(Qa1);
 type Qa2 = sqrid::Qa<11, 3>;
 type Gbool2 = sqrid::Gridbool<11, 3, 2>;
 
+type _QaScale = sqrid::Qa<0xffff, 0xffff>;
+type _GridboolScale = sqrid::gridbool_create!(_QaScale);
+
 #[test]
 fn test_getset() -> Result<()> {
     let mut gb1 = Gbool1::default();

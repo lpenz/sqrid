@@ -10,6 +10,8 @@ use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<5, 3>;
 type Grid = sqrid::Grid<i32, 5, 3, 15>;
+type _QaScale = sqrid::Qa<0xffff, 0xffff>;
+type _GridScale = sqrid::grid_create!(i32, _QaScale);
 
 #[test]
 fn test_basic() -> Result<()> {

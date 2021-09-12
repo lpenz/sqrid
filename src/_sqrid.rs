@@ -608,8 +608,8 @@ pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; S
 #[macro_export]
 macro_rules! grid_create {
     ($member: ty, $qa: ty) => {
-        sqrid::Grid<$member, { <$qa>::WIDTH }, { <$qa>::HEIGHT },
-                    { (<$qa>::WIDTH * <$qa>::HEIGHT) as usize }>
+        $crate::Grid<$member, { <$qa>::WIDTH }, { <$qa>::HEIGHT },
+                     { (<$qa>::WIDTH as usize * <$qa>::HEIGHT as usize) }>
     };
 }
 
@@ -987,8 +987,8 @@ pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u3
 #[macro_export]
 macro_rules! gridbool_create {
     ($qa: ty) => {
-        sqrid::Gridbool<{ <$qa>::WIDTH }, { <$qa>::HEIGHT },
-                        { (((<$qa>::WIDTH - 1) * (<$qa>::HEIGHT - 1)) / 32 + 1) as usize }>
+        $crate::Gridbool<{ <$qa>::WIDTH }, { <$qa>::HEIGHT },
+        { (((<$qa>::WIDTH as usize - 1) * (<$qa>::HEIGHT as usize - 1)) / 32 + 1) }>
     };
 }
 
