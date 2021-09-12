@@ -94,3 +94,19 @@ fn test_is_diagonal() -> Result<()> {
     assert!(Qr::NW.is_diagonal());
     Ok(())
 }
+
+#[test]
+fn test_neg() -> Result<()> {
+    assert_eq!(-Qr::N, Qr::S);
+    assert_eq!(-Qr::NE, Qr::SW);
+    assert_eq!(-Qr::E, Qr::W);
+    assert_eq!(-Qr::SE, Qr::NW);
+    assert_eq!(-Qr::S, Qr::N);
+    assert_eq!(-Qr::SW, Qr::NE);
+    assert_eq!(-Qr::W, Qr::E);
+    assert_eq!(-Qr::NW, Qr::SE);
+    for qr in Qr::iter::<true>() {
+        assert_eq!(-(-qr), qr);
+    }
+    Ok(())
+}

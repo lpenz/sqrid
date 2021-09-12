@@ -437,6 +437,12 @@ impl Qr {
         *self as usize
     }
 
+    /// Flip the direction: N -> S, E -> W, etc.
+    #[inline]
+    pub fn flip(&self) -> Qr {
+        Qr::ALL[(*self as usize + 4) % Self::SIZE]
+    }
+
     /// Return the next `Qr` in clockwise order, or None if `self`
     /// is the last one.
     ///
@@ -463,6 +469,15 @@ impl Qr {
     #[inline]
     pub fn iter<const D: bool>() -> QrIter<D> {
         QrIter::<D>::default()
+    }
+}
+
+// Ops
+
+impl ops::Neg for Qr {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        self.flip()
     }
 }
 
