@@ -89,6 +89,16 @@ fn test_iter() -> Result<()> {
 }
 
 #[test]
+fn test_names() -> Result<()> {
+    let mut iter = Qr::iter::<true>();
+    assert_eq!(iter.next().map(|qr| qr.name_cardinal()), Some("N"));
+    assert_eq!(iter.next().map(|qr| qr.name_direction()), Some("UP-RIGHT"));
+    assert_eq!(iter.next().map(|qr| qr.name_direction()), Some("RIGHT"));
+    assert_eq!(iter.next().map(|qr| qr.name_cardinal()), Some("SE"));
+    Ok(())
+}
+
+#[test]
 fn test_is_diagonal() -> Result<()> {
     assert!(!Qr::N.is_diagonal());
     assert!(Qr::NE.is_diagonal());

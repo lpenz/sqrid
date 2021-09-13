@@ -404,10 +404,24 @@ impl Qr {
         Self::SE,
     ];
 
-    /// The names of all corresponding `Qr` values.
+    /// The "cardinal" names of all corresponding `Qr` values.
     ///
     /// Used to convert a `Qr` value into a &'static str via indexing.
-    pub const NAMES: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    pub const NAMES_CARDINAL: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+
+    /// The "direction" names of all corresponding `Qr` values.
+    ///
+    /// Can be used to convert a `Qr` value into a &'static str via indexing.
+    pub const NAMES_DIRECTION: [&'static str; 8] = [
+        "UP",
+        "UP-RIGHT",
+        "RIGHT",
+        "DOWN-RIGHT",
+        "DOWN",
+        "DOWN-LEFT",
+        "LEFT",
+        "UP-LEFT",
+    ];
 
     /// Return true if the `Qr` is one of the diagonals: NE, SE, SW or NW.
     pub const fn is_diagonal(&self) -> bool {
@@ -436,6 +450,18 @@ impl Qr {
     #[inline]
     pub fn to_usize(&self) -> usize {
         *self as usize
+    }
+
+    /// Return the "cardinal" name of the `Qr`
+    #[inline]
+    pub fn name_cardinal(&self) -> &'static str {
+        Self::NAMES_CARDINAL[*self as usize]
+    }
+
+    /// Return the "direction" name of the `Qr`
+    #[inline]
+    pub fn name_direction(&self) -> &'static str {
+        Self::NAMES_DIRECTION[*self as usize]
     }
 
     /// Flip the direction: N -> S, E -> W, etc.
@@ -568,7 +594,7 @@ impl From<Qr> for usize {
 
 impl fmt::Display for Qr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Qr::NAMES[usize::from(self)])
+        write!(f, "{}", self.name_cardinal())
     }
 }
 
