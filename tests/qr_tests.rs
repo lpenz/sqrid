@@ -110,3 +110,36 @@ fn test_neg() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn test_add() -> Result<()> {
+    assert_eq!(Qr::S + Qr::N, Qr::S);
+    assert_eq!(Qr::S + Qr::NE, Qr::SW);
+    assert_eq!(Qr::S + Qr::E, Qr::W);
+    assert_eq!(Qr::S + Qr::SE, Qr::NW);
+    assert_eq!(Qr::S + Qr::S, Qr::N);
+    assert_eq!(Qr::S + Qr::SW, Qr::NE);
+    assert_eq!(Qr::S + Qr::W, Qr::E);
+    assert_eq!(Qr::S + Qr::NW, Qr::SE);
+    Ok(())
+}
+
+#[test]
+fn test_addassign() -> Result<()> {
+    let mut qr = Qr::N;
+    qr += Qr::NE;
+    assert_eq!(qr, Qr::NE);
+    qr += Qr::NE;
+    assert_eq!(qr, Qr::E);
+    qr += Qr::W;
+    assert_eq!(qr, Qr::N);
+    qr += Qr::NW;
+    assert_eq!(qr, Qr::NW);
+    qr += Qr::SE;
+    assert_eq!(qr, Qr::E);
+    qr += Qr::SE;
+    assert_eq!(qr, Qr::SW);
+    qr += Qr::SE;
+    assert_eq!(qr, Qr::N);
+    Ok(())
+}

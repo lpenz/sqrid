@@ -443,6 +443,15 @@ impl Qr {
         Qr::ALL[(*self as usize + 4) % Self::SIZE]
     }
 
+    /// Rotate a Qr using the angle given by the `other` Qr argument
+    #[inline]
+    pub fn rotate<AQR>(&self, other: AQR) -> Qr
+    where
+        AQR: Borrow<Qr>,
+    {
+        Qr::ALL[(*self as usize + *other.borrow() as usize) % Self::SIZE]
+    }
+
     /// Return the next `Qr` in clockwise order, or None if `self`
     /// is the last one.
     ///
@@ -478,6 +487,19 @@ impl ops::Neg for Qr {
     type Output = Self;
     fn neg(self) -> Self::Output {
         self.flip()
+    }
+}
+
+impl ops::Add for Qr {
+    type Output = Qr;
+    fn add(self, other: Self) -> Self {
+        self.rotate(other)
+    }
+}
+
+impl ops::AddAssign for Qr {
+    fn add_assign(&mut self, other: Self) {
+        *self = self.rotate(other);
     }
 }
 
