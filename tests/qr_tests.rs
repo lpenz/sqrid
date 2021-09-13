@@ -35,7 +35,13 @@ fn do_test_iter<const D: bool>() -> Result<()> {
     println!("{:?}", iter);
     let div = if D { 1 } else { 2 };
     for (i, qr) in iter.enumerate() {
-        println!("i {}, qr {}, from {}", i, qr, usize::from(qr));
+        println!(
+            "i {}, qr {}, from {}, from& {}",
+            i,
+            qr,
+            usize::from(qr),
+            usize::from(&qr)
+        );
         assert_eq!(usize::from(qr) / div, i);
         assert_eq!(qr, Qr::from(qr));
         println!("{}", qr);

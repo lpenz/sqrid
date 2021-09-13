@@ -159,9 +159,10 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     }
 
     /// Return the manhattan distance between 2 `Qa`s of the same type
-    pub fn manhattan<AQA>(aqa1: AQA, aqa2: AQA) -> usize
+    pub fn manhattan<AQA1, AQA2>(aqa1: AQA1, aqa2: AQA2) -> usize
     where
-        AQA: Borrow<Qa<W, H>>,
+        AQA1: Borrow<Qa<W, H>>,
+        AQA2: Borrow<Qa<W, H>>,
     {
         let qa1 = aqa1.borrow();
         let qa2 = aqa2.borrow();

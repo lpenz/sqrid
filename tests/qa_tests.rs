@@ -8,6 +8,7 @@ use anyhow::Result;
 use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<6, 7>;
+type Qa2 = sqrid::Qa<2, 2>;
 
 #[test]
 fn test_basic() -> Result<()> {
@@ -88,5 +89,12 @@ fn test_corner_side() -> Result<()> {
     assert_eq!(v, v2);
     let v3 = Qa::iter().filter(|qa| qa.is_side()).collect::<Vec<_>>();
     assert_eq!(v3.len(), 22);
+    Ok(())
+}
+
+#[test]
+fn test_manhattan() -> Result<()> {
+    assert_eq!(Qa2::manhattan(&Qa2::TOP_LEFT, Qa2::BOTTOM_RIGHT), 2);
+    assert_eq!(Qa2::manhattan(Qa2::BOTTOM_RIGHT, &Qa2::TOP_LEFT), 2);
     Ok(())
 }
