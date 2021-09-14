@@ -204,5 +204,5 @@
 //! ```
 //!
 
-pub mod _sqrid;
-pub use self::_sqrid::*;
+mod sqrid;
+pub use self::sqrid::*;
