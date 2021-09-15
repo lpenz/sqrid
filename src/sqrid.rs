@@ -106,6 +106,24 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         self.x == 0 || self.x == W - 1 || self.y == 0 || self.y == H - 1
     }
 
+    /// Flip the coordinate vertically
+    #[inline]
+    pub fn flip_h(&self) -> Qa<W, H> {
+        Qa {
+            x: W - self.x - 1,
+            y: self.y,
+        }
+    }
+
+    /// Flip the coordinate horizontally
+    #[inline]
+    pub fn flip_v(&self) -> Qa<W, H> {
+        Qa {
+            x: self.x,
+            y: H - self.y - 1,
+        }
+    }
+
     /// Return the corresponding `(u16, u16)` tuple.
     #[inline]
     pub fn tuple(&self) -> (u16, u16) {

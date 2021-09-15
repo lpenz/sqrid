@@ -98,3 +98,22 @@ fn test_manhattan() -> Result<()> {
     assert_eq!(Qa2::manhattan(Qa2::BOTTOM_RIGHT, &Qa2::TOP_LEFT), 2);
     Ok(())
 }
+
+#[test]
+fn test_flips() -> Result<()> {
+    assert_eq!(Qa::TOP_LEFT.flip_v(), Qa::BOTTOM_LEFT);
+    assert_eq!(Qa::TOP_RIGHT.flip_v(), Qa::BOTTOM_RIGHT);
+    assert_eq!(Qa::TOP_LEFT.flip_h(), Qa::TOP_RIGHT);
+    assert_eq!(Qa::BOTTOM_LEFT.flip_h(), Qa::BOTTOM_RIGHT);
+    assert_eq!(Qa::new::<2, 3>().flip_h(), Qa::new::<3, 3>());
+    assert_eq!(Qa::new::<2, 3>().flip_v(), Qa::new::<2, 3>());
+    for qa in Qa::iter() {
+        assert_eq!(qa.flip_h().flip_h(), qa);
+        assert_eq!(qa.flip_v().flip_v(), qa);
+        assert_eq!(qa.flip_v().is_corner(), qa.is_corner());
+        assert_eq!(qa.flip_h().is_corner(), qa.is_corner());
+        assert_eq!(qa.flip_v().is_side(), qa.is_side());
+        assert_eq!(qa.flip_h().is_side(), qa.is_side());
+    }
+    Ok(())
+}
