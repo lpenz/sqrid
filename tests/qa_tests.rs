@@ -9,6 +9,7 @@ use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<6, 7>;
 type Qa2 = sqrid::Qa<2, 2>;
+type Qa5 = sqrid::Qa<5, 5>;
 
 #[test]
 fn test_basic() -> Result<()> {
@@ -114,6 +115,36 @@ fn test_flips() -> Result<()> {
         assert_eq!(qa.flip_h().is_corner(), qa.is_corner());
         assert_eq!(qa.flip_v().is_side(), qa.is_side());
         assert_eq!(qa.flip_h().is_side(), qa.is_side());
+    }
+    Ok(())
+}
+
+#[test]
+fn test_rotate_cw() -> Result<()> {
+    assert_eq!(Qa5::TOP_LEFT.rotate_cw(), Qa5::TOP_RIGHT);
+    assert_eq!(Qa5::TOP_RIGHT.rotate_cw(), Qa5::BOTTOM_RIGHT);
+    assert_eq!(Qa5::BOTTOM_RIGHT.rotate_cw(), Qa5::BOTTOM_LEFT);
+    assert_eq!(Qa5::BOTTOM_LEFT.rotate_cw(), Qa5::TOP_LEFT);
+    for qa in Qa5::iter() {
+        assert_eq!(qa.rotate_cw().rotate_cw().rotate_cw().rotate_cw(), qa);
+        assert_eq!(qa.rotate_cw().is_corner(), qa.is_corner());
+        assert_eq!(qa.rotate_cw().is_corner(), qa.is_corner());
+        assert_eq!(qa.rotate_cw().rotate_cw(), qa.rotate_cc().rotate_cc());
+    }
+    Ok(())
+}
+
+#[test]
+fn test_rotate_cc() -> Result<()> {
+    assert_eq!(Qa5::TOP_LEFT.rotate_cc(), Qa5::BOTTOM_LEFT);
+    assert_eq!(Qa5::BOTTOM_LEFT.rotate_cc(), Qa5::BOTTOM_RIGHT);
+    assert_eq!(Qa5::BOTTOM_RIGHT.rotate_cc(), Qa5::TOP_RIGHT);
+    assert_eq!(Qa5::TOP_RIGHT.rotate_cc(), Qa5::TOP_LEFT);
+    for qa in Qa5::iter() {
+        assert_eq!(qa.rotate_cc().rotate_cc().rotate_cc().rotate_cc(), qa);
+        assert_eq!(qa.rotate_cc().is_side(), qa.is_side());
+        assert_eq!(qa.rotate_cc().is_side(), qa.is_side());
+        assert_eq!(qa.rotate_cw().rotate_cw(), qa.rotate_cc().rotate_cc());
     }
     Ok(())
 }

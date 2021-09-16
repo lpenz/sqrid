@@ -198,6 +198,27 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     }
 }
 
+// Rotations are only available for "square" grid coordinates
+impl<const W: u16> Qa<W, W> {
+    /// Rotate the square grid coordinate 90 degrees clockwise
+    #[inline]
+    pub fn rotate_cw(&self) -> Qa<W, W> {
+        Qa {
+            x: W - 1 - self.y,
+            y: self.x,
+        }
+    }
+
+    /// Rotate the square grid coordinate 90 degrees counter-clockwise
+    #[inline]
+    pub fn rotate_cc(&self) -> Qa<W, W> {
+        Qa {
+            x: self.y,
+            y: W - 1 - self.x,
+        }
+    }
+}
+
 impl<const W: u16, const H: u16> fmt::Display for Qa<W, H> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({},{})", self.x, self.y)
