@@ -862,6 +862,34 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     pub fn iter_qa(&self) -> impl iter::Iterator<Item = (Qa<W, H>, &'_ T)> {
         Qa::<W, H>::iter().map(move |qa| (qa, &self[qa]))
     }
+
+    /// Flip all elements horizontally.
+    pub fn flip_h(&mut self)
+    where
+        T: Copy,
+    {
+        for y in 0..H {
+            for x in 0..W / 2 {
+                let qa1 = Qa::<W, H> { x, y };
+                let qa2 = qa1.flip_h();
+                self.0.swap(qa1.to_usize(), qa2.to_usize());
+            }
+        }
+    }
+
+    /// Flip all elements vertically.
+    pub fn flip_v(&mut self)
+    where
+        T: Copy,
+    {
+        for y in 0..H / 2 {
+            for x in 0..W {
+                let qa1 = Qa::<W, H> { x, y };
+                let qa2 = qa1.flip_v();
+                self.0.swap(qa1.to_usize(), qa2.to_usize());
+            }
+        }
+    }
 }
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE>

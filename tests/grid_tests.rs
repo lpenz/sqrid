@@ -13,6 +13,9 @@ type Grid = sqrid::Grid<i32, 5, 3, 15>;
 type _QaScale = sqrid::Qa<0xffff, 0xffff>;
 type _GridScale = sqrid::grid_create!(i32, _QaScale);
 
+type Qa3 = sqrid::Qa<3, 3>;
+type Grid3 = sqrid::grid_create!(i32, Qa3);
+
 #[test]
 fn test_basic() -> Result<()> {
     let mut grid = Grid::default();
@@ -104,6 +107,38 @@ fn test_qa_iter_ref() -> Result<()> {
     assert_eq!(
         grid.into_inner(),
         [0, 5, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
+    Ok(())
+}
+
+#[test]
+fn test_flip_h() -> Result<()> {
+    /*
+    123
+    456
+    789
+     */
+    let mut grid = (1..10).collect::<Grid3>();
+    grid.flip_h();
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        vec![3, 2, 1, 6, 5, 4, 9, 8, 7]
+    );
+    Ok(())
+}
+
+#[test]
+fn test_flip_v() -> Result<()> {
+    /*
+    123
+    456
+    789
+     */
+    let mut grid = (1..10).collect::<Grid3>();
+    grid.flip_v();
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        vec![7, 8, 9, 4, 5, 6, 1, 2, 3]
     );
     Ok(())
 }
