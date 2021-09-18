@@ -892,6 +892,38 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     }
 }
 
+// Rotations are only available for "square" grids
+impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
+    /// Rotate all elements 90 degrees clockwise
+    pub fn rotate_cw(&mut self) {
+        for y in 0..W / 2 {
+            for x in y..W - 1 - y {
+                let qa1 = Qa::<W, W> { x, y };
+                let qa2 = qa1.rotate_cw();
+                let qa3 = qa2.rotate_cw();
+                let qa4 = qa3.rotate_cw();
+                self.0.swap(qa1.to_usize(), qa2.to_usize());
+                self.0.swap(qa1.to_usize(), qa3.to_usize());
+                self.0.swap(qa1.to_usize(), qa4.to_usize());
+            }
+        }
+    }
+    /// Rotate all elements 90 degrees counterclockwise
+    pub fn rotate_cc(&mut self) {
+        for y in 0..W / 2 {
+            for x in y..W - 1 - y {
+                let qa1 = Qa::<W, W> { x, y };
+                let qa2 = qa1.rotate_cw();
+                let qa3 = qa2.rotate_cw();
+                let qa4 = qa3.rotate_cw();
+                self.0.swap(qa1.to_usize(), qa4.to_usize());
+                self.0.swap(qa1.to_usize(), qa3.to_usize());
+                self.0.swap(qa1.to_usize(), qa2.to_usize());
+            }
+        }
+    }
+}
+
 impl<T, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE>
 where
     T: Default + Copy,

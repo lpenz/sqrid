@@ -15,6 +15,8 @@ type _GridScale = sqrid::grid_create!(i32, _QaScale);
 
 type Qa3 = sqrid::Qa<3, 3>;
 type Grid3 = sqrid::grid_create!(i32, Qa3);
+type Qa5 = sqrid::Qa<5, 5>;
+type Grid5 = sqrid::grid_create!(i32, Qa5);
 
 #[test]
 fn test_basic() -> Result<()> {
@@ -139,6 +141,84 @@ fn test_flip_v() -> Result<()> {
     assert_eq!(
         grid.iter().cloned().collect::<Vec<_>>(),
         vec![7, 8, 9, 4, 5, 6, 1, 2, 3]
+    );
+    Ok(())
+}
+
+#[test]
+fn test_rotate_cw() -> Result<()> {
+    /*
+    123
+    456
+    789
+     */
+    let mut grid = (1..10).collect::<Grid3>();
+    grid.rotate_cw();
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        vec![7, 4, 1, 8, 5, 2, 9, 6, 3]
+    );
+    let mut grid = (1..=25).collect::<Grid5>();
+    grid.rotate_cw();
+    /*
+     1  2  3  4  5
+     6  7  8  9 10
+    11 12 13 14 15
+    16 17 18 19 20
+    21 22 23 24 25
+     */
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        vec![
+            21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4, 25, 20, 15, 10,
+            5
+        ]
+    );
+    grid.rotate_cw();
+    grid.rotate_cw();
+    grid.rotate_cw();
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        (1..=25).collect::<Vec<_>>()
+    );
+    Ok(())
+}
+
+#[test]
+fn test_rotate_cc() -> Result<()> {
+    /*
+    123
+    456
+    789
+     */
+    let mut grid = (1..10).collect::<Grid3>();
+    grid.rotate_cc();
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        vec![3, 6, 9, 2, 5, 8, 1, 4, 7]
+    );
+    let mut grid = (1..=25).collect::<Grid5>();
+    grid.rotate_cc();
+    /*
+     1  2  3  4  5
+     6  7  8  9 10
+    11 12 13 14 15
+    16 17 18 19 20
+    21 22 23 24 25
+     */
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        vec![
+            5, 10, 15, 20, 25, 4, 9, 14, 19, 24, 3, 8, 13, 18, 23, 2, 7, 12, 17, 22, 1, 6, 11, 16,
+            21
+        ]
+    );
+    grid.rotate_cc();
+    grid.rotate_cc();
+    grid.rotate_cc();
+    assert_eq!(
+        grid.iter().cloned().collect::<Vec<_>>(),
+        (1..=25).collect::<Vec<_>>()
     );
     Ok(())
 }
