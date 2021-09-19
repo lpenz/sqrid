@@ -462,6 +462,20 @@ impl Qr {
         "UP-LEFT",
     ];
 
+    /// The UTF-8 symbol corresponding to `Qr` values.
+    ///
+    /// Used to convert a `Qr` value into a &'static str via indexing.
+    pub const NAMES_UTF8: [&'static str; 8] = [
+        "\u{2191}", // N
+        "\u{2197}", // NE
+        "\u{2192}", // E
+        "\u{2198}", // SE
+        "\u{2193}", // S
+        "\u{2199}", // SW
+        "\u{2190}", // W
+        "\u{2196}", // NW
+    ];
+
     /// Return true if the `Qr` is one of the diagonals: NE, SE, SW or NW.
     pub const fn is_diagonal(&self) -> bool {
         (*self as u8) % 2 == 1
@@ -501,6 +515,12 @@ impl Qr {
     #[inline]
     pub fn name_direction(&self) -> &'static str {
         Self::NAMES_DIRECTION[*self as usize]
+    }
+
+    /// Return the UTF-8 arrow corresponding to the `Qr`
+    #[inline]
+    pub fn name_utf8(&self) -> &'static str {
+        Self::NAMES_UTF8[*self as usize]
     }
 
     /// Flip the direction: N -> S, E -> W, etc.

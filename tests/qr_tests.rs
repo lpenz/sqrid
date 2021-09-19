@@ -95,6 +95,7 @@ fn test_names() -> Result<()> {
     assert_eq!(iter.next().map(|qr| qr.name_direction()), Some("UP-RIGHT"));
     assert_eq!(iter.next().map(|qr| qr.name_direction()), Some("RIGHT"));
     assert_eq!(iter.next().map(|qr| qr.name_cardinal()), Some("SE"));
+    assert_eq!(iter.next().map(|qr| qr.name_utf8()), Some("\u{2193}"));
     Ok(())
 }
 
