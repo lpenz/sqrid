@@ -12,6 +12,9 @@ type Gbool1 = sqrid::gridbool_create!(Qa1);
 type Qa2 = sqrid::Qa<11, 3>;
 type Gbool2 = sqrid::Gridbool<11, 3, 2>;
 
+type Qa5 = sqrid::Qa<5, 5>;
+type Gbool5 = sqrid::Gridbool<5, 5, 1>;
+
 type _QaScale = sqrid::Qa<0xffff, 0xffff>;
 type _GridboolScale = sqrid::gridbool_create!(_QaScale);
 
@@ -79,5 +82,69 @@ fn test_iter1() -> Result<()> {
     }
     gb1.set_iter_f(v.iter());
     assert_eq!(gb1, Gbool1::ALL_FALSE);
+    Ok(())
+}
+
+#[test]
+fn test_flip_h() -> Result<()> {
+    let mut gb = Gbool5::default();
+    // Set all fourth quadrant:
+    for qa in Qa5::iter() {
+        let t = qa.tuple();
+        gb.set(qa, t.0 < 2 && t.1 > 2);
+    }
+    let mut gb2 = *&gb;
+    // Flip horizontally, check that the third quadrant is set:
+    gb2.flip_h();
+    for qa in Qa5::iter() {
+        let t = qa.tuple();
+        assert_eq!(gb2.get(qa), t.0 > 2 && t.1 > 2);
+    }
+    // Flip again, check we are back at starting position:
+    gb2.flip_h();
+    assert_eq!(gb2, gb);
+    Ok(())
+}
+
+#[test]
+fn test_flip_v() -> Result<()> {
+    let mut gb = Gbool5::default();
+    // Set all first quadrant:
+    for qa in Qa5::iter() {
+        let t = qa.tuple();
+        gb.set(qa, t.0 < 2 && t.1 < 2);
+    }
+    let mut gb2 = *&gb;
+    // Flip vertically, check that the fourth quadrant is set:
+    gb2.flip_v();
+    for qa in Qa5::iter() {
+        let t = qa.tuple();
+        assert_eq!(gb2.get(qa), t.0 < 2 && t.1 > 2);
+    }
+    // Flip again, check we are back at starting position:
+    gb2.flip_v();
+    assert_eq!(gb2, gb);
+    Ok(())
+}
+
+#[test]
+fn test_rotate() -> Result<()> {
+    let mut gb = Gbool5::default();
+    // Set all first quadrant:
+    for qa in Qa5::iter() {
+        let t = qa.tuple();
+        gb.set(qa, t.0 < 2 && t.1 < 2);
+    }
+    let mut gb2 = *&gb;
+    // Rotate, check second quadrant is set:
+    gb2.rotate_cw();
+    for qa in Qa5::iter() {
+        let t = qa.tuple();
+        assert_eq!(gb2.get(qa), t.0 > 2 && t.1 < 2);
+    }
+    // Rotate in the other direction, check we are back to starting
+    // point:
+    gb2.rotate_cc();
+    assert_eq!(gb2, gb);
     Ok(())
 }

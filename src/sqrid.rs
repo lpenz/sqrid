@@ -1333,6 +1333,68 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
             self.set_f(qa);
         }
     }
+
+    /// Flip all elements horizontally.
+    pub fn flip_h(&mut self) {
+        for y in 0..H {
+            for x in 0..W / 2 {
+                let qa1 = Qa::<W, H> { x, y };
+                let qa2 = qa1.flip_h();
+                let tmp = self.get(qa1);
+                self.set(qa1, self.get(qa2));
+                self.set(qa2, tmp);
+            }
+        }
+    }
+
+    /// Flip all elements vertically.
+    pub fn flip_v(&mut self) {
+        for y in 0..H / 2 {
+            for x in 0..W {
+                let qa1 = Qa::<W, H> { x, y };
+                let qa2 = qa1.flip_v();
+                let tmp = self.get(qa1);
+                self.set(qa1, self.get(qa2));
+                self.set(qa2, tmp);
+            }
+        }
+    }
+}
+
+// Rotations are only available for "square" gridbools
+impl<const W: u16, const WORDS: usize> Gridbool<W, W, WORDS> {
+    /// Rotate all elements 90 degrees clockwise
+    pub fn rotate_cw(&mut self) {
+        for y in 0..W / 2 {
+            for x in y..W - 1 - y {
+                let qa0 = Qa::<W, W> { x, y };
+                let qa1 = qa0.rotate_cw();
+                let qa2 = qa1.rotate_cw();
+                let qa3 = qa2.rotate_cw();
+                let values = [self.get(qa0), self.get(qa1), self.get(qa2), self.get(qa3)];
+                self.set(qa0, values[3]);
+                self.set(qa1, values[0]);
+                self.set(qa2, values[1]);
+                self.set(qa3, values[2]);
+            }
+        }
+    }
+    /// Rotate all elements 90 degrees counterclockwise
+    pub fn rotate_cc(&mut self) {
+        for y in 0..W / 2 {
+            for x in y..W - 1 - y {
+                let qa0 = Qa::<W, W> { x, y };
+                let qa1 = qa0.rotate_cw();
+                let qa2 = qa1.rotate_cw();
+                let qa3 = qa2.rotate_cw();
+                let values = [self.get(qa0), self.get(qa1), self.get(qa2), self.get(qa3)];
+                self.set(qa0, values[1]);
+                self.set(qa1, values[2]);
+                self.set(qa2, values[3]);
+                self.set(qa3, values[0]);
+            }
+        }
+    }
 }
 
 impl<const W: u16, const H: u16, const WORDS: usize> Default for Gridbool<W, H, WORDS> {
