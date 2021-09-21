@@ -19,8 +19,11 @@ types it provides:
   which can be `None` if the result is outside the grid.
 - [`Grid`]: a `Qa`-indexed array.
 - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
+- [`BfIterator`]: iterate a grid in breadth-first order, which is
+  useful for path-finding, flood-filling, and several other
+  things.
 
-All these types have the standard `iter`, `iter_mut`, `extend`,
+All basic types have the standard `iter`, `iter_mut`, `extend`,
 `as_ref`, and conversion operations that should be expected.
 
 ## `Qa`: absolute coordinates, position
@@ -37,27 +40,11 @@ use sqrid;
 type Qa = sqrid::Qa<6, 7>;
 ```
 
-We can get [`Qa`] instances by:
-- Using one of the const associated items:
-  ```rust
-  type Qa = sqrid::Qa<6, 7>;
-  const MY_FIRST : Qa = Qa::FIRST;
-  const MY_LAST : Qa = Qa::LAST;
-  ```
-- Using `try_from` with a `(i16, i16)` tuple or a tuple reference:
-  ```rust
-  use std::convert::TryFrom;
-  use std::error::Error;
-
-  type Qa = sqrid::Qa<6, 7>;
-
-  fn main() -> Result<(), Box<dyn Error>> {
-      let qa1 = Qa::try_from((2_u16, 3_u16))?;
-
-      println!("qa1: {}", qa1);
-      Ok(())
-  }
-  ```
+We can only generate [`Qa`] instances that are valid - i.e. inside
+the grid. Some of the ways to create instances:
+- Using one of the const associated items: [`Qa::FIRST`] and
+  [`Qa::LAST`]; [`Qa::TOP_LEFT`], etc.; [`Qa::CENTER`].
+- Using `try_from` with a `(i16, i16)` tuple or a tuple reference.
 - Calling [`Qa::new`], which checks the bounds in const contexts:
   ```rust
   type Qa = sqrid::Qa<6, 7>;
@@ -68,56 +55,22 @@ We can get [`Qa`] instances by:
   type Qa = sqrid::Qa<6, 7>;
   const MY_FIRST : Qa = Qa::new::<12, 4>();
   ```
-- Calling [`Qa::iter`] to iterate all coordinates in the grid:
-  ```rust
-  type Qa = sqrid::Qa<6, 7>;
-  for qa in Qa::iter() {
-      println!("{}", qa);
-  }
-  ```
 
 ## `Qr`: relative coordinates, direction, movement
 
 This type represents a relative movement of one square. It can
-only be one of the 8 cardinal and intercardinal directions (N, NE,
-E, SE, S, SW, W, NW).
+only be one of the 8 cardinal and intercardinal directions:
+[`N`](`Qr::N`), [`NE`](`Qr::NE`), [`E`](`Qr::E`),
+[`SE`](`Qr::SE`), [`S`](`Qr::S`), [`SW`](`Qr::SW`),
+[`W`](`Qr::W`), [`NW`](`Qr::NW`).
 
 It's a building block for paths, iterating on a [`Qa`] neighbors,
 etc. It effectively represents the edges in a graph where the
 [`Qa`] type represents nodes.
 
-We can get [`Qr`] instances by:
-- Using one of the const associated items that represent all
-  cardinal directions (recommended):
-  ```rust
-  use sqrid::Qr;
-  const RIGHT : Qr = Qr::E;
-  const DOWN : Qr = Qr::S;
-  ```
-- Using `try_from` with a `(i16, i16)` tuple or a tuple reference:
-  ```rust
-  use std::convert::TryFrom;
-  use std::error::Error;
-
-  use sqrid::Qr;
-
-  fn main() -> Result<(), Box<dyn Error>> {
-      // Re-create West:
-      let qr1 = Qr::try_from((0_i8, -1_i8))?;
-      // Re-create Northeast:
-      let qr2 = Qr::try_from((-1_i8, 1_i8))?;
-      Ok(())
-  }
-  ```
-- Calling [`Qr::iter`] to iterate all directions:
-  ```rust
-  for qr in sqrid::Qr::iter::<true>() {
-      println!("{}", qr);
-  }
-  ```
-  The const argument to Qr::iter signals it to iterate over the
-  intercardinal directions too. Passing `false` gets us only the 4
-  cardinal directions.
+All functions that iterate on `Qr` values accept a boolean const
+argument that specifies whether the intercardinal directions
+(`NE`, `SE`, `SW`, `NW`) should be considered.
 
 ## `Grid`: a `Qa`-indexed array
 
@@ -204,11 +157,22 @@ for (qa, b) in gb.iter_qa() {
 
 
 [`Qa`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html
+[`Qa::FIRST`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#associatedconstant.FIRST
+[`Qa::LAST`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#associatedconstant.LAST
+[`Qa::TOP_LEFT`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#associatedconstant.TOP_LEFT
+[`Qa::CENTER`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#associatedconstant.CENTER
 [`Qa::new`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#method.new
 [`Qa::iter`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qa.html#method.iter
-[`Qr`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qr.html
-[`Qr::new`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qr.html#method.new
-[`Qr::iter`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Qr.html#method.iter
+[`Qr`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html
+[`Qr::iter`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#method.iter
+[`Qr::N`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.N
+[`Qr::NE`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.NE
+[`Qr::E`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.E
+[`Qr::SE`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.SE
+[`Qr::S`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.S
+[`Qr::SW`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.SW
+[`Qr::W`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.W
+[`Qr::NW`]: https://docs.rs/sqrid/0/sqrid/_sqrid/enum.Qr.html#variant.NW
 [`Grid`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Grid.html
 [`grid_create`]: https://docs.rs/sqrid/0/sqrid/macro.grid_create.html
 [`Grid::line`]: https://docs.rs/sqrid/0/sqrid/_sqrid/struct.Grid.html#method.line

@@ -12,6 +12,7 @@
 //! crate dependency.
 
 use std::borrow::Borrow;
+use std::collections::VecDeque;
 use std::convert;
 use std::convert::TryFrom;
 use std::error;
@@ -710,13 +711,27 @@ impl<const D: bool> Iterator for QrIter<D> {
 
 /* Interaction between Qa and Qr: ***********************************/
 
+/// Combine the provided `qa` ([`Qa`]) position with the `qr` ([`Qr`])
+/// direction and returns `Some(Qa)` if the resulting position is
+/// inside the grid, `None` if it's not.
+///
+/// This function is used to implement `Qa` + `Qr`.
+#[inline]
+pub fn qaqr_eval<T, U, const W: u16, const H: u16>(qa: T, qr: U) -> Option<Qa<W, H>>
+where
+    T: Borrow<Qa<W, H>>,
+    U: Borrow<Qr>,
+{
+    let qat = <(i32, i32)>::from(qa.borrow());
+    let qrt = <(i32, i32)>::from(qr.borrow());
+    Qa::<W, H>::try_from((qat.0 + qrt.0, qat.1 + qrt.1)).ok()
+}
+
 impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
     type Output = Option<Self>;
     #[inline]
     fn add(self, rhs: Qr) -> Self::Output {
-        let qat = <(i32, i32)>::from(self);
-        let qrt = <(i32, i32)>::from(rhs);
-        Qa::<W, H>::try_from((qat.0 + qrt.0, qat.1 + qrt.1)).ok()
+        qaqr_eval(self, rhs)
     }
 }
 
@@ -1448,6 +1463,128 @@ impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W
             H,
             self.iter().map(|b| (if b { "#" } else { "." }).to_string()),
         )
+    }
+}
+
+/* Breadth-first iterator *******************************************/
+
+/// Breadth-first iterator
+///
+/// This struct is used to iterate a grid in breadth-first order, from
+/// a provided set of specific points, using a provided function to
+/// evaluate a given [`Qa`] position + [`Qr`] direction into the next
+/// `Qa` position.
+///
+/// The type arguments are:
+/// - `F`: type of the evaluation function, doesn't have to be
+///        explicitly provided.
+/// - `W`, `H`: grid parameters, width and height.
+/// - `D`: `true` if the grid can be traversed diagonally; `false` to
+///        allow only north, south, east, west traversal.
+/// - `WORDS`: [`Gridbool`] parameter, essentially `W * H / 32`
+///            rounded up.
+///
+/// See [`BfIterator::new`] for example usage.
+#[derive(Debug, Clone)]
+pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
+    visited: Gridbool<W, H, WORDS>,
+    front: VecDeque<(Qa<W, H>, Qr)>,
+    nextfront: VecDeque<(Qa<W, H>, Qr)>,
+    go: F,
+    distance: usize,
+}
+
+impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
+    BfIterator<F, W, H, D, WORDS>
+{
+    /// Create new breadth-first iterator
+    ///
+    /// This function creates a new [`BfIterator`] structure that can
+    /// be used to iterate a grid in bradth-first order.
+    ///
+    /// The function accepts a slice with a set of points to be used
+    /// as the origins and a function that is responsible for
+    /// evaluating a given [`Qa`] position plus a [`Qr`] direction
+    /// into an optional next position, `Option<Qa>`. The
+    /// [`qaqr_eval`] function can be used to traverse a grid where
+    /// all the coordinates are available with the trivial topological
+    /// relations.
+    ///
+    /// Example: traversing a grid starting at the center:
+    ///
+    /// ```
+    /// type Qa = sqrid::Qa<11, 11>;
+    /// let mut iter = sqrid::BfIterator::<
+    ///     _, 11, 11, false, 4
+    /// >::new(
+    ///     &[Qa::CENTER],
+    ///     sqrid::qaqr_eval
+    ///     );
+    /// for (qa, qr, dist) in iter {
+    ///     eprintln!("position {} came from direction {}, distance {}",
+    ///               qa, qr, dist);
+    /// }
+    /// ```
+    pub fn new(origins: &[Qa<W, H>], go: F) -> Self
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+    {
+        let mut bfs = BfIterator {
+            visited: Default::default(),
+            front: origins.iter().map(|&qa| (qa, Qr::default())).collect(),
+            nextfront: Default::default(),
+            go,
+            distance: 0,
+        };
+        // Process origins:
+        let _ = bfs.visit_next();
+        bfs
+    }
+
+    /// Get the next coordinate in breadth-first order
+    ///
+    /// This is the backend of the `Iterator` trait for `BfIterator`.
+    pub fn visit_next(&mut self) -> Option<(Qa<W, H>, Qr, usize)>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+    {
+        while !self.front.is_empty() || !self.nextfront.is_empty() {
+            if self.front.is_empty() {
+                self.front = mem::take(&mut self.nextfront);
+                self.distance += 1;
+            }
+            while let Some((qa, qr)) = self.front.pop_front() {
+                if self.visited.get(qa) {
+                    continue;
+                }
+                let topush = Qr::iter::<D>()
+                    .filter_map(|qr| {
+                        (self.go)(qa, qr).and_then(|nextqa| {
+                            if !self.visited.get(nextqa) {
+                                Some((nextqa, -qr))
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                self.nextfront.extend(&topush);
+                self.visited.set_t(qa);
+                return Some((qa, qr, self.distance));
+            }
+        }
+        None
+    }
+}
+
+impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> Iterator
+    for BfIterator<F, W, H, D, WORDS>
+where
+    F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+{
+    type Item = (Qa<W, H>, Qr, usize);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.visit_next()
     }
 }
 
