@@ -1,10 +1,3 @@
-[![CI](https://github.com/lpenz/sqrid/actions/workflows/ci.yml/badge.svg)](https://github.com/lpenz/sqrid/actions/workflows/ci.yml)
-[![coveralls](https://coveralls.io/repos/github/lpenz/sqrid/badge.svg?branch=main)](https://coveralls.io/github/lpenz/sqrid?branch=main)
-[![crates.io](https://img.shields.io/crates/v/sqrid)](https://crates.io/crates/sqrid)
-[![doc.rs](https://docs.rs/sqrid/badge.svg)](https://docs.rs/sqrid)
-
-# sqrid
-
 *sqrid* provides square grid coordinates and related operations,
 in a single-file create, with no dependencies.
 
@@ -19,14 +12,15 @@ types it provides:
   which can be `None` if the result is outside the grid.
 - [`Grid`]: a `Qa`-indexed array.
 - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
-- [`BfIterator`]: iterate a grid in breadth-first order, which is
-  useful for path-finding, flood-filling, and several other
-  things.
+- [`Traverser`]: helper structure that concentrates all `const
+  generics` arguments and acts as a provider of grid-travessing
+  algorithms. This is the starting point of a big chunk of the
+  core functionality of this crate.
 
 All basic types have the standard `iter`, `iter_mut`, `extend`,
 `as_ref`, and conversion operations that should be expected.
 
-## `Qa`: absolute coordinates, position
+# `Qa`: absolute coordinates, position
 
 The [`Qa`] type represents an absolute position in a square
 grid. The type itself receives the height and width of the grid as
@@ -51,12 +45,12 @@ the grid. Some of the ways to create instances:
   const MY_FIRST : Qa = Qa::new::<3, 4>();
   ```
   The following, for instance, doesn't compile:
-  ```rust
+  ```compile_fail
   type Qa = sqrid::Qa<6, 7>;
   const MY_FIRST : Qa = Qa::new::<12, 4>();
   ```
 
-## `Qr`: relative coordinates, direction, movement
+# `Qr`: relative coordinates, direction, movement
 
 This type represents a relative movement of one square. It can
 only be one of the 8 cardinal and intercardinal directions:
@@ -72,7 +66,7 @@ All functions that iterate on `Qr` values accept a boolean const
 argument that specifies whether the intercardinal directions
 (`NE`, `SE`, `SW`, `NW`) should be considered.
 
-## `Grid`: a `Qa`-indexed array
+# `Grid`: a `Qa`-indexed array
 
 A grid is a generic array that can be indexed by a [`Qa`]
 
@@ -155,28 +149,31 @@ for (qa, b) in gb.iter_qa() {
 }
 ```
 
+# `Traveser`: entry point of travessing algorithms
 
-[`Qa`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html
-[`Qa::FIRST`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#associatedconstant.FIRST
-[`Qa::LAST`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#associatedconstant.LAST
-[`Qa::TOP_LEFT`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#associatedconstant.TOP_LEFT
-[`Qa::CENTER`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#associatedconstant.CENTER
-[`Qa::new`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#method.new
-[`Qa::iter`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#method.iter
-[`Qr`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html
-[`Qr::iter`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#method.iter
-[`Qr::N`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.N
-[`Qr::NE`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.NE
-[`Qr::E`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.E
-[`Qr::SE`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.SE
-[`Qr::S`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.S
-[`Qr::SW`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.SW
-[`Qr::W`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.W
-[`Qr::NW`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Qr.html#variant.NW
-[`Grid`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Grid.html
-[`grid_create`]: https://docs.rs/sqrid/0/sqrid/macro.grid_create.html
-[`Grid::line`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Grid.html#method.line
-[`Grid::line_mut`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Grid.html#method.line_mut
-[`Gridbool`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Gridbool.html
-[`gridbool_create`]: https://docs.rs/sqrid/0/sqrid/macro.gridbool_create.html
+This type provides a convenient entry point for all travessing
+algorithms implemented by this crate. To use it, create a type
+alias using [`traverser_create`], and use the alias to call the
+methods.
+
+Example usage:
+
+```rust
+type Qa = sqrid::Qa<4,4>;
+type Traverser = sqrid::traverser_create!(Qa, false); // No diagonals
+
+// We have a single-origin breadth-first iterator:
+for (qa, qr, dist) in Traverser::bf_iter(Qa::CENTER, |qa, qr| qa + qr) {
+    println!("breadth-first qa {} from {}", qa, qr);
+}
+
+// And also a multi-origin one, that tracks the origin and the distance:
+for (qa, qr, dist, origin) in Traverser::bfmulti_iter(
+                                  &[Qa::CENTER],
+                                  sqrid::qaqr_eval) {
+    println!("breadth-first qa {} from {} distance {} origin {}",
+             qa, qr, dist, origin);
+}
+```
+
 
