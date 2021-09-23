@@ -780,7 +780,36 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     /// Number of elements in the grid.
     pub const SIZE: usize = SIZE;
 
+    /// Create a grid of `MaybeUninit<T>`
+    ///
+    /// See [`std::mem::MaybeUninit`] for more information, including
+    /// a very similar example.
+    #[inline]
+    fn uninit() -> Grid<mem::MaybeUninit<T>, W, H, SIZE> {
+        let _ = Self::_ASSERTS;
+        Grid::<mem::MaybeUninit<T>, W, H, SIZE>(unsafe {
+            #[allow(clippy::uninit_assumed_init)]
+            mem::MaybeUninit::uninit().assume_init()
+        })
+    }
+
+    /// Transform a grid of `MaybeUnint<T>` into a grid of `T`
+    ///
+    /// This is marked as unsafe at the moment because it's using a
+    /// cast.
+    #[inline]
+    unsafe fn cast(g: Grid<mem::MaybeUninit<T>, W, H, SIZE>) -> Grid<T, W, H, SIZE> {
+        // Not yet supported:
+        // Grid::<T, W, H, SIZE>(unsafe { mem::transmute::<_, [T; SIZE]>(arr) })
+        // So we do a hacky cast:
+        let ptr: *const Grid<T, W, H, SIZE> = g.0.as_ptr() as *const Grid<T, W, H, SIZE>;
+        ptr.read()
+    }
+
     /// Create a grid filled with copies of the provided item
+    ///
+    /// This is the fastest of the repeat_* functions, that's why it's
+    /// the "default".
     #[inline]
     pub fn repeat(item: T) -> Self
     where
@@ -788,6 +817,33 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     {
         let _ = Self::_ASSERTS;
         Grid([item; SIZE])
+    }
+
+    /// Create a grid filled with clones of the provided item
+    #[inline]
+    pub fn repeat_clone(value: T) -> Self
+    where
+        T: Clone,
+    {
+        let _ = Self::_ASSERTS;
+        let mut g = Self::uninit();
+        for item in &mut g.0[..] {
+            item.write(value.clone());
+        }
+        unsafe { Self::cast(g) }
+    }
+
+    /// Create a grid filled with copies of the provided item
+    #[inline]
+    pub fn repeat_default() -> Self
+    where
+        T: Default,
+    {
+        let mut g = Self::uninit();
+        for item in &mut g.0[..] {
+            item.write(T::default());
+        }
+        unsafe { Self::cast(g) }
     }
 
     /// "Dismantle" a Grid into the inner array; consumes self.
@@ -844,42 +900,6 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
         unsafe { self.0.get_unchecked_mut(qa.borrow().to_usize()) }
     }
 
-    /// Creates a Grid from an iterator
-    ///
-    /// Assumes we are getting exactly all grid elements; it panics
-    /// otherwise.
-    ///
-    /// Use the `(Qa, Item)` `FromIterator` implementation if not all elements
-    /// are available, or a combination of
-    /// [`repeat`](std::iter::repeat) and
-    /// [`take`](std::iter::Take::take).
-    pub fn from_iterator<AT, I>(iter: I) -> Self
-    where
-        I: iter::IntoIterator<Item = AT>,
-        AT: Borrow<T>,
-        T: Copy,
-    {
-        let _ = Self::_ASSERTS;
-        let mut grid = Grid::<T, W, H, SIZE>(
-            #[allow(clippy::uninit_assumed_init)]
-            unsafe {
-                mem::MaybeUninit::uninit().assume_init()
-            },
-        );
-        let mut it = iter.into_iter();
-        for item in &mut grid {
-            if let Some(fromiter) = it.next() {
-                *item = *fromiter.borrow();
-            } else {
-                panic!("iterator too short for grid type");
-            }
-        }
-        if it.next().is_some() {
-            panic!("iterator too long for grid type");
-        }
-        grid
-    }
-
     /// Returns an iterator over the grid values
     #[inline]
     pub fn iter(&self) -> std::slice::Iter<'_, T> {
@@ -899,10 +919,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     }
 
     /// Flip all elements horizontally.
-    pub fn flip_h(&mut self)
-    where
-        T: Copy,
-    {
+    pub fn flip_h(&mut self) {
         for y in 0..H {
             for x in 0..W / 2 {
                 let qa1 = Qa::<W, H> { x, y };
@@ -913,10 +930,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     }
 
     /// Flip all elements vertically.
-    pub fn flip_v(&mut self)
-    where
-        T: Copy,
-    {
+    pub fn flip_v(&mut self) {
         for y in 0..H / 2 {
             for x in 0..W {
                 let qa1 = Qa::<W, H> { x, y };
@@ -964,6 +978,8 @@ where
     T: Default + Copy,
 {
     fn default() -> Self {
+        // We use the Copy-repeat here because this can overflow the
+        // stack when used with other repeat_* implementations:
         Self::repeat(Default::default())
     }
 }
@@ -1038,6 +1054,10 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
 
 // from_iter
 
+/// Creates a Grid from an iterator that returns references
+///
+/// Assumes we are getting exactly all grid elements; it panics
+/// otherwise.
 impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<&'a T>
     for Grid<T, W, H, SIZE>
 {
@@ -1046,11 +1066,27 @@ impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize> iter::From
     where
         I: iter::IntoIterator<Item = &'a T>,
     {
-        Grid::<T, W, H, SIZE>::from_iterator(iter)
+        let mut g = Self::uninit();
+        let mut it = iter.into_iter();
+        for item in &mut g.0[..] {
+            if let Some(fromiter) = it.next() {
+                item.write(*fromiter.borrow());
+            } else {
+                panic!("iterator too short for grid type");
+            }
+        }
+        if it.next().is_some() {
+            panic!("iterator too long for grid type");
+        }
+        unsafe { Self::cast(g) }
     }
 }
 
-impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<T>
+/// Creates a Grid from an iterator that returns values
+///
+/// Assumes we are getting exactly all grid elements; it panics
+/// otherwise.
+impl<T, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<T>
     for Grid<T, W, H, SIZE>
 {
     #[inline]
@@ -1058,7 +1094,19 @@ impl<T: Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<
     where
         I: iter::IntoIterator<Item = T>,
     {
-        Grid::<T, W, H, SIZE>::from_iterator(iter)
+        let mut g = Self::uninit();
+        let mut it = iter.into_iter();
+        for item in &mut g.0[..] {
+            if let Some(fromiter) = it.next() {
+                item.write(fromiter);
+            } else {
+                panic!("iterator too short for grid type");
+            }
+        }
+        if it.next().is_some() {
+            panic!("iterator too long for grid type");
+        }
+        unsafe { Self::cast(g) }
     }
 }
 
