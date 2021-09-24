@@ -19,9 +19,10 @@ types it provides:
   which can be `None` if the result is outside the grid.
 - [`Grid`]: a `Qa`-indexed array.
 - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
-- [`BfIterator`]: iterate a grid in breadth-first order, which is
-  useful for path-finding, flood-filling, and several other
-  things.
+- [`Traverser`]: helper structure that concentrates all `const
+  generics` arguments and acts as a provider of grid-travessing
+  algorithms. This is the starting point of a big chunk of the
+  core functionality of this crate.
 
 All basic types have the standard `iter`, `iter_mut`, `extend`,
 `as_ref`, and conversion operations that should be expected.
@@ -116,7 +117,7 @@ for (qa, &i) in gridnums.iter_qa() {
 gridnums.as_mut().reverse();
 ```
 
-# `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
+## `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
 
 `Gridbool` is a compact abstraction of a grid of booleans.
 
@@ -155,6 +156,23 @@ for (qa, b) in gb.iter_qa() {
 }
 ```
 
+## `Traveser`: entry point of travessing algorithms
+
+This type provides a convenient entry point for all travessing
+algorithms implemented by this crate. To use it, create a type
+alias using [`traverser_create`], and use the alias to call the
+methods.
+
+Example usage:
+
+```rust
+type Qa = sqrid::Qa<4,4>;
+type Traverser = sqrid::traverser_create!(Qa, false); // No diagonals
+
+for (qa, qr, dist) in Traverser::bf_iter(&[Qa::CENTER], |qa, qr| qa + qr) {
+    println!("breadth-first qa {} from {} distance {}", qa, qr, dist);
+}
+```
 
 [`Qa`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html
 [`Qa::FIRST`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Qa.html#associatedconstant.FIRST
@@ -179,4 +197,6 @@ for (qa, b) in gb.iter_qa() {
 [`Grid::line_mut`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Grid.html#method.line_mut
 [`Gridbool`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Gridbool.html
 [`gridbool_create`]: https://docs.rs/sqrid/0/sqrid/macro.gridbool_create.html
+[`Traverser`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Traverser.html
+[`traverser_create`]: https://docs.rs/sqrid/0/sqrid/macro.traverser_create.html
 

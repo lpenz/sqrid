@@ -1514,6 +1514,75 @@ impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W
     }
 }
 
+/* Traverser helper struct: *****************************************/
+
+/// Helper type that builds traversal-related entities
+///
+/// This type holds all generic parameters used to create
+/// traversal-related types like BfIterator.
+///
+/// These types usually have to be aware of the dimensions of the
+/// grid, whether diagonals should be used, and other generic const
+/// parameters that can't be calculated in rust yet. Instead of having
+/// to instantiate each traversing type with the parameres, we use
+/// this class to concentrate them, and then use its methods.
+///
+/// The helper macro [`traverser_create`] should be used to create
+/// aliases to this type.
+///
+/// Example usage:
+/// ```
+/// type Qa = sqrid::Qa<4,4>;
+/// type Traverser = sqrid::traverser_create!(Qa, false); // No diagonals
+///
+/// for (qa, qr, dist) in Traverser::bf_iter(&[Qa::CENTER], |qa, qr| qa + qr) {
+///     println!("breadth-first qa {} from {} distance {}", qa, qr, dist);
+/// }
+/// ```
+#[allow(missing_debug_implementations)]
+pub enum Traverser<const W: u16, const H: u16, const D: bool, const SIZE: usize, const WORDS: usize>
+{}
+
+/// Helper macro that creates a Traverser type from a [`Qa`]
+///
+/// The [`Traverser`] type needs at least 3 parameters that can be
+/// derived from the grid's [`Qa`] coordinate type. This macro takes
+/// advantage of that and uses a provided `Qa` type to create the
+/// corresponding [`Traverser`].
+///
+/// A usage example can be seen in [`Traverser`]
+#[macro_export]
+macro_rules! traverser_create {
+    ($qatype: ty, $diag: expr) => {
+        $crate::Traverser<{ <$qatype>::WIDTH }, { <$qatype>::HEIGHT }, $diag,
+        { (<$qatype>::WIDTH as usize * <$qatype>::HEIGHT as usize) },
+        { (<$qatype>::WIDTH as usize * <$qatype>::HEIGHT as usize - 1) / 32 + 1 }
+        >
+    };
+}
+
+impl<const W: u16, const H: u16, const D: bool, const SIZE: usize, const WORDS: usize>
+    Traverser<W, H, D, SIZE, WORDS>
+{
+    /// Create a breadth-first iterator
+    ///
+    /// The function accepts a slice with a set of points to be used
+    /// as the origins and a function that is responsible for
+    /// evaluating a given [`Qa`] position plus a [`Qr`] direction
+    /// into an optional next position, `Option<Qa>`. The
+    /// [`qaqr_eval`] function can be used to traverse a grid where
+    /// all the coordinates are available with the trivial topological
+    /// relations.
+    ///
+    /// A usage example can be seen in [`Traverser`]
+    pub fn bf_iter<F>(origins: &[Qa<W, H>], go: F) -> BfIterator<F, W, H, D, WORDS>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+    {
+        BfIterator::<F, W, H, D, WORDS>::new(origins, go)
+    }
+}
+
 /* Breadth-first iterator *******************************************/
 
 /// Breadth-first iterator
@@ -1522,17 +1591,6 @@ impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W
 /// a provided set of specific points, using a provided function to
 /// evaluate a given [`Qa`] position + [`Qr`] direction into the next
 /// `Qa` position.
-///
-/// The type arguments are:
-/// - `F`: type of the evaluation function, doesn't have to be
-///        explicitly provided.
-/// - `W`, `H`: grid parameters, width and height.
-/// - `D`: `true` if the grid can be traversed diagonally; `false` to
-///        allow only north, south, east, west traversal.
-/// - `WORDS`: [`Gridbool`] parameter, essentially `W * H / 32`
-///            rounded up.
-///
-/// See [`BfIterator::new`] for example usage.
 #[derive(Debug, Clone)]
 pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
     visited: Gridbool<W, H, WORDS>,
@@ -1547,32 +1605,8 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
 {
     /// Create new breadth-first iterator
     ///
-    /// This function creates a new [`BfIterator`] structure that can
-    /// be used to iterate a grid in bradth-first order.
-    ///
-    /// The function accepts a slice with a set of points to be used
-    /// as the origins and a function that is responsible for
-    /// evaluating a given [`Qa`] position plus a [`Qr`] direction
-    /// into an optional next position, `Option<Qa>`. The
-    /// [`qaqr_eval`] function can be used to traverse a grid where
-    /// all the coordinates are available with the trivial topological
-    /// relations.
-    ///
-    /// Example: traversing a grid starting at the center:
-    ///
-    /// ```
-    /// type Qa = sqrid::Qa<11, 11>;
-    /// let mut iter = sqrid::BfIterator::<
-    ///     _, 11, 11, false, 4
-    /// >::new(
-    ///     &[Qa::CENTER],
-    ///     sqrid::qaqr_eval
-    ///     );
-    /// for (qa, qr, dist) in iter {
-    ///     eprintln!("position {} came from direction {}, distance {}",
-    ///               qa, qr, dist);
-    /// }
-    /// ```
+    /// Use [`Traverser::bf_iter`] instead of this to instantiate
+    /// [`BfIterator`], it's way more convenient.
     pub fn new(origins: &[Qa<W, H>], go: F) -> Self
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
@@ -1592,6 +1626,19 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
     /// Get the next coordinate in breadth-first order
     ///
     /// This is the backend of the `Iterator` trait for `BfIterator`.
+    ///
+    /// Example: traversing a grid starting at the center:
+    ///
+    /// ```
+    /// type Qa = sqrid::Qa<11, 11>;
+    /// type Traverser = sqrid::traverser_create!(Qa, false); // No diagonals
+    ///
+    /// for (qa, qr, dist) in Traverser::bf_iter(&[Qa::CENTER],
+    ///                                          sqrid::qaqr_eval) {
+    ///     eprintln!("position {} came from direction {}, distance {}",
+    ///               qa, qr, dist);
+    /// }
+    /// ```
     pub fn visit_next(&mut self) -> Option<(Qa<W, H>, Qr, usize)>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
