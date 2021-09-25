@@ -821,14 +821,16 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
 
     /// Create a grid filled with clones of the provided item
     #[inline]
-    pub fn repeat_clone(value: T) -> Self
+    pub fn repeat_clone<U>(value: U) -> Self
     where
+        U: Borrow<T>,
         T: Clone,
     {
         let _ = Self::_ASSERTS;
         let mut g = Self::uninit();
+        let v = value.borrow();
         for item in &mut g.0[..] {
-            item.write(value.clone());
+            item.write(v.clone());
         }
         unsafe { Self::cast(g) }
     }

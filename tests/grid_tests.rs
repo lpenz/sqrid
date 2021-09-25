@@ -79,12 +79,26 @@ fn test_into_from_iter_qa() -> Result<()> {
 #[should_panic]
 fn test_into_iter_underflow() {
     let v = (0..14_i32).collect::<Vec<_>>();
-    let _ = v.iter().collect::<Grid>();
+    let _ = v.iter().cloned().collect::<Grid>();
 }
 
 #[test]
 #[should_panic]
 fn test_into_iter_overflow() {
+    let v = (0..16_i32).collect::<Vec<_>>();
+    let _ = v.iter().cloned().collect::<Grid>();
+}
+
+#[test]
+#[should_panic]
+fn test_into_iter_underflow_refs() {
+    let v = (0..14_i32).collect::<Vec<_>>();
+    let _ = v.iter().collect::<Grid>();
+}
+
+#[test]
+#[should_panic]
+fn test_into_iter_overflow_refs() {
     let v = (0..16_i32).collect::<Vec<_>>();
     let _ = v.iter().collect::<Grid>();
 }
@@ -240,5 +254,7 @@ fn test_nocopy() -> Result<()> {
     let v = vec![(Qa::TOP_LEFT, "string".to_string())];
     grid.extend(v.into_iter());
     eprintln!("3 {:?}", grid);
+    let grid4 = GridString::repeat_clone("X".to_string());
+    eprintln!("4 {:?}", grid4);
     Ok(())
 }
