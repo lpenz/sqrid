@@ -7,7 +7,7 @@
 #![deny(rustdoc::broken_intra_doc_links)]
 
 //! *sqrid* provides square grid coordinates and related operations,
-//! in a single-file create, with no dependencies.
+//! in a crate with zero dependencies.
 //!
 //! It's easier to explain the features of this crate in terms of the
 //! types it provides:
