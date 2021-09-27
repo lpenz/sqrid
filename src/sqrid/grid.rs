@@ -18,7 +18,9 @@ use std::iter;
 use std::mem;
 use std::ops;
 
+use super::error::Error;
 use super::qa::Qa;
+use super::qr::Qr;
 
 /// Assert const generic expressions inside `impl` blocks
 macro_rules! impl_assert {
@@ -514,5 +516,19 @@ impl<T: fmt::Display, const W: u16, const H: u16, const SIZE: usize> fmt::Displa
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         display_fmt_helper(f, W, H, self.iter().map(|v| format!("{}", v)))
+    }
+}
+
+impl<const W: u16, const H: u16, const SIZE: usize> Grid<Qr, W, H, SIZE> {
+    /// TODO
+    pub fn path(&self, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error> {
+        let mut ret: Vec<Qr> = vec![];
+        let mut qa = *orig;
+        while &qa != dest {
+            let qr = self[qa];
+            ret.push(qr);
+            qa = (qa + qr).ok_or(Error::InvalidMovement)?;
+        }
+        Ok(ret)
     }
 }

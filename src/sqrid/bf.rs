@@ -10,6 +10,7 @@
 use std::collections::VecDeque;
 use std::mem;
 
+use super::grid::Grid;
 use super::gridbool::Gridbool;
 use super::qa::Qa;
 use super::qr::Qr;
@@ -20,7 +21,14 @@ use super::qr::Qr;
 /// a given origin, using a provided function to evaluate a given
 /// [`Qa`] position + [`Qr`] direction into the next `Qa` position.
 #[derive(Debug, Clone)]
-pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
+pub struct BfIterator<
+    F,
+    const W: u16,
+    const H: u16,
+    const D: bool,
+    const WORDS: usize,
+    const SIZE: usize,
+> {
     visited: Gridbool<W, H, WORDS>,
     front: VecDeque<(Qa<W, H>, Qr)>,
     nextfront: VecDeque<(Qa<W, H>, Qr)>,
@@ -37,6 +45,7 @@ macro_rules! bfiter_create {
             { <$qatype>::HEIGHT },
             $diags,
             { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize)) / 32 + 1) },
+            { (<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize) },
         >
     };
 }
@@ -60,8 +69,16 @@ macro_rules! bf_iter {
     };
 }
 
-impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
-    BfIterator<F, W, H, D, WORDS>
+/// TODO
+#[macro_export]
+macro_rules! bfs {
+    ($qatype: ty, $diags: expr, $orig: expr, $go: expr, $found: expr) => {
+        <$crate::bfiter_create!($qatype, $diags)>::bfs($orig, $go, $found)
+    };
+}
+
+impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
+    BfIterator<F, W, H, D, WORDS, SIZE>
 {
     /// Create new breadth-first iterator
     pub fn new(orig: &Qa<W, H>, go: F) -> Self
@@ -77,6 +94,22 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
         // Process origins:
         let _ = bfs.visit_next();
         bfs
+    }
+
+    /// TODO
+    pub fn bfs<G, U>(orig: &Qa<W, H>, go: F, found: G) -> Option<Grid<Qr, W, H, SIZE>>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+        G: Fn(Qa<W, H>) -> bool,
+    {
+        let mut from = Grid::<Qr, W, H, SIZE>::default();
+        for (qa, qr) in Self::new(orig, go) {
+            from[qa] = qr;
+            if found(qa) {
+                return Some(from);
+            }
+        }
+        None
     }
 
     /// Get the next coordinate in breadth-first order
@@ -127,8 +160,8 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
     }
 }
 
-impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> Iterator
-    for BfIterator<F, W, H, D, WORDS>
+impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize> Iterator
+    for BfIterator<F, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
 {
