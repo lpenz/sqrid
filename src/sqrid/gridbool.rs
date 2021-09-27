@@ -58,7 +58,7 @@ pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u3
 macro_rules! gridbool_create {
     ($qa: ty) => {
         $crate::Gridbool<{ <$qa>::WIDTH }, { <$qa>::HEIGHT },
-        { (((<$qa>::WIDTH as usize - 1) * (<$qa>::HEIGHT as usize - 1)) / 32 + 1) }>
+        { (((<$qa>::WIDTH as usize) * (<$qa>::HEIGHT as usize) + 31) / 32) }>
     };
 }
 
@@ -70,7 +70,7 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
                  // WORDS is big enough to hold all bits:
                  W as usize * H as usize <= WORDS * 32 &&
                  // WORDS is not bigger than necessary:
-                 W as usize * H as usize > WORDS * 32 - 32);
+                 W as usize * H as usize >= WORDS * 32 - 32);
     // Used in creation:
     const WORD_FALSE: u32 = 0;
     const WORD_TRUE: u32 = 0xFFFFFFFF;

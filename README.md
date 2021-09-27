@@ -6,7 +6,7 @@
 # sqrid
 
 *sqrid* provides square grid coordinates and related operations,
-in a single-file create, with no dependencies.
+in a crate with zero dependencies.
 
 It's easier to explain the features of this crate in terms of the
 types it provides:
@@ -19,10 +19,6 @@ types it provides:
   which can be `None` if the result is outside the grid.
 - [`Grid`]: a `Qa`-indexed array.
 - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
-- [`Traverser`]: helper structure that concentrates all `const
-  generics` arguments and acts as a provider of grid-travessing
-  algorithms. This is the starting point of a big chunk of the
-  core functionality of this crate.
 
 All basic types have the standard `iter`, `iter_mut`, `extend`,
 `as_ref`, and conversion operations that should be expected.
@@ -156,21 +152,21 @@ for (qa, b) in gb.iter_qa() {
 }
 ```
 
-## `Traveser`: entry point of travessing algorithms
+# `BfIterator`: breadth-first iteration
 
-This type provides a convenient entry point for all travessing
-algorithms implemented by this crate. To use it, create a type
-alias using [`traverser_create`], and use the alias to call the
-methods.
+The [`BfIterator`] struct is used to iterate a grid in
+breadth-first order, from a given origin, using a provided
+function to evaluate a given [`Qa`] position + [`Qr`] direction
+into the next `Qa` position.
 
 Example usage:
 
 ```rust
 type Qa = sqrid::Qa<4,4>;
-type Traverser = sqrid::traverser_create!(Qa, false); // No diagonals
 
-for (qa, qr, dist) in Traverser::bf_iter(&[Qa::CENTER], |qa, qr| qa + qr) {
-    println!("breadth-first qa {} from {} distance {}", qa, qr, dist);
+for (qa, qr) in <sqrid::bf_iter!(Qa, false)>::new(Qa::CENTER,
+                                                  sqrid::qaqr_eval) {
+    println!("breadth-first qa {} from {}", qa, qr);
 }
 ```
 
@@ -197,6 +193,4 @@ for (qa, qr, dist) in Traverser::bf_iter(&[Qa::CENTER], |qa, qr| qa + qr) {
 [`Grid::line_mut`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Grid.html#method.line_mut
 [`Gridbool`]: https://docs.rs/sqrid/0/sqrid/sqrid/struct.Gridbool.html
 [`gridbool_create`]: https://docs.rs/sqrid/0/sqrid/macro.gridbool_create.html
-[`Traverser`]: https://docs.rs/sqrid/0/sqrid/sqrid/enum.Traverser.html
-[`traverser_create`]: https://docs.rs/sqrid/0/sqrid/macro.traverser_create.html
 
