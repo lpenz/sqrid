@@ -18,8 +18,6 @@ use std::fmt;
 
 use super::error::Error;
 
-// Compile-time assertion hacks:
-
 /// Assert const generic expressions inside const functions
 macro_rules! const_assert {
     ($x:expr $(,)?) => {
@@ -27,8 +25,6 @@ macro_rules! const_assert {
         let _ = ASSERT_FALSE[$x as usize];
     };
 }
-
-/* Qa: absolute coordinates, positioning ****************************/
 
 /// Square grid absolute coordinate
 ///

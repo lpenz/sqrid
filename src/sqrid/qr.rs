@@ -13,20 +13,16 @@
 
 use std::borrow::Borrow;
 use std::convert;
-use std::convert::TryFrom;
 use std::fmt;
 use std::ops;
 
 use super::error::Error;
-use super::qa::Qa;
-
-/* Qr: relative coordinates, motion *********************************/
 
 /// Square grid "relative" coordinates
 ///
 /// This type represents a relative movement of one square.
 ///
-/// It's a building block for paths, iterating on a [`Qa`] neighbors,
+/// It's a building block for paths, iterating on a [`super::Qa`] neighbors,
 /// etc. It effectively represents the edges in a graph, while the
 /// `Qa` type represents nodes.
 ///
@@ -366,31 +362,5 @@ impl<const D: bool> Iterator for QrIter<D> {
         } else {
             (4, Some(4))
         }
-    }
-}
-
-/* Interaction between Qa and Qr: ***********************************/
-
-/// Combine the provided `qa` ([`Qa`]) position with the `qr` ([`Qr`])
-/// direction and returns `Some(Qa)` if the resulting position is
-/// inside the grid, `None` if it's not.
-///
-/// This function is used to implement `Qa` + `Qr`.
-#[inline]
-pub fn qaqr_eval<T, U, const W: u16, const H: u16>(qa: T, qr: U) -> Option<Qa<W, H>>
-where
-    T: Borrow<Qa<W, H>>,
-    U: Borrow<Qr>,
-{
-    let qat = <(i32, i32)>::from(qa.borrow());
-    let qrt = <(i32, i32)>::from(qr.borrow());
-    Qa::<W, H>::try_from((qat.0 + qrt.0, qat.1 + qrt.1)).ok()
-}
-
-impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
-    type Output = Option<Self>;
-    #[inline]
-    fn add(self, rhs: Qr) -> Self::Output {
-        qaqr_eval(self, rhs)
     }
 }

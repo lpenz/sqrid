@@ -14,8 +14,6 @@ use super::gridbool::Gridbool;
 use super::qa::Qa;
 use super::qr::Qr;
 
-/* Breadth-first iterator *******************************************/
-
 /// Breadth-first iterator
 ///
 /// This struct is used to iterate a grid in breadth-first order, from

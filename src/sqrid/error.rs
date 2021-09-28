@@ -10,8 +10,6 @@
 use std::error;
 use std::fmt;
 
-/* Errors: **********************************************************/
-
 /// sqrid errors enum
 ///
 /// Used by try_from when an invalid value is passed, for instance.

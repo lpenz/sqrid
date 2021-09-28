@@ -19,16 +19,12 @@ use std::ops;
 use super::grid;
 use super::qa::Qa;
 
-// Compile-time assertion hacks:
-
 /// Assert const generic expressions inside `impl` blocks
 macro_rules! impl_assert {
     ($label:ident; $x:expr $(,)?) => {
         const $label: usize = 0 - !$x as usize;
     };
 }
-
-/* Gridbool: a grid of booleans optimized for space *****************/
 
 /// Space-optimized grid of booleans using bitmaps
 ///

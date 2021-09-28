@@ -18,6 +18,8 @@ pub mod qa;
 pub use self::qa::*;
 pub mod qr;
 pub use self::qr::*;
+pub mod qaqr;
+pub use self::qaqr::*;
 
 pub mod grid;
 pub use self::grid::*;

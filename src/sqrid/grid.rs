@@ -18,10 +18,7 @@ use std::iter;
 use std::mem;
 use std::ops;
 
-// use super::error::Error;
 use super::qa::Qa;
-
-// Compile-time assertion hacks:
 
 /// Assert const generic expressions inside `impl` blocks
 macro_rules! impl_assert {
@@ -29,8 +26,6 @@ macro_rules! impl_assert {
         const $label: usize = 0 - !$x as usize;
     };
 }
-
-/* Grid: a Qa-indexed array *****************************************/
 
 /// A grid is a generic array that can be indexed by a [`Qa`]
 ///
