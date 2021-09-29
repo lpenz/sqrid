@@ -28,26 +28,35 @@ pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS:
 }
 
 /// Creates the BfIterator type from the provided [`Qa`] and diagonal option.
+#[macro_export]
+macro_rules! bfiter_create {
+    ($qatype: ty, $diags: expr) => {
+        $crate::BfIterator::<
+            _,
+            { <$qatype>::WIDTH },
+            { <$qatype>::HEIGHT },
+            $diags,
+            { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize)) / 32 + 1) },
+        >
+    };
+}
+
+/// Creates the BfIterator instance from the provided [`Qa`], diagonal
+/// option, center and Qa-Qr evaluation function.
 ///
 /// Example usage:
 /// ```rust
 /// type Qa = sqrid::Qa<4,4>;
 ///
-/// for (qa, qr) in <sqrid::bf_iter!(Qa, false)>::new(Qa::CENTER,
-///                                                   sqrid::qaqr_eval) {
+/// for (qa, qr) in sqrid::bf_iter!(Qa, false, &Qa::CENTER,
+///                                 sqrid::qaqr_eval) {
 ///     println!("breadth-first qa {} from {}", qa, qr);
 /// }
 /// ```
 #[macro_export]
 macro_rules! bf_iter {
-    ($qa: ty, $diags: expr) => {
-        $crate::BfIterator::<
-            _,
-            { <$qa>::WIDTH },
-            { <$qa>::HEIGHT },
-            $diags,
-            { (((<$qa>::WIDTH as usize) * (<$qa>::HEIGHT as usize)) / 32 + 1) },
-        >
+    ($qatype: ty, $diags: expr, $orig: expr, $go: expr) => {
+        <$crate::bfiter_create!($qatype, $diags)>::new($orig, $go)
     };
 }
 
@@ -55,13 +64,13 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
     BfIterator<F, W, H, D, WORDS>
 {
     /// Create new breadth-first iterator
-    pub fn new(origin: Qa<W, H>, go: F) -> Self
+    pub fn new(orig: &Qa<W, H>, go: F) -> Self
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
         let mut bfs = BfIterator {
             visited: Default::default(),
-            front: VecDeque::from(vec![(origin, Qr::default())]),
+            front: VecDeque::from(vec![(*orig, Qr::default())]),
             nextfront: Default::default(),
             go,
         };
@@ -79,8 +88,8 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
     /// ```
     /// type Qa = sqrid::Qa<11, 11>;
     ///
-    /// for (qa, qr) in <sqrid::bf_iter!(Qa, false)>::new(Qa::CENTER,
-    ///                                                   sqrid::qaqr_eval) {
+    /// for (qa, qr) in sqrid::bf_iter!(Qa, false, &Qa::CENTER,
+    ///                                 sqrid::qaqr_eval) {
     ///     eprintln!("position {} came from direction {}",
     ///               qa, qr);
     /// }

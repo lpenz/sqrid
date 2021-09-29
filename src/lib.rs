@@ -165,8 +165,8 @@
 //! ```rust
 //! type Qa = sqrid::Qa<4,4>;
 //!
-//! for (qa, qr) in <sqrid::bf_iter!(Qa, false)>::new(Qa::CENTER,
-//!                                                   sqrid::qaqr_eval) {
+//! for (qa, qr) in sqrid::bf_iter!(Qa, false, &Qa::CENTER,
+//!                                 sqrid::qaqr_eval) {
 //!     println!("breadth-first qa {} from {}", qa, qr);
 //! }
 //! ```
