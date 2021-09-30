@@ -39,10 +39,7 @@ macro_rules! const_assert {
 /// type Qa = sqrid::Qa<4, 4>;
 /// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-pub struct Qa<const WIDTH: u16, const HEIGHT: u16> {
-    x: u16,
-    y: u16,
-}
+pub struct Qa<const WIDTH: u16, const HEIGHT: u16>(u16, u16);
 
 impl<const W: u16, const H: u16> Qa<W, H> {
     /// Width of the grid: exclusive max of the x coordinate.
@@ -56,65 +53,59 @@ impl<const W: u16, const H: u16> Qa<W, H> {
 
     /// Coordinates of the first element of the grid: `(0, 0)`.
     /// Also known as origin.
-    pub const FIRST: Qa<W, H> = Qa { x: 0, y: 0 };
+    pub const FIRST: Qa<W, H> = Qa(0, 0);
 
     /// Coordinates of the last element of the grid.
-    pub const LAST: Qa<W, H> = Qa { x: W - 1, y: H - 1 };
+    pub const LAST: Qa<W, H> = Qa(W - 1, H - 1);
 
     /// Center the (approximate) center coordinate.
-    pub const CENTER: Qa<W, H> = Qa { x: W / 2, y: H / 2 };
+    pub const CENTER: Qa<W, H> = Qa(W / 2, H / 2);
 
     /// Coordinates of the top-left coordinate.
-    pub const TOP_LEFT: Qa<W, H> = Qa { x: 0, y: 0 };
+    pub const TOP_LEFT: Qa<W, H> = Qa(0, 0);
     /// Coordinates of the top-right coordinate.
-    pub const TOP_RIGHT: Qa<W, H> = Qa { x: W - 1, y: 0 };
+    pub const TOP_RIGHT: Qa<W, H> = Qa(W - 1, 0);
     /// Coordinates of the bottom-left coordinate.
-    pub const BOTTOM_LEFT: Qa<W, H> = Qa { x: 0, y: H - 1 };
+    pub const BOTTOM_LEFT: Qa<W, H> = Qa(0, H - 1);
     /// Coordinates of the bottom-right coordinate.
-    pub const BOTTOM_RIGHT: Qa<W, H> = Qa { x: W - 1, y: H - 1 };
+    pub const BOTTOM_RIGHT: Qa<W, H> = Qa(W - 1, H - 1);
 
     /// Create a new [`Qa`] instance.
     /// Can be used in const context.
     /// Bounds are checked at compile-time, when possible.
     pub const fn new<const X: u16, const Y: u16>() -> Self {
         const_assert!(X >= W || Y >= H);
-        Self { x: X, y: Y }
+        Self(X, Y)
     }
 
     /// Return true if self is a corner of the grid.
     #[inline]
     pub fn is_corner(&self) -> bool {
-        (self.x == 0 || self.x == W - 1) && (self.y == 0 || self.y == H - 1)
+        (self.0 == 0 || self.0 == W - 1) && (self.1 == 0 || self.1 == H - 1)
     }
 
     /// Return true if self is on the side of the grid.
     #[inline]
     pub fn is_side(&self) -> bool {
-        self.x == 0 || self.x == W - 1 || self.y == 0 || self.y == H - 1
+        self.0 == 0 || self.0 == W - 1 || self.1 == 0 || self.1 == H - 1
     }
 
     /// Flip the coordinate vertically
     #[inline]
     pub fn flip_h(&self) -> Qa<W, H> {
-        Qa {
-            x: W - self.x - 1,
-            y: self.y,
-        }
+        Qa(W - self.0 - 1, self.1)
     }
 
     /// Flip the coordinate horizontally
     #[inline]
     pub fn flip_v(&self) -> Qa<W, H> {
-        Qa {
-            x: self.x,
-            y: H - self.y - 1,
-        }
+        Qa(self.0, H - self.1 - 1)
     }
 
     /// Return the corresponding `(u16, u16)` tuple.
     #[inline]
     pub fn tuple(&self) -> (u16, u16) {
-        (self.x, self.y)
+        (self.0, self.1)
     }
 
     /// Create a new `Qa` from the provided `(u16, u16)`, if
@@ -125,7 +116,7 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         if xy.0 >= W || xy.1 >= H {
             Err(Error::OutOfBounds)
         } else {
-            Ok(Qa { x: xy.0, y: xy.1 })
+            Ok(Qa(xy.0, xy.1))
         }
     }
 
@@ -139,14 +130,14 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         } else {
             let x = (i % W as usize) as u16;
             let y = (i / W as usize) as u16;
-            Ok(Qa { x, y })
+            Ok(Qa(x, y))
         }
     }
 
     /// Return a usize index corresponding to the `Qa`.
     #[inline]
     pub fn to_usize(&self) -> usize {
-        self.y as usize * W as usize + self.x as usize
+        self.1 as usize * W as usize + self.0 as usize
     }
 
     /// Return the next `Qa` in sequence (English read sequence), or
@@ -171,15 +162,15 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     {
         let qa1 = aqa1.borrow();
         let qa2 = aqa2.borrow();
-        let dx = if qa1.x > qa2.x {
-            qa1.x as usize - qa2.x as usize
+        let dx = if qa1.0 > qa2.0 {
+            qa1.0 as usize - qa2.0 as usize
         } else {
-            qa2.x as usize - qa1.x as usize
+            qa2.0 as usize - qa1.0 as usize
         };
-        let dy = if qa1.y > qa2.y {
-            qa1.y as usize - qa2.y as usize
+        let dy = if qa1.1 > qa2.1 {
+            qa1.1 as usize - qa2.1 as usize
         } else {
-            qa2.y as usize - qa1.y as usize
+            qa2.1 as usize - qa1.1 as usize
         };
         dx + dy
     }
@@ -190,25 +181,19 @@ impl<const W: u16> Qa<W, W> {
     /// Rotate the square grid coordinate 90 degrees clockwise
     #[inline]
     pub fn rotate_cw(&self) -> Qa<W, W> {
-        Qa {
-            x: W - 1 - self.y,
-            y: self.x,
-        }
+        Qa(W - 1 - self.1, self.0)
     }
 
     /// Rotate the square grid coordinate 90 degrees counter-clockwise
     #[inline]
     pub fn rotate_cc(&self) -> Qa<W, W> {
-        Qa {
-            x: self.y,
-            y: W - 1 - self.x,
-        }
+        Qa(self.1, W - 1 - self.0)
     }
 }
 
 impl<const W: u16, const H: u16> fmt::Display for Qa<W, H> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({},{})", self.x, self.y)
+        write!(f, "({},{})", self.0, self.1)
     }
 }
 
@@ -237,10 +222,7 @@ impl<const W: u16, const H: u16> convert::TryFrom<&(i32, i32)> for Qa<W, H> {
         if xy.0 < 0 || xy.1 < 0 || xy.0 >= W as i32 || xy.1 >= H as i32 {
             Err(Error::OutOfBounds)
         } else {
-            Ok(Qa {
-                x: xy.0 as u16,
-                y: xy.1 as u16,
-            })
+            Ok(Qa(xy.0 as u16, xy.1 as u16))
         }
     }
 }
@@ -270,7 +252,7 @@ impl<const W: u16, const H: u16> From<Qa<W, H>> for (u16, u16) {
 impl<const W: u16, const H: u16> From<&Qa<W, H>> for (i32, i32) {
     #[inline]
     fn from(qa: &Qa<W, H>) -> Self {
-        (qa.x as i32, qa.y as i32)
+        (qa.0 as i32, qa.1 as i32)
     }
 }
 
