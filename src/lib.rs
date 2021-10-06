@@ -20,6 +20,7 @@
 //!   which can be `None` if the result is outside the grid.
 //! - [`Grid`]: a `Qa`-indexed array.
 //! - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
+//! - [`Bf`]: breadth-first traversal tools.
 //!
 //! All basic types have the standard `iter`, `iter_mut`, `extend`,
 //! `as_ref`, and conversion operations that should be expected.
@@ -153,20 +154,25 @@
 //! }
 //! ```
 //!
-//! # `BfIterator`: breadth-first iteration
+//! # `Bf`: breadth-first traversal tools
 //!
-//! The [`BfIterator`] struct is used to iterate a grid in
-//! breadth-first order, from a given origin, using a provided
-//! function to evaluate a given [`Qa`] position + [`Qr`] direction
-//! into the next `Qa` position.
+//! The [`Bf`] struct acts as a entry point for all breadth-first
+//! algorithms. It holds the generic const parameters and should be
+//! aliased to be used as a "pseudo-module" to call functions that
+//! need to instantiate other structs.
+//!
+//! One such tool is [`Bf::iter`], that can be used to iterate
+//! coordinates in breadth-first order, from a given origin, using a
+//! provided function to evaluate a given [`Qa`] position + [`Qr`]
+//! direction into the next `Qa` position.
 //!
 //! Example usage:
 //!
 //! ```rust
 //! type Qa = sqrid::Qa<4,4>;
+//! type Bf = sqrid::bf_create!(Qa, false);
 //!
-//! for (qa, qr) in sqrid::bf_iter!(Qa, false, &Qa::CENTER,
-//!                                 sqrid::qaqr_eval) {
+//! for (qa, qr) in Bf::iter(&Qa::CENTER, sqrid::qaqr_eval) {
 //!     println!("breadth-first qa {} from {}", qa, qr);
 //! }
 //! ```

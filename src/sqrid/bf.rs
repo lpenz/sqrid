@@ -14,57 +14,49 @@ use super::gridbool::Gridbool;
 use super::qa::Qa;
 use super::qr::Qr;
 
-/// Breadth-first iterator
+/// Breadth-first "factory" type
 ///
-/// This struct is used to iterate a grid in breadth-first order, from
-/// a given origin, using a provided function to evaluate a given
-/// [`Qa`] position + [`Qr`] direction into the next `Qa` position.
-#[derive(Debug, Clone)]
-pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
-    visited: Gridbool<W, H, WORDS>,
-    front: VecDeque<(Qa<W, H>, Qr)>,
-    nextfront: VecDeque<(Qa<W, H>, Qr)>,
-    go: F,
-}
+/// This struct holds all the generic const parameters required by the
+/// other breadth-first structs. This can be aliased and used as a
+/// pseudo-module to ease the creation of the sub-structs.
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Bf<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize> {}
 
-/// Creates the BfIterator type from the provided [`Qa`] and diagonal option.
-#[macro_export]
-macro_rules! bfiter_create {
-    ($qatype: ty, $diags: expr) => {
-        $crate::BfIterator::<
-            _,
-            { <$qatype>::WIDTH },
-            { <$qatype>::HEIGHT },
-            $diags,
-            { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize)) / 32 + 1) },
-        >
-    };
-}
-
-/// Creates the BfIterator instance from the provided [`Qa`], diagonal
-/// option, center and Qa-Qr evaluation function.
+/// Creates the Bf type from the provided [`Qa`] and diagonal option.
 ///
 /// Example usage:
-/// ```rust
-/// type Qa = sqrid::Qa<4,4>;
 ///
-/// for (qa, qr) in sqrid::bf_iter!(Qa, false, &Qa::CENTER,
-///                                 sqrid::qaqr_eval) {
+/// ```
+/// type Qa = sqrid::Qa<4,4>;
+/// type Bf = sqrid::bf_create!(Qa, false);
+///
+/// for (qa, qr) in Bf::iter(&Qa::CENTER, sqrid::qaqr_eval) {
 ///     println!("breadth-first qa {} from {}", qa, qr);
 /// }
 /// ```
 #[macro_export]
-macro_rules! bf_iter {
-    ($qatype: ty, $diags: expr, $orig: expr, $go: expr) => {
-        <$crate::bfiter_create!($qatype, $diags)>::new($orig, $go)
+macro_rules! bf_create {
+    ($qatype: ty, $diags: expr) => {
+        $crate::Bf::<
+            { <$qatype>::WIDTH },
+            { <$qatype>::HEIGHT },
+            $diags,
+            { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize)) / 32 + 1) },
+            { (<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize) },
+        >
     };
 }
 
-impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
-    BfIterator<F, W, H, D, WORDS>
+impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
+    Bf<W, H, D, WORDS, SIZE>
 {
     /// Create new breadth-first iterator
-    pub fn new(orig: &Qa<W, H>, go: F) -> Self
+    ///
+    /// This is used to iterate coordinates in breadth-first order,
+    /// from a given origin, using a provided function to evaluate a
+    /// given [`Qa`] position + [`Qr`] direction into the next `Qa`
+    /// position.
+    pub fn iter<F>(orig: &Qa<W, H>, go: F) -> BfIterator<F, W, H, D, WORDS>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
@@ -75,29 +67,29 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
             go,
         };
         // Process origins:
-        let _ = bfs.visit_next();
+        let _ = bfs.next();
         bfs
     }
+}
 
-    /// Get the next coordinate in breadth-first order
-    ///
-    /// This is the backend of the `Iterator` trait for `BfIterator`.
-    ///
-    /// Example: traversing a grid starting at the center:
-    ///
-    /// ```
-    /// type Qa = sqrid::Qa<11, 11>;
-    ///
-    /// for (qa, qr) in sqrid::bf_iter!(Qa, false, &Qa::CENTER,
-    ///                                 sqrid::qaqr_eval) {
-    ///     eprintln!("position {} came from direction {}",
-    ///               qa, qr);
-    /// }
-    /// ```
-    pub fn visit_next(&mut self) -> Option<(Qa<W, H>, Qr)>
-    where
-        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    {
+/* BfIterator */
+
+/// Breadth-first iterator
+#[derive(Debug, Clone)]
+pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
+    visited: Gridbool<W, H, WORDS>,
+    front: VecDeque<(Qa<W, H>, Qr)>,
+    nextfront: VecDeque<(Qa<W, H>, Qr)>,
+    go: F,
+}
+
+impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> Iterator
+    for BfIterator<F, W, H, D, WORDS>
+where
+    F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+{
+    type Item = (Qa<W, H>, Qr);
+    fn next(&mut self) -> Option<Self::Item> {
         while !self.front.is_empty() || !self.nextfront.is_empty() {
             if self.front.is_empty() {
                 self.front = mem::take(&mut self.nextfront);
@@ -124,16 +116,5 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
             }
         }
         None
-    }
-}
-
-impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> Iterator
-    for BfIterator<F, W, H, D, WORDS>
-where
-    F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-{
-    type Item = (Qa<W, H>, Qr);
-    fn next(&mut self) -> Option<Self::Item> {
-        self.visit_next()
     }
 }
