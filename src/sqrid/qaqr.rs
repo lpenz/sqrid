@@ -37,3 +37,11 @@ impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
         qaqr_eval(self, rhs)
     }
 }
+
+impl<const W: u16, const H: u16> ops::Add<&Qr> for Qa<W, H> {
+    type Output = Option<Self>;
+    #[inline]
+    fn add(self, rhs: &Qr) -> Self::Output {
+        qaqr_eval(self, rhs)
+    }
+}

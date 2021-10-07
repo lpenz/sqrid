@@ -21,6 +21,10 @@ pub enum Error {
     /// Attempted to create a [`super::Qr`] instance with a tuple
     /// that doesn't represent a unitary direction.
     InvalidDirection,
+    /// A [`super::Qa`] + [`super::Qr`] operation unexpectedly failed.
+    InvalidMovement,
+    /// An unexpected coordinate loop has been detected.
+    Loop,
 }
 
 impl error::Error for Error {}
@@ -30,6 +34,8 @@ impl fmt::Display for Error {
         match self {
             Error::OutOfBounds => write!(f, "value is out-of-bounds"),
             Error::InvalidDirection => write!(f, "invalid direction for Qr"),
+            Error::InvalidMovement => write!(f, "invalid movement (Qa+Qr)"),
+            Error::Loop => write!(f, "unexpected loop detected"),
         }
     }
 }
