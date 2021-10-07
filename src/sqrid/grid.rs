@@ -51,13 +51,13 @@ pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; S
 /// Example usage:
 /// ```
 /// type Qa = sqrid::Qa<3, 3>;
-/// type Grid = sqrid::grid_create!(i32, Qa);
+/// type Grid = sqrid::grid_create!(Qa, i32);
 /// ```
 #[macro_export]
 macro_rules! grid_create {
-    ($member: ty, $qa: ty) => {
-        $crate::Grid<$member, { <$qa>::WIDTH }, { <$qa>::HEIGHT },
-                     { (<$qa>::WIDTH as usize * <$qa>::HEIGHT as usize) }>
+    ($qatype: ty, $member: ty) => {
+        $crate::Grid<$member, { <$qatype>::WIDTH }, { <$qatype>::HEIGHT },
+                     { (<$qatype>::WIDTH as usize * <$qatype>::HEIGHT as usize) }>
     };
 }
 

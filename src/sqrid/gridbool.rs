@@ -52,9 +52,9 @@ pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u3
 /// ```
 #[macro_export]
 macro_rules! gridbool_create {
-    ($qa: ty) => {
-        $crate::Gridbool<{ <$qa>::WIDTH }, { <$qa>::HEIGHT },
-        { (((<$qa>::WIDTH as usize) * (<$qa>::HEIGHT as usize) + 31) / 32) }>
+    ($qatype: ty) => {
+        $crate::Gridbool<{ <$qatype>::WIDTH }, { <$qatype>::HEIGHT },
+        { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize) + 31) / 32) }>
     };
 }
 

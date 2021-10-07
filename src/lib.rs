@@ -85,7 +85,7 @@
 //!
 //! ```rust
 //! type Qa = sqrid::Qa<3, 3>;
-//! type Grid = sqrid::grid_create!(i32, Qa);
+//! type Grid = sqrid::grid_create!(Qa, i32);
 //!
 //! // The grid create macro above is currently equivalent to:
 //! type Grid2 = sqrid::Grid<i32, { Qa::WIDTH }, { Qa::HEIGHT },
