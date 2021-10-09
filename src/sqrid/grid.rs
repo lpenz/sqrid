@@ -10,6 +10,7 @@
 //! This submodule has the [`Grid`] type and the associated
 //! functionality.
 
+use std::array;
 use std::borrow::Borrow;
 use std::convert;
 use std::convert::TryFrom;
@@ -276,6 +277,16 @@ where
     }
 }
 
+impl<T, const W: u16, const H: u16, const SIZE: usize> ops::Neg for Grid<T, W, H, SIZE>
+where
+    T: ops::Neg<Output = T>,
+{
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        self.into_iter().map(|v| v.neg()).collect()
+    }
+}
+
 // Indexing
 
 impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::Index<AQA> for Grid<T, W, H, SIZE>
@@ -341,6 +352,15 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
+    }
+}
+
+impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for Grid<T, W, H, SIZE> {
+    type Item = T;
+    type IntoIter = std::array::IntoIter<T, SIZE>;
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        array::IntoIter::new(self.0)
     }
 }
 

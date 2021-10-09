@@ -233,6 +233,13 @@ impl ops::Neg for Qr {
     }
 }
 
+impl ops::Neg for &Qr {
+    type Output = Qr;
+    fn neg(self) -> Self::Output {
+        self.flip()
+    }
+}
+
 impl ops::Add for Qr {
     type Output = Qr;
     fn add(self, other: Self) -> Self {

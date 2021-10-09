@@ -123,7 +123,7 @@ fn test_neg() -> Result<()> {
     assert_eq!(-Qr::W, Qr::E);
     assert_eq!(-Qr::NW, Qr::SE);
     for qr in Qr::iter::<true>() {
-        assert_eq!(-(-qr), qr);
+        assert_eq!(-(-&qr), qr);
     }
     Ok(())
 }

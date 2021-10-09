@@ -56,7 +56,24 @@ fn test_basic2() -> Result<()> {
 }
 
 #[test]
-fn test_into_iter_ok() -> Result<()> {
+fn test_into_iter() -> Result<()> {
+    let vec = (0..15).collect::<Vec<_>>();
+    let grid = vec.iter().collect::<Grid>();
+    let mut v = 0;
+    for &i in &grid {
+        assert_eq!(i, v);
+        v += 1;
+    }
+    let mut v = 0;
+    for i in grid {
+        assert_eq!(i, v);
+        v += 1;
+    }
+    Ok(())
+}
+
+#[test]
+fn test_from_iter_ok() -> Result<()> {
     let v = (0..15_i32).collect::<Vec<_>>();
     let grid = v.into_iter().collect::<Grid>();
     assert_eq!(
@@ -77,28 +94,28 @@ fn test_into_from_iter_qa() -> Result<()> {
 
 #[test]
 #[should_panic]
-fn test_into_iter_underflow() {
+fn test_from_iter_underflow() {
     let v = (0..14_i32).collect::<Vec<_>>();
     let _ = v.iter().cloned().collect::<Grid>();
 }
 
 #[test]
 #[should_panic]
-fn test_into_iter_overflow() {
+fn test_from_iter_overflow() {
     let v = (0..16_i32).collect::<Vec<_>>();
     let _ = v.iter().cloned().collect::<Grid>();
 }
 
 #[test]
 #[should_panic]
-fn test_into_iter_underflow_refs() {
+fn test_from_iter_underflow_refs() {
     let v = (0..14_i32).collect::<Vec<_>>();
     let _ = v.iter().collect::<Grid>();
 }
 
 #[test]
 #[should_panic]
-fn test_into_iter_overflow_refs() {
+fn test_from_iter_overflow_refs() {
     let v = (0..16_i32).collect::<Vec<_>>();
     let _ = v.iter().collect::<Grid>();
 }
