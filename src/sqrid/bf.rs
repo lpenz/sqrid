@@ -10,45 +10,38 @@
 use std::collections::VecDeque;
 use std::mem;
 
-use super::gridbool::Gridbool;
-use super::qa::Qa;
-use super::qr::Qr;
+use super::Gridbool;
+use super::Qa;
+use super::Qr;
+use super::Sqrid;
 
-/// Breadth-first "factory" type
-///
-/// This struct holds all the generic const parameters required by the
-/// other breadth-first structs. This can be aliased and used as a
-/// pseudo-module to ease the creation of the sub-structs.
-#[derive(Debug, Copy, Clone, Default)]
-pub struct Bf<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize> {}
-
-/// Creates the Bf type from the provided [`Qa`] and diagonal option.
-///
-/// Example usage:
-///
-/// ```
-/// type Qa = sqrid::Qa<4,4>;
-/// type Bf = sqrid::bf_create!(Qa, false);
-///
-/// for (qa, qr) in Bf::iter(&Qa::CENTER, sqrid::qaqr_eval) {
-///     println!("breadth-first qa {} from {}", qa, qr);
-/// }
-/// ```
-#[macro_export]
-macro_rules! bf_create {
-    ($qatype: ty, $diags: expr) => {
-        $crate::Bf::<
-            { <$qatype>::WIDTH },
-            { <$qatype>::HEIGHT },
-            $diags,
-            { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize)) / 32 + 1) },
-            { (<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize) },
-        >
-    };
-}
+/* Use Sqrid to create BfIterator */
 
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
-    Bf<W, H, D, WORDS, SIZE>
+    Sqrid<W, H, D, WORDS, SIZE>
+{
+    /// Create new breadth-first iterator; see [`BfIterator::new`]
+    pub fn bf_iter<F>(orig: &Qa<W, H>, go: F) -> BfIterator<F, W, H, D, WORDS>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+    {
+        BfIterator::<F, W, H, D, WORDS>::new(orig, go)
+    }
+}
+
+/* BfIterator */
+
+/// Breadth-first iterator
+#[derive(Debug, Clone)]
+pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
+    visited: Gridbool<W, H, WORDS>,
+    front: VecDeque<(Qa<W, H>, Qr)>,
+    nextfront: VecDeque<(Qa<W, H>, Qr)>,
+    go: F,
+}
+
+impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
+    BfIterator<F, W, H, D, WORDS>
 {
     /// Create new breadth-first iterator
     ///
@@ -56,7 +49,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     /// from a given origin, using a provided function to evaluate a
     /// given [`Qa`] position + [`Qr`] direction into the next `Qa`
     /// position.
-    pub fn iter<F>(orig: &Qa<W, H>, go: F) -> BfIterator<F, W, H, D, WORDS>
+    pub fn new(orig: &Qa<W, H>, go: F) -> BfIterator<F, W, H, D, WORDS>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
@@ -70,17 +63,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         let _ = bfs.next();
         bfs
     }
-}
-
-/* BfIterator */
-
-/// Breadth-first iterator
-#[derive(Debug, Clone)]
-pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
-    visited: Gridbool<W, H, WORDS>,
-    front: VecDeque<(Qa<W, H>, Qr)>,
-    nextfront: VecDeque<(Qa<W, H>, Qr)>,
-    go: F,
 }
 
 impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> Iterator

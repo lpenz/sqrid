@@ -11,6 +11,9 @@
 //! directory to their projects and use sqrid as its own module,
 //! without a crate dependency.
 
+pub mod base;
+pub use self::base::*;
+
 pub mod error;
 pub use self::error::*;
 

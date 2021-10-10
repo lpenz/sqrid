@@ -47,18 +47,18 @@ pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; S
 /// Helper macro for grid type creation.
 ///
 /// More often than not we want to create a grid form an associated
-/// [`Qa`] type. This macros makes the process easier.
+/// [`super::base::Sqrid`] type. This macros makes the process easier.
 ///
 /// Example usage:
 /// ```
-/// type Qa = sqrid::Qa<3, 3>;
-/// type Grid = sqrid::grid_create!(Qa, i32);
+/// type Sqrid = sqrid::sqrid_create!(3, 3, false);
+/// type Grid = sqrid::grid_create!(Sqrid, i32);
 /// ```
 #[macro_export]
 macro_rules! grid_create {
-    ($qatype: ty, $member: ty) => {
-        $crate::Grid<$member, { <$qatype>::WIDTH }, { <$qatype>::HEIGHT },
-                     { (<$qatype>::WIDTH as usize * <$qatype>::HEIGHT as usize) }>
+    ($sqrid: ty, $member: ty) => {
+        $crate::Grid<$member, { <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT },
+                     { (<$sqrid>::WIDTH as usize * <$sqrid>::HEIGHT as usize) }>
     };
 }
 

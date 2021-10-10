@@ -44,6 +44,20 @@ pub struct Qa<const WIDTH: u16, const HEIGHT: u16> {
     y: u16,
 }
 
+/// Helper macro to a [`Qa`] type from an [`super::base::Sqrid`].
+///
+/// Example usage:
+/// ```
+/// type Sqrid = sqrid::sqrid_create!(3, 3, false);
+/// type Qa = sqrid::qa_create!(Sqrid);
+/// ```
+#[macro_export]
+macro_rules! qa_create {
+    ($sqrid: ty) => {
+        $crate::Qa::<{ <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT }>
+    };
+}
+
 impl<const W: u16, const H: u16> Qa<W, H> {
     /// Width of the grid: exclusive max of the x coordinate.
     pub const WIDTH: u16 = W;

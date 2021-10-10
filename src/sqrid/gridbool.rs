@@ -43,18 +43,18 @@ pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u3
 /// Helper macro for Gridbool type creation.
 ///
 /// More often than not we want to create a grid form an associated
-/// [`Qa`] type. This macros makes the process easier.
+/// [`super::base::Sqrid`] type. This macros makes the process easier.
 ///
 /// Example usage:
 /// ```
-/// type Qa = sqrid::Qa<3, 3>;
-/// type Gridbool = sqrid::gridbool_create!(Qa);
+/// type Sqrid = sqrid::sqrid_create!(3, 3, false);
+/// type Gridbool = sqrid::gridbool_create!(Sqrid);
 /// ```
 #[macro_export]
 macro_rules! gridbool_create {
-    ($qatype: ty) => {
-        $crate::Gridbool<{ <$qatype>::WIDTH }, { <$qatype>::HEIGHT },
-        { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize) + 31) / 32) }>
+    ($sqrid: ty) => {
+        $crate::Gridbool<{ <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT },
+        { (((<$sqrid>::WIDTH as usize) * (<$sqrid>::HEIGHT as usize) + 31) / 32) }>
     };
 }
 

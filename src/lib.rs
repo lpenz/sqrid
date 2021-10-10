@@ -14,18 +14,21 @@
 //! - [`Qa`]: position, as absolute coordinates in a grid of fixed
 //!   size. The dimensions of the grid are const generics type
 //!   parameters; invalid coordinates can't be created.
-//! - [`Qr`]: "movement", relative coordinates. These are the cardinal
-//!   (and intercardinal) directions.
+//! - [`Qr`]: "movement", relative coordinates. These are the
+//!   cardinal (and intercardinal) directions.
 //!   Addition is implemented in the form of `Qa + Qr = Option<Qa>`,
 //!   which can be `None` if the result is outside the grid.
 //! - [`Grid`]: a `Qa`-indexed array.
 //! - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
-//! - [`Bf`]: breadth-first traversal tools.
+//! - [`Sqrid`]: "factory" type that acts as an entry point to the
+//!   fundamental types below and to algorithms.
 //!
 //! All basic types have the standard `iter`, `iter_mut`, `extend`,
 //! `as_ref`, and conversion operations that should be expected.
 //!
-//! # `Qa`: absolute coordinates, position
+//! # Fundamental types
+//!
+//! ## `Qa`: absolute coordinates, position
 //!
 //! The [`Qa`] type represents an absolute position in a square
 //! grid. The type itself receives the height and width of the grid as
@@ -55,7 +58,7 @@
 //!   const MY_FIRST : Qa = Qa::new::<12, 4>();
 //!   ```
 //!
-//! # `Qr`: relative coordinates, direction, movement
+//! ## `Qr`: relative coordinates, direction, movement
 //!
 //! This type represents a relative movement of one square. It can
 //! only be one of the 8 cardinal and intercardinal directions:
@@ -71,11 +74,11 @@
 //! argument that specifies whether the intercardinal directions
 //! (`NE`, `SE`, `SW`, `NW`) should be considered.
 //!
-//! # `Grid`: a `Qa`-indexed array
+//! ## `Grid`: a `Qa`-indexed array
 //!
 //! A grid is a generic array that can be indexed by a [`Qa`]
 //!
-//! We can create the type from a suitable [`Qa`] type by using the
+//! We can create the type from a suitable [`Sqrid`] type by using the
 //! [`grid_create`] macro. We can then interact with specific lines
 //! with [`Grid::line`] and [`Grid::line_mut`], or with the whole
 //! underlying array with [`as_ref`](std::convert::AsRef) and
@@ -84,12 +87,13 @@
 //! Usage example:
 //!
 //! ```rust
-//! type Qa = sqrid::Qa<3, 3>;
-//! type Grid = sqrid::grid_create!(Qa, i32);
+//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Grid = sqrid::grid_create!(Sqrid, i32);
 //!
 //! // The grid create macro above is currently equivalent to:
-//! type Grid2 = sqrid::Grid<i32, { Qa::WIDTH }, { Qa::HEIGHT },
-//!                               { (Qa::WIDTH * Qa::HEIGHT) as usize }>;
+//! type Grid2 = sqrid::Grid<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
+//!                               { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
 //!
 //! // We can create grids from iterators via `collect`:
 //! let mut gridnums = (0..9).collect::<Grid>();
@@ -115,7 +119,7 @@
 //! gridnums.as_mut().reverse();
 //! ```
 //!
-//! # `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
+//! ## `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
 //!
 //! `Gridbool` is a compact abstraction of a grid of booleans.
 //!
@@ -129,8 +133,9 @@
 //! Usage example:
 //!
 //! ```rust
-//! type Qa = sqrid::Qa<3, 3>;
-//! type Gridbool = sqrid::gridbool_create!(Qa);
+//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Gridbool = sqrid::gridbool_create!(Sqrid);
 //!
 //! // We can create a gridbool from a Qa iterator via `collect`:
 //! let mut gb = Qa::iter().filter(|qa| qa.is_corner()).collect::<Gridbool>();
@@ -154,25 +159,44 @@
 //! }
 //! ```
 //!
-//! # `Bf`: breadth-first traversal tools
+//! # `Sqrid`: entry point for algorithms
 //!
-//! The [`Bf`] struct acts as a entry point for all breadth-first
-//! algorithms. It holds the generic const parameters and should be
-//! aliased to be used as a "pseudo-module" to call functions that
-//! need to instantiate other structs.
+//! The [`Qa`] type and some methods on the [`Qr`] type require const
+//! generic arguments that usually don't change inside an application.
+//! Both [`Grid`] and [`Gridbool`] also require further arguments that
+//! can actually be derived from the width and height of the grid, but
+//! that have to be explicitly specified due to some Rust limitations.
 //!
-//! One such tool is [`Bf::iter`], that can be used to iterate
-//! coordinates in breadth-first order, from a given origin, using a
-//! provided function to evaluate a given [`Qa`] position + [`Qr`]
-//! direction into the next `Qa` position.
+//! To make the creation of these types easier, we provide the
+//! [`Sqrid`] type, which acumulates all const generic parameters and
+//! can be used to create the other types via macros.
 //!
 //! Example usage:
 //!
 //! ```rust
-//! type Qa = sqrid::Qa<4,4>;
-//! type Bf = sqrid::bf_create!(Qa, false);
+//! type Sqrid = sqrid::sqrid_create!(4, 4, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Grid = sqrid::grid_create!(Sqrid, i32);
+//! type Gridbool = sqrid::gridbool_create!(Sqrid);
+//! ```
 //!
-//! for (qa, qr) in Bf::iter(&Qa::CENTER, sqrid::qaqr_eval) {
+//! # Algorithms
+//!
+//! ## Breadth-first traversal
+//!
+//! The [`Sqrid::bf_iter`] instantiates an iterator struct
+//! ([`BfIterator`]) that can be used to iterate coordinates in
+//! breadth-first order, from a given origin, using a provided
+//! function to evaluate a given [`Qa`] position + [`Qr`] direction
+//! into the next `Qa` position.
+//!
+//! Example usage:
+//!
+//! ```rust
+//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//!
+//! for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval) {
 //!     println!("breadth-first qa {} from {}", qa, qr);
 //! }
 //! ```

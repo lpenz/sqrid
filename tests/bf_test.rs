@@ -8,9 +8,9 @@ use anyhow::Result;
 use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<3, 3>;
-type Bf = sqrid::bf_create!(Qa, false);
+type Sqrid = sqrid::sqrid_create!(Qa, false);
 type Qa2 = sqrid::Qa<256, 256>;
-type Bf2 = sqrid::bf_create!(Qa2, false);
+type Sqrid2 = sqrid::sqrid_create!(Qa2, false);
 
 fn sumfunc(qa: Qa, qr: sqrid::Qr) -> Option<Qa> {
     qa + qr
@@ -19,7 +19,7 @@ fn sumfunc(qa: Qa, qr: sqrid::Qr) -> Option<Qa> {
 #[test]
 fn test_basic() -> Result<()> {
     let center = Qa::try_from((1, 1))?;
-    let bfiterator = Bf::iter(&center, sumfunc);
+    let bfiterator = Sqrid::bf_iter(&center, sumfunc);
     let bfiterator2 = bfiterator.clone();
     let v = bfiterator2.map(|(qa, _)| qa.tuple()).collect::<Vec<_>>();
     assert_eq!(
@@ -41,7 +41,7 @@ fn test_basic() -> Result<()> {
 #[test]
 fn test_walls() -> Result<()> {
     let center = Qa::try_from((1, 1))?;
-    let v = Bf::iter(&center, |qa, qr| {
+    let v = Sqrid::bf_iter(&center, |qa, qr| {
         (qa + qr).and_then(|qa| {
             let t = qa.tuple();
             if t != (0, 1) && t != (2, 1) {
@@ -59,7 +59,7 @@ fn test_walls() -> Result<()> {
 
 #[test]
 fn test_scale() -> Result<()> {
-    let v = Bf2::iter(&Qa2::TOP_LEFT, |qa, qr| qa + qr)
+    let v = Sqrid2::bf_iter(&Qa2::TOP_LEFT, |qa, qr| qa + qr)
         .map(|(qa, _)| qa)
         .collect::<Vec<_>>();
     assert_eq!(v.len(), 256 * 256 - 1);
