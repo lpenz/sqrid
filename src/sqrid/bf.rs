@@ -7,7 +7,6 @@
 
 //! Breadth-first iterator module
 
-use std::collections::VecDeque;
 use std::mem;
 
 use super::Gridbool;
@@ -35,8 +34,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 #[derive(Debug, Clone)]
 pub struct BfIterator<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> {
     visited: Gridbool<W, H, WORDS>,
-    front: VecDeque<(Qa<W, H>, Qr)>,
-    nextfront: VecDeque<(Qa<W, H>, Qr)>,
+    nextfront: Vec<(Qa<W, H>, Qr)>,
     go: F,
 }
 
@@ -55,8 +53,7 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
     {
         let mut bfs = BfIterator {
             visited: Default::default(),
-            front: VecDeque::from(vec![(*orig, Qr::default())]),
-            nextfront: Default::default(),
+            nextfront: vec![(*orig, Qr::default())],
             go,
         };
         // Process origins:
@@ -70,33 +67,24 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize> Iterator
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
 {
-    type Item = (Qa<W, H>, Qr);
+    type Item = Vec<(Qa<W, H>, Qr)>;
     fn next(&mut self) -> Option<Self::Item> {
-        while !self.front.is_empty() || !self.nextfront.is_empty() {
-            if self.front.is_empty() {
-                self.front = mem::take(&mut self.nextfront);
-            }
-            while let Some(qaqr) = self.front.pop_front() {
-                let qa = qaqr.0;
-                if self.visited.get(qa) {
-                    continue;
-                }
-                let topush = Qr::iter::<D>()
-                    .filter_map(|qr| {
-                        (self.go)(qa, qr).and_then(|nextqa| {
-                            if !self.visited.get(nextqa) {
-                                Some((nextqa, -qr))
-                            } else {
-                                None
-                            }
-                        })
-                    })
-                    .collect::<VecDeque<(Qa<W, H>, Qr)>>();
-                self.nextfront.extend(topush);
-                self.visited.set_t(qa);
-                return Some(qaqr);
-            }
+        let front = mem::take(&mut self.nextfront);
+        if front.is_empty() {
+            return None;
         }
-        None
+        for &(qa, _) in &front {
+            for qr in Qr::iter::<D>() {
+                if let Some(nextqa) = (self.go)(qa, qr) {
+                    if self.visited.get(nextqa) {
+                        continue;
+                    }
+                    self.nextfront.push((nextqa, -qr));
+                    self.visited.set_t(nextqa);
+                }
+            }
+            self.visited.set_t(qa);
+        }
+        Some(front)
     }
 }

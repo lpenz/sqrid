@@ -21,7 +21,10 @@ fn test_basic() -> Result<()> {
     let center = Qa::try_from((1, 1))?;
     let bfiterator = Sqrid::bf_iter(&center, sumfunc);
     let bfiterator2 = bfiterator.clone();
-    let v = bfiterator2.map(|(qa, _)| qa.tuple()).collect::<Vec<_>>();
+    let v = bfiterator2
+        .flatten()
+        .map(|(qa, _)| qa.tuple())
+        .collect::<Vec<_>>();
     assert_eq!(
         v,
         vec![
@@ -51,6 +54,7 @@ fn test_walls() -> Result<()> {
             }
         })
     })
+    .flatten()
     .map(|(qa, _)| qa.tuple())
     .collect::<Vec<_>>();
     assert_eq!(v, vec![(1, 0), (1, 2), (2, 0), (0, 0), (2, 2), (0, 2)],);
@@ -60,6 +64,7 @@ fn test_walls() -> Result<()> {
 #[test]
 fn test_scale() -> Result<()> {
     let v = Sqrid2::bf_iter(&Qa2::TOP_LEFT, |qa, qr| qa + qr)
+        .flatten()
         .map(|(qa, _)| qa)
         .collect::<Vec<_>>();
     assert_eq!(v.len(), 256 * 256 - 1);

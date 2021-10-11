@@ -29,7 +29,8 @@ pub struct Sqrid<const W: u16, const H: u16, const D: bool, const WORDS: usize, 
 /// type Sqrid = sqrid::sqrid_create!(4, 4, false);
 /// type Qa = sqrid::qa_create!(Sqrid);
 ///
-/// for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval) {
+/// for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval)
+///                 .flatten() {
 ///     println!("breadth-first qa {} from {}", qa, qr);
 /// }
 /// ```

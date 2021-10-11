@@ -196,7 +196,8 @@
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
 //! type Qa = sqrid::qa_create!(Sqrid);
 //!
-//! for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval) {
+//! for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval)
+//!                 .flatten() {
 //!     println!("breadth-first qa {} from {}", qa, qr);
 //! }
 //! ```
