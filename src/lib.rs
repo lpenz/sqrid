@@ -184,7 +184,7 @@
 //!
 //! ## Breadth-first traversal
 //!
-//! The [`Sqrid::bf_iter`] instantiates an iterator struct
+//! The [`Sqrid::bf_iter`] function instantiates an iterator struct
 //! ([`BfIterator`]) that can be used to iterate coordinates in
 //! breadth-first order, from a given origin, using a provided
 //! function to evaluate a given [`Qa`] position + [`Qr`] direction
@@ -199,6 +199,38 @@
 //! for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval)
 //!                 .flatten() {
 //!     println!("breadth-first qa {} from {}", qa, qr);
+//! }
+//! ```
+//!
+//! ## Breadth-first search
+//!
+//! [`Sqrid::bfs`] takes an origin, a movement function and a goal
+//! function, and figures out the shortest path to a goal by using a
+//! breadth-first iteration.
+//!
+//! The function returns the [`Qa`] that fulfills the goal and a
+//! [`Grid`] of [`Qr`] that represents the "came from"
+//! direction. We can then use the [`Grid::camefrom_into_path`] method
+//! to get a vector of directions that take us from the origin to the
+//! goal.
+//!
+//! Example usage:
+//!
+//! ```
+//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//!
+//! // Generate the grid of "came from" directions from bottom-right to
+//! // top-left:
+//! if let Some((goal, mut camefrom_grid)) =
+//!     Sqrid::bfs(&Qa::TOP_LEFT, sqrid::qaqr_eval,
+//!                |qa| qa == Qa::BOTTOM_RIGHT) {
+//!     // `goal` is Qa::BOTTOM_RIGHT
+//!     // Get the path as a vector of directions:
+//!     if let Ok(path) = camefrom_grid.camefrom_into_path(&Qa::TOP_LEFT,
+//!                                                        &Qa::BOTTOM_RIGHT) {
+//!         println!("path: {:?}", path);
+//!     }
 //! }
 //! ```
 //!

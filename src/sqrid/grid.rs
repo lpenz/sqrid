@@ -468,7 +468,9 @@ impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
 
 // Display, with helper
 
-/// TODO
+/// Grid Display helper function
+///
+/// Used in Display implementation of Grid and Gridbool.
 pub fn display_fmt_helper(
     f: &mut fmt::Formatter<'_>,
     w: u16,

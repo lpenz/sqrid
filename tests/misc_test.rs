@@ -15,10 +15,10 @@ type Grid = sqrid::grid_create!(Qa, Qr);
 #[test]
 fn test_path() -> Result<()> {
     let grid = Grid::repeat(Qr::E);
-    let path = grid.path(&Qa::TOP_LEFT, &Qa::BOTTOM_RIGHT)?;
+    let path = grid.goto_into_path(&Qa::TOP_LEFT, &Qa::BOTTOM_RIGHT)?;
     assert_eq!(path, vec![Qr::E, Qr::E, Qr::E, Qr::E,]);
     for dest in Qa::iter() {
-        let path = grid.path(&Qa::TOP_LEFT, &dest)?;
+        let path = grid.goto_into_path(&Qa::TOP_LEFT, &dest)?;
         let mut qa = Qa::TOP_LEFT;
         for qr in &path {
             qa = (qa + qr).ok_or(anyhow!("error adding"))?;
@@ -31,7 +31,7 @@ fn test_path() -> Result<()> {
 #[test]
 fn test_leavegrid() -> Result<()> {
     let grid = Grid::repeat(Qr::E);
-    let e = grid.path(&Qa::CENTER, &Qa::TOP_LEFT);
+    let e = grid.goto_into_path(&Qa::CENTER, &Qa::TOP_LEFT);
     assert_eq!(e, Err(Error::InvalidMovement));
     eprintln!("{}", e.unwrap_err());
     Ok(())
@@ -41,7 +41,7 @@ fn test_leavegrid() -> Result<()> {
 fn test_loop() -> Result<()> {
     let mut grid = Grid::repeat(Qr::E);
     grid[Qa::CENTER] = Qr::W;
-    let e = grid.path(&Qa::TOP_LEFT, &Qa::BOTTOM_RIGHT);
+    let e = grid.goto_into_path(&Qa::TOP_LEFT, &Qa::BOTTOM_RIGHT);
     assert_eq!(e, Err(Error::Loop));
     eprintln!("{}", e.unwrap_err());
     Ok(())

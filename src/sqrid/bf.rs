@@ -9,6 +9,7 @@
 
 use std::mem;
 
+use super::Grid;
 use super::Gridbool;
 use super::Qa;
 use super::Qr;
@@ -25,6 +26,15 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
         BfIterator::<F, W, H, D, WORDS>::new(orig, go)
+    }
+
+    /// Perform a breadth-first search; see [`search`]
+    pub fn bfs<F, G>(orig: &Qa<W, H>, go: F, found: G) -> Option<(Qa<W, H>, Grid<Qr, W, H, SIZE>)>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+        G: Fn(Qa<W, H>) -> bool,
+    {
+        search::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)
     }
 }
 
@@ -87,4 +97,57 @@ where
         }
         Some(front)
     }
+}
+
+/// Make a breadth-first search
+///
+/// Starting at `origin`, iterate coordinates in breadth-first order using
+/// `go` to get more coordinates, until `found` returns true. When that happens,
+/// return the grid of directions filled by the iteration going from `dest` to
+/// `orig` (note: this is the reverse of what one would expect).
+///
+/// Example usage:
+///
+/// ```
+/// type Sqrid = sqrid::sqrid_create!(3, 3, false);
+/// type Qa = sqrid::qa_create!(Sqrid);
+///
+/// // Generate the grid of "came from" directions from bottom-right to
+/// // top-left:
+/// if let Some((goal, mut camefrom_grid)) =
+///     Sqrid::bfs(&Qa::TOP_LEFT, sqrid::qaqr_eval,
+///                |qa| qa == Qa::BOTTOM_RIGHT) {
+///     // `goal` is Qa::BOTTOM_RIGHT
+///     // Get the path as a vector of directions:
+///     if let Ok(path) = camefrom_grid.camefrom_into_path(&Qa::TOP_LEFT,
+///                                                        &Qa::BOTTOM_RIGHT) {
+///         println!("path: {:?}", path);
+///     }
+/// }
+/// ```
+pub fn search<
+    G,
+    F,
+    const W: u16,
+    const H: u16,
+    const D: bool,
+    const WORDS: usize,
+    const SIZE: usize,
+>(
+    orig: &Qa<W, H>,
+    go: F,
+    found: G,
+) -> Option<(Qa<W, H>, Grid<Qr, W, H, SIZE>)>
+where
+    F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+    G: Fn(Qa<W, H>) -> bool,
+{
+    let mut from = Grid::<Qr, W, H, SIZE>::default();
+    for (qa, qr) in BfIterator::<F, W, H, D, WORDS>::new(orig, go).flatten() {
+        from[qa] = qr;
+        if found(qa) {
+            return Some((qa, from));
+        }
+    }
+    None
 }
