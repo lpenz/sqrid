@@ -26,11 +26,10 @@ pub use self::qaqr::*;
 
 pub mod grid;
 pub use self::grid::*;
+pub mod qrgrid;
+pub use self::qrgrid::*;
 pub mod gridbool;
 pub use self::gridbool::*;
 
 pub mod bf;
 pub use self::bf::*;
-
-pub mod misc;
-pub use self::misc::*;

@@ -5,12 +5,7 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 
-//! Module with misc functions that don't fit elsewhere, usually due
-//! to dependencies
-//!
-//! Functions and implementations in this module are allowed to depend
-//! on all other modules. Most of them bridge functionality between
-//! modules that don't have a dependency relationship.
+//! Module with functions for "direction grids" (Grid<Qr>)
 
 use super::error::Error;
 use super::grid::Grid;
