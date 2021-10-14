@@ -183,7 +183,7 @@ type Gridbool = sqrid::gridbool_create!(Sqrid);
 
 ### Breadth-first traversal
 
-The [`Sqrid::bf_iter`] instantiates an iterator struct
+The [`Sqrid::bf_iter`] function instantiates an iterator struct
 ([`BfIterator`]) that can be used to iterate coordinates in
 breadth-first order, from a given origin, using a provided
 function to evaluate a given [`Qa`] position + [`Qr`] direction
@@ -195,8 +195,32 @@ Example usage:
 type Sqrid = sqrid::sqrid_create!(3, 3, false);
 type Qa = sqrid::qa_create!(Sqrid);
 
-for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval) {
+for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval)
+                .flatten() {
     println!("breadth-first qa {} from {}", qa, qr);
+}
+```
+
+### Breadth-first search
+
+[`Sqrid::bfs_path`] takes an origin, a movement function and a
+goal function, and figures out the shortest path to a goal by
+using a breadth-first iteration.
+
+The function returns the [`Qa`] that fulfills the goal and a
+path in the form of a `Vec<Qr>`.
+
+Example usage:
+
+```rust
+type Sqrid = sqrid::sqrid_create!(3, 3, false);
+type Qa = sqrid::qa_create!(Sqrid);
+
+// Generate the grid of "came from" directions from bottom-right to
+// top-left:
+if let Ok(path) = Sqrid::bfs_path(&Qa::TOP_LEFT, sqrid::qaqr_eval,
+                                  |qa| qa == Qa::BOTTOM_RIGHT) {
+    println!("path: {:?}", path);
 }
 ```
 

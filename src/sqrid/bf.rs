@@ -9,6 +9,7 @@
 
 use std::mem;
 
+use super::Error;
 use super::Grid;
 use super::Gridbool;
 use super::Qa;
@@ -28,13 +29,26 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         BfIterator::<F, W, H, D, WORDS>::new(orig, go)
     }
 
-    /// Perform a breadth-first search; see [`search`]
-    pub fn bfs<F, G>(orig: &Qa<W, H>, go: F, found: G) -> Option<(Qa<W, H>, Grid<Qr, W, H, SIZE>)>
+    /// Perform a breadth-first search; see [`search_qrgrid`]
+    pub fn bfs_qrgrid<F, G>(
+        orig: &Qa<W, H>,
+        go: F,
+        found: G,
+    ) -> Result<(Qa<W, H>, Grid<Qr, W, H, SIZE>), Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         G: Fn(Qa<W, H>) -> bool,
     {
-        search::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)
+        search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)
+    }
+
+    /// Perform a breadth-first search; see [`search_path`]
+    pub fn bfs_path<F, G>(orig: &Qa<W, H>, go: F, found: G) -> Result<(Qa<W, H>, Vec<Qr>), Error>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+        G: Fn(Qa<W, H>) -> bool,
+    {
+        search_path::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)
     }
 }
 
@@ -99,7 +113,8 @@ where
     }
 }
 
-/// Make a breadth-first search
+/// Make a breadth-first search, return the "came from" direction grid
+/// (Grid<Qr>)
 ///
 /// Starting at `origin`, iterate coordinates in breadth-first order using
 /// `go` to get more coordinates, until `found` returns true. When that happens,
@@ -114,9 +129,9 @@ where
 ///
 /// // Generate the grid of "came from" directions from bottom-right to
 /// // top-left:
-/// if let Some((goal, mut camefrom_grid)) =
-///     Sqrid::bfs(&Qa::TOP_LEFT, sqrid::qaqr_eval,
-///                |qa| qa == Qa::BOTTOM_RIGHT) {
+/// if let Ok((goal, mut camefrom_grid)) =
+///     Sqrid::bfs_qrgrid(&Qa::TOP_LEFT, sqrid::qaqr_eval,
+///                       |qa| qa == Qa::BOTTOM_RIGHT) {
 ///     // `goal` is Qa::BOTTOM_RIGHT
 ///     // Get the path as a vector of directions:
 ///     if let Ok(path) = camefrom_grid.camefrom_into_path(&Qa::TOP_LEFT,
@@ -125,7 +140,7 @@ where
 ///     }
 /// }
 /// ```
-pub fn search<
+pub fn search_qrgrid<
     G,
     F,
     const W: u16,
@@ -137,7 +152,7 @@ pub fn search<
     orig: &Qa<W, H>,
     go: F,
     found: G,
-) -> Option<(Qa<W, H>, Grid<Qr, W, H, SIZE>)>
+) -> Result<(Qa<W, H>, Grid<Qr, W, H, SIZE>), Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     G: Fn(Qa<W, H>) -> bool,
@@ -146,8 +161,47 @@ where
     for (qa, qr) in BfIterator::<F, W, H, D, WORDS>::new(orig, go).flatten() {
         from[qa] = qr;
         if found(qa) {
-            return Some((qa, from));
+            return Ok((qa, from));
         }
     }
-    None
+    Err(Error::DestinationUnreachable)
+}
+
+/// Make a breadth-first search, return path (Vec<Qr>)
+///
+/// This is essentially [`search_qrgrid`] followed by a call to
+/// [`Grid::camefrom_into_path`].
+///
+/// Example usage:
+///
+/// ```
+/// type Sqrid = sqrid::sqrid_create!(3, 3, false);
+/// type Qa = sqrid::qa_create!(Sqrid);
+///
+/// // Generate the grid of "came from" directions from bottom-right to
+/// // top-left:
+/// if let Ok(path) = Sqrid::bfs_path(&Qa::TOP_LEFT, sqrid::qaqr_eval,
+///                                   |qa| qa == Qa::BOTTOM_RIGHT) {
+///     println!("path: {:?}", path);
+/// }
+/// ```
+pub fn search_path<
+    G,
+    F,
+    const W: u16,
+    const H: u16,
+    const D: bool,
+    const WORDS: usize,
+    const SIZE: usize,
+>(
+    orig: &Qa<W, H>,
+    go: F,
+    found: G,
+) -> Result<(Qa<W, H>, Vec<Qr>), Error>
+where
+    F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
+    G: Fn(Qa<W, H>) -> bool,
+{
+    let (dest, qrgrid) = search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)?;
+    Ok((dest, qrgrid.camefrom_into_path(orig, &dest)?))
 }

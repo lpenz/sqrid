@@ -25,6 +25,8 @@ pub enum Error {
     InvalidMovement,
     /// An unexpected coordinate loop has been detected.
     Loop,
+    /// A search algorithm unexpectedly could no reach the destination
+    DestinationUnreachable,
 }
 
 impl error::Error for Error {}
@@ -36,6 +38,7 @@ impl fmt::Display for Error {
             Error::InvalidDirection => write!(f, "invalid direction for Qr"),
             Error::InvalidMovement => write!(f, "invalid movement (Qa+Qr)"),
             Error::Loop => write!(f, "unexpected loop detected"),
+            Error::DestinationUnreachable => write!(f, "destination unreachable"),
         }
     }
 }
