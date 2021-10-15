@@ -38,7 +38,7 @@ macro_rules! const_assert {
 /// ```
 /// type Qa = sqrid::Qa<4, 4>;
 /// ```
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Qa<const WIDTH: u16, const HEIGHT: u16> {
     x: u16,
     y: u16,

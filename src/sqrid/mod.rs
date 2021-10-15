@@ -33,3 +33,5 @@ pub use self::gridbool::*;
 
 pub mod bf;
 pub use self::bf::*;
+pub mod astar;
+pub use self::astar::*;

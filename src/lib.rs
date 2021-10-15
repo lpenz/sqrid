@@ -23,6 +23,13 @@
 //! - [`Sqrid`]: "factory" type that acts as an entry point to the
 //!   fundamental types below and to algorithms.
 //!
+//! Besides these fundamental types, we also have some algorithms
+//! attached to [`Sqrid`]:
+//! - [`Sqrid::bf_iter`]: breadth-first iteration
+//! - [`Sqrid::bfs_path`]: breadth-first search that accepts an
+//!   arbitrary `found` function.
+//! - [`Sqrid::astar_path`]: A* search that takes a destination `Qa`
+//!
 //! All basic types have the standard `iter`, `iter_mut`, `extend`,
 //! `as_ref`, and conversion operations that should be expected.
 //!
@@ -219,8 +226,30 @@
 //!
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
-//! if let Ok(path) = Sqrid::bfs_path(&Qa::TOP_LEFT, sqrid::qaqr_eval,
-//!                                   |qa| qa == Qa::BOTTOM_RIGHT) {
+//! if let Ok((goal, path)) = Sqrid::bfs_path(
+//!                               &Qa::TOP_LEFT, sqrid::qaqr_eval,
+//!                               |qa| qa == Qa::BOTTOM_RIGHT) {
+//!     println!("goal: {}, path: {:?}", goal, path);
+//! }
+//! ```
+//!
+//! ## A* search
+//!
+//! [`Sqrid::astar_path`] takes a movement function, an origin and a
+//! destination, and figures out the shortest path by using A*.
+//!
+//! The function returns path in the form of a `Vec<Qr>`.
+//!
+//! Example usage:
+//!
+//! ```rust
+//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//!
+//! // Generate the grid of "came from" directions from bottom-right to
+//! // top-left:
+//! if let Ok(path) = Sqrid::astar_path(sqrid::qaqr_eval, &Qa::TOP_LEFT,
+//!                                     &Qa::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);
 //! }
 //! ```

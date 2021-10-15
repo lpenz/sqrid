@@ -180,9 +180,10 @@ where
 ///
 /// // Generate the grid of "came from" directions from bottom-right to
 /// // top-left:
-/// if let Ok(path) = Sqrid::bfs_path(&Qa::TOP_LEFT, sqrid::qaqr_eval,
-///                                   |qa| qa == Qa::BOTTOM_RIGHT) {
-///     println!("path: {:?}", path);
+/// if let Ok((goal, path)) = Sqrid::bfs_path(
+///                               &Qa::TOP_LEFT, sqrid::qaqr_eval,
+///                               |qa| qa == Qa::BOTTOM_RIGHT) {
+///     println!("goal: {}, path: {:?}", goal, path);
 /// }
 /// ```
 pub fn search_path<

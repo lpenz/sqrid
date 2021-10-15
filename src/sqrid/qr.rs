@@ -27,7 +27,7 @@ use super::error::Error;
 /// `Qa` type represents nodes.
 ///
 /// Internally, 0 reprents N, 1 is NE and so forth until 7.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Qr {
     /// North, or up
     N = 0,
