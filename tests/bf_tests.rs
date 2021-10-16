@@ -19,7 +19,7 @@ fn sumfunc(qa: Qa, qr: sqrid::Qr) -> Option<Qa> {
 #[test]
 fn test_basic() -> Result<()> {
     let center = Qa::try_from((1, 1))?;
-    let bfiterator = Sqrid::bf_iter(&center, sumfunc);
+    let bfiterator = Sqrid::bf_iter(sumfunc, &center);
     let bfiterator2 = bfiterator.clone();
     let v = bfiterator2
         .flatten()
@@ -44,16 +44,19 @@ fn test_basic() -> Result<()> {
 #[test]
 fn test_walls() -> Result<()> {
     let center = Qa::try_from((1, 1))?;
-    let v = Sqrid::bf_iter(&center, |qa, qr| {
-        (qa + qr).and_then(|qa| {
-            let t = qa.tuple();
-            if t != (0, 1) && t != (2, 1) {
-                Some(qa)
-            } else {
-                None
-            }
-        })
-    })
+    let v = Sqrid::bf_iter(
+        |qa, qr| {
+            (qa + qr).and_then(|qa| {
+                let t = qa.tuple();
+                if t != (0, 1) && t != (2, 1) {
+                    Some(qa)
+                } else {
+                    None
+                }
+            })
+        },
+        &center,
+    )
     .flatten()
     .map(|(qa, _)| qa.tuple())
     .collect::<Vec<_>>();
@@ -63,7 +66,7 @@ fn test_walls() -> Result<()> {
 
 #[test]
 fn test_scale() -> Result<()> {
-    let v = Sqrid2::bf_iter(&Qa2::TOP_LEFT, |qa, qr| qa + qr)
+    let v = Sqrid2::bf_iter(|qa, qr| qa + qr, &Qa2::TOP_LEFT)
         .flatten()
         .map(|(qa, _)| qa)
         .collect::<Vec<_>>();

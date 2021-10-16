@@ -53,10 +53,10 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         eprintln!("from {} to {}: {}", qa, end, i);
         eprintln!("{}", wall);
         // BFS:
-        let (g1, dirgrid) = Sqrid::bfs_qrgrid(&qa, path(&wall), goal(&end))?;
+        let (g1, dirgrid) = Sqrid::bfs_qrgrid(path(&wall), &qa, goal(&end))?;
         assert_eq!(g1, *end);
         let path1 = dirgrid.camefrom_into_path(&qa, &end)?;
-        let (g2, path2) = Sqrid::bfs_path(&qa, path(&wall), goal(&end))?;
+        let (g2, path2) = Sqrid::bfs_path(path(&wall), &qa, goal(&end))?;
         assert_eq!(g1, g2);
         assert_eq!(path1, path2);
         eprintln!("{:?}", path1);

@@ -22,33 +22,33 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     Sqrid<W, H, D, WORDS, SIZE>
 {
     /// Create new breadth-first iterator; see [`BfIterator::new`]
-    pub fn bf_iter<F>(orig: &Qa<W, H>, go: F) -> BfIterator<F, W, H, D, WORDS>
+    pub fn bf_iter<F>(go: F, orig: &Qa<W, H>) -> BfIterator<F, W, H, D, WORDS>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        BfIterator::<F, W, H, D, WORDS>::new(orig, go)
+        BfIterator::<F, W, H, D, WORDS>::new(go, orig)
     }
 
     /// Perform a breadth-first search; see [`search_qrgrid`]
     pub fn bfs_qrgrid<F, G>(
-        orig: &Qa<W, H>,
         go: F,
+        orig: &Qa<W, H>,
         found: G,
     ) -> Result<(Qa<W, H>, Grid<Qr, W, H, SIZE>), Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         G: Fn(Qa<W, H>) -> bool,
     {
-        search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)
+        search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 
     /// Perform a breadth-first search; see [`search_path`]
-    pub fn bfs_path<F, G>(orig: &Qa<W, H>, go: F, found: G) -> Result<(Qa<W, H>, Vec<Qr>), Error>
+    pub fn bfs_path<F, G>(go: F, orig: &Qa<W, H>, found: G) -> Result<(Qa<W, H>, Vec<Qr>), Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         G: Fn(Qa<W, H>) -> bool,
     {
-        search_path::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)
+        search_path::<G, F, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 }
 
@@ -71,7 +71,7 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
     /// from a given origin, using a provided function to evaluate a
     /// given [`Qa`] position + [`Qr`] direction into the next `Qa`
     /// position.
-    pub fn new(orig: &Qa<W, H>, go: F) -> BfIterator<F, W, H, D, WORDS>
+    pub fn new(go: F, orig: &Qa<W, H>) -> BfIterator<F, W, H, D, WORDS>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
@@ -130,7 +130,7 @@ where
 /// // Generate the grid of "came from" directions from bottom-right to
 /// // top-left:
 /// if let Ok((goal, mut camefrom_grid)) =
-///     Sqrid::bfs_qrgrid(&Qa::TOP_LEFT, sqrid::qaqr_eval,
+///     Sqrid::bfs_qrgrid(sqrid::qaqr_eval, &Qa::TOP_LEFT,
 ///                       |qa| qa == Qa::BOTTOM_RIGHT) {
 ///     // `goal` is Qa::BOTTOM_RIGHT
 ///     // Get the path as a vector of directions:
@@ -149,8 +149,8 @@ pub fn search_qrgrid<
     const WORDS: usize,
     const SIZE: usize,
 >(
-    orig: &Qa<W, H>,
     go: F,
+    orig: &Qa<W, H>,
     found: G,
 ) -> Result<(Qa<W, H>, Grid<Qr, W, H, SIZE>), Error>
 where
@@ -158,7 +158,7 @@ where
     G: Fn(Qa<W, H>) -> bool,
 {
     let mut from = Grid::<Qr, W, H, SIZE>::default();
-    for (qa, qr) in BfIterator::<F, W, H, D, WORDS>::new(orig, go).flatten() {
+    for (qa, qr) in BfIterator::<F, W, H, D, WORDS>::new(go, orig).flatten() {
         from[qa] = qr;
         if found(qa) {
             return Ok((qa, from));
@@ -181,7 +181,7 @@ where
 /// // Generate the grid of "came from" directions from bottom-right to
 /// // top-left:
 /// if let Ok((goal, path)) = Sqrid::bfs_path(
-///                               &Qa::TOP_LEFT, sqrid::qaqr_eval,
+///                               sqrid::qaqr_eval, &Qa::TOP_LEFT,
 ///                               |qa| qa == Qa::BOTTOM_RIGHT) {
 ///     println!("goal: {}, path: {:?}", goal, path);
 /// }
@@ -195,14 +195,14 @@ pub fn search_path<
     const WORDS: usize,
     const SIZE: usize,
 >(
-    orig: &Qa<W, H>,
     go: F,
+    orig: &Qa<W, H>,
     found: G,
 ) -> Result<(Qa<W, H>, Vec<Qr>), Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     G: Fn(Qa<W, H>) -> bool,
 {
-    let (dest, qrgrid) = search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(orig, go, found)?;
+    let (dest, qrgrid) = search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(go, orig, found)?;
     Ok((dest, qrgrid.camefrom_into_path(orig, &dest)?))
 }

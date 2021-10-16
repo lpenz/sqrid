@@ -203,7 +203,7 @@
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
 //! type Qa = sqrid::qa_create!(Sqrid);
 //!
-//! for (qa, qr) in Sqrid::bf_iter(&Qa::CENTER, sqrid::qaqr_eval)
+//! for (qa, qr) in Sqrid::bf_iter(sqrid::qaqr_eval, &Qa::CENTER)
 //!                 .flatten() {
 //!     println!("breadth-first qa {} from {}", qa, qr);
 //! }
@@ -227,7 +227,7 @@
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
 //! if let Ok((goal, path)) = Sqrid::bfs_path(
-//!                               &Qa::TOP_LEFT, sqrid::qaqr_eval,
+//!                               sqrid::qaqr_eval, &Qa::TOP_LEFT,
 //!                               |qa| qa == Qa::BOTTOM_RIGHT) {
 //!     println!("goal: {}, path: {:?}", goal, path);
 //! }
