@@ -303,6 +303,32 @@ where
     }
 }
 
+impl<const W: u16, const H: u16, const WORDS: usize> iter::FromIterator<bool>
+    for Gridbool<W, H, WORDS>
+{
+    #[inline]
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: iter::IntoIterator<Item = bool>,
+    {
+        let mut gb = Gridbool::<W, H, WORDS>::ALL_FALSE;
+        let mut it = iter.into_iter();
+        for qa in Qa::<W, H>::iter() {
+            if let Some(value) = it.next() {
+                gb.set(qa, value);
+            } else {
+                panic!("iterator too short for gridbool type");
+            }
+        }
+        if it.next().is_some() {
+            panic!("iterator too long for grid type");
+        }
+        gb
+    }
+}
+
+// display
+
 impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W, H, WORDS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         grid::display_fmt_helper(
