@@ -62,6 +62,7 @@ impl<const W: u16, const H: u16, const SIZE: usize> Grid<Qr, W, H, SIZE> {
                 return Err(Error::Loop);
             }
         }
+        ret.reverse();
         Ok(ret)
     }
 }

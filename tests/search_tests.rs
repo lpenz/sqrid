@@ -45,6 +45,16 @@ fn goal(end: &Qa) -> Box<impl Fn(Qa) -> bool + '_> {
     Box::new(move |qa| qa == *end)
 }
 
+fn test_path(wall: &Gridbool, orig: &Qa, dest: &Qa, path: &[sqrid::Qr]) -> Result<()> {
+    let mut qa = *orig;
+    for dir in path {
+        qa = (qa + dir).ok_or(anyhow!("invalid direction in path"))?;
+        assert!(!wall.get(qa), "hit wall");
+    }
+    assert_eq!(qa, *dest, "path not leading to dest");
+    Ok(())
+}
+
 fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result<()> {
     eprintln!("start {}, end {}", start, end);
     let mut qa = *start;
@@ -56,7 +66,9 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         let (g1, dirgrid) = Sqrid::bfs_qrgrid(path(&wall), &qa, goal(&end))?;
         assert_eq!(g1, *end);
         let path1 = dirgrid.camefrom_into_path(&qa, &end)?;
+        test_path(&wall, &qa, end, &path1)?;
         let (g2, path2) = Sqrid::bfs_path(path(&wall), &qa, goal(&end))?;
+        test_path(&wall, &qa, end, &path2)?;
         assert_eq!(g1, g2);
         assert_eq!(path1, path2);
         eprintln!("{:?}", path1);
@@ -64,12 +76,14 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         // A*:
         let dirgrid = Sqrid::astar_qrgrid(path(&wall), &qa, end)?;
         let path1 = dirgrid.camefrom_into_path(&qa, &end)?;
+        test_path(&wall, &qa, end, &path1)?;
         let path2 = Sqrid::astar_path(path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path2)?;
         assert_eq!(path1, path2);
         assert_eq!(path1.len(), i);
         // Try next coordinate:
-        let last = path1.last().ok_or(anyhow!("unexpected empty path"))?;
-        qa = (qa + last).ok_or(anyhow!("sum failed"))?;
+        let first = path1.first().ok_or(anyhow!("unexpected empty path"))?;
+        qa = (qa + first).ok_or(anyhow!("sum failed"))?;
         i -= 1;
     }
     Ok(())
