@@ -7,6 +7,8 @@
 
 //! Module with functions for "direction grids" (Grid<Qr>)
 
+use std::collections::VecDeque;
+
 use super::error::Error;
 use super::grid::Grid;
 use super::qa::Qa;
@@ -47,13 +49,14 @@ impl<const W: u16, const H: u16, const SIZE: usize> Grid<Qr, W, H, SIZE> {
     /// directions lead out of the grid, or [`Error::Loop`]
     /// if a cycle is found.
     pub fn camefrom_into_path(&self, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error> {
-        let mut ret: Vec<Qr> = vec![];
+        let distance = Qa::manhattan(orig, dest);
+        let mut ret = VecDeque::<Qr>::with_capacity(2 * distance);
         let mut qa = *dest;
         // Maximum iterations is the number of coordinates
         let mut maxiter = W as usize * H as usize + 1;
         while &qa != orig {
             let qr = self[qa];
-            ret.push(-qr);
+            ret.push_front(-qr);
             qa = (qa + qr).ok_or(Error::InvalidMovement)?;
             maxiter -= 1;
             if maxiter == 0 {
@@ -62,7 +65,6 @@ impl<const W: u16, const H: u16, const SIZE: usize> Grid<Qr, W, H, SIZE> {
                 return Err(Error::Loop);
             }
         }
-        ret.reverse();
-        Ok(ret)
+        Ok(Vec::from(ret))
     }
 }
