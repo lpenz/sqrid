@@ -74,13 +74,9 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         eprintln!("{:?}", path1);
         assert_eq!(path1.len(), i);
         // A*:
-        let dirgrid = Sqrid::astar_qrgrid(path(&wall), &qa, end)?;
-        let path1 = dirgrid.camefrom_into_path(&qa, &end)?;
-        test_path(&wall, &qa, end, &path1)?;
-        let path2 = Sqrid::astar_path(path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path2)?;
-        assert_eq!(path1, path2);
-        assert_eq!(path1.len(), i);
+        let path = Sqrid::astar_path(path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
         // Try next coordinate:
         let first = path1.first().ok_or(anyhow!("unexpected empty path"))?;
         qa = (qa + first).ok_or(anyhow!("sum failed"))?;

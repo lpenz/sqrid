@@ -21,19 +21,7 @@ use super::Sqrid;
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
     Sqrid<W, H, D, WORDS, SIZE>
 {
-    /// Perform a breadth-first search; see [`search_qrgrid`]
-    pub fn astar_qrgrid<F>(
-        go: F,
-        orig: &Qa<W, H>,
-        dest: &Qa<W, H>,
-    ) -> Result<Grid<Qr, W, H, SIZE>, Error>
-    where
-        F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    {
-        search_qrgrid::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
-    }
-
-    /// Perform a breadth-first search; see [`search_path`]
+    /// Perform an A* search; see [`search_path`]
     pub fn astar_path<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
@@ -44,7 +32,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 
 /* AstarIterator */
 
-/// A* iterator
+/// Internal A* iterator
 #[derive(Debug, Clone)]
 pub struct AstarIterator<
     F,
@@ -109,33 +97,8 @@ where
 }
 
 /// Make an A* search, return the "came from" direction grid
-/// (Grid<Qr>)
-///
-/// Starting at `origin`, use A* and `go` to find a path to `dest`.
-/// Return the grid of directions filled by the iteration going from
-/// `dest` to `orig` (note: this is the reverse of what one would
-/// expect).
-///
-/// Example usage:
-///
-/// ```
-/// type Sqrid = sqrid::sqrid_create!(3, 3, false);
-/// type Qa = sqrid::qa_create!(Sqrid);
-///
-/// // Generate the grid of "came from" directions from bottom-right to
-/// // top-left:
-/// if let Ok(mut camefrom_grid) =
-///     Sqrid::astar_qrgrid(sqrid::qaqr_eval, &Qa::TOP_LEFT,
-///                         &Qa::BOTTOM_RIGHT) {
-///     // `goal` is Qa::BOTTOM_RIGHT
-///     // Get the path as a vector of directions:
-///     if let Ok(path) = camefrom_grid.camefrom_into_path(&Qa::TOP_LEFT,
-///                                                        &Qa::BOTTOM_RIGHT) {
-///         println!("path: {:?}", path);
-///     }
-/// }
-/// ```
-pub fn search_qrgrid<
+/// (Grid<Qr>), used internally
+fn search_qrgrid<
     F,
     const W: u16,
     const H: u16,
