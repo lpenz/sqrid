@@ -13,8 +13,6 @@ type Grid = sqrid::Grid<i32, 5, 3, 15>;
 type _QaScale = sqrid::Qa<0xffff, 0xffff>;
 type _GridScale = sqrid::grid_create!(_QaScale, i32);
 
-type GridString = sqrid::grid_create!(Qa, String);
-
 type Qa3 = sqrid::Qa<3, 3>;
 type Grid3 = sqrid::grid_create!(Qa3, i32);
 type Qa5 = sqrid::Qa<5, 5>;
@@ -253,25 +251,5 @@ fn test_rotate_cc() -> Result<()> {
         grid.iter().cloned().collect::<Vec<_>>(),
         (1..=25).collect::<Vec<_>>()
     );
-    Ok(())
-}
-
-#[test]
-fn test_nocopy() -> Result<()> {
-    let mut grid = GridString::repeat_default();
-    for (i, element) in (&mut grid).into_iter().enumerate() {
-        *element = format!("{}", i);
-    }
-    eprintln!("1 {:?}", grid);
-    let grid2 = (0..(GridString::SIZE))
-        .map(|i| format!("{}", i))
-        .collect::<GridString>();
-    eprintln!("2 {:?}", grid2);
-    assert_eq!(grid, grid2);
-    let v = vec![(Qa::TOP_LEFT, "string".to_string())];
-    grid.extend(v.into_iter());
-    eprintln!("3 {:?}", grid);
-    let grid4 = GridString::repeat_clone("X".to_string());
-    eprintln!("4 {:?}", grid4);
     Ok(())
 }
