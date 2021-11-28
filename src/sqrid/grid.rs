@@ -341,9 +341,7 @@ impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
                 panic!("iterator too short for grid type");
             }
         }
-        if it.next().is_some() {
-            panic!("iterator too long for grid type");
-        }
+        assert!(!it.next().is_some(), "iterator too long for grid type");
         g
     }
 }
@@ -369,9 +367,7 @@ impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> iter::Fro
                 panic!("iterator too short for grid type");
             }
         }
-        if it.next().is_some() {
-            panic!("iterator too long for grid type");
-        }
+        assert!(!it.next().is_some(), "iterator too long for grid type");
         g
     }
 }
