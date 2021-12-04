@@ -177,6 +177,16 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         QaIter::<W, H>::default()
     }
 
+    /// Return an iterator that returns all `Qa`'s in a column.
+    pub fn iter_in_x(x: u16) -> Option<QaIterInX<W, H>> {
+        Some(QaIterInX::<W, H>(Qa::tryfrom_tuple((x, 0)).ok()))
+    }
+
+    /// Return an iterator that returns all `Qa`'s in a line.
+    pub fn iter_in_y(y: u16) -> Option<QaIterInY<W, H>> {
+        Some(QaIterInY::<W, H>(Qa::tryfrom_tuple((0, y)).ok()))
+    }
+
     /// Return the manhattan distance between 2 `Qa`s of the same type
     pub fn manhattan<AQA1, AQA2>(aqa1: AQA1, aqa2: AQA2) -> usize
     where
@@ -356,6 +366,62 @@ impl<const W: u16, const H: u16> Iterator for QaIter<W, H> {
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = W as usize * H as usize;
+        (size, Some(size))
+    }
+}
+
+/* QaIterInX/Y*/
+
+/// Iterator for a specific column
+///
+/// Given a column `x`, return all [`Qa`] values in that column.
+#[derive(Debug, Clone, Copy)]
+pub struct QaIterInX<const W: u16, const H: u16>(Option<Qa<W, H>>);
+
+impl<const W: u16, const H: u16> Iterator for QaIterInX<W, H> {
+    type Item = Qa<W, H>;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(i) = self.0.take() {
+            if i.y >= H - 1 {
+                None
+            } else {
+                self.0 = Qa::tryfrom_tuple((i.x, i.y + 1)).ok();
+                Some(i)
+            }
+        } else {
+            None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = H as usize;
+        (size, Some(size))
+    }
+}
+
+/// Iterator for a specific line
+///
+/// Given a line `y`, return all [`Qa`] values in that line.
+#[derive(Debug, Clone, Copy)]
+pub struct QaIterInY<const W: u16, const H: u16>(Option<Qa<W, H>>);
+
+impl<const W: u16, const H: u16> Iterator for QaIterInY<W, H> {
+    type Item = Qa<W, H>;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(i) = self.0.take() {
+            if i.x >= W - 1 {
+                None
+            } else {
+                self.0 = Qa::tryfrom_tuple((i.x + 1, i.y)).ok();
+                Some(i)
+            }
+        } else {
+            None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = W as usize;
         (size, Some(size))
     }
 }

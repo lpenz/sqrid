@@ -4,7 +4,7 @@
 
 use sqrid;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<6, 7>;
@@ -58,6 +58,27 @@ fn test_iter() -> Result<()> {
     let v = Qa::iter().collect::<Vec<_>>();
     assert_eq!(v.len(), iter.size_hint().0);
     assert_eq!(v.len(), iter.size_hint().1.unwrap());
+    Ok(())
+}
+
+#[test]
+fn test_iter_in_xy() -> Result<()> {
+    for x in 0..Qa::WIDTH {
+        let qax1 = Qa::iter_in_x(x)
+            .ok_or(anyhow!("iter_in_x error"))?
+            .collect::<Vec<_>>();
+        for (y, qa) in (0..Qa::HEIGHT).zip(qax1) {
+            assert_eq!(qa.tuple(), (x, y));
+        }
+    }
+    for y in 0..Qa::HEIGHT {
+        let qay1 = Qa::iter_in_y(y)
+            .ok_or(anyhow!("iter_in_y error"))?
+            .collect::<Vec<_>>();
+        for (x, qa) in (0..Qa::WIDTH).zip(qay1) {
+            assert_eq!(qa.tuple(), (x, y));
+        }
+    }
     Ok(())
 }
 
