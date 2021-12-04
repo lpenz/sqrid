@@ -66,7 +66,7 @@ the grid. Some of the ways to create instances:
 
 ### `Qr`: relative coordinates, direction, movement
 
-This type represents a relative movement of one square. It can
+The [`Qr`] type represents a relative movement of one square. It can
 only be one of the 8 cardinal and intercardinal directions:
 [`N`](`Qr::N`), [`NE`](`Qr::NE`), [`E`](`Qr::E`),
 [`SE`](`Qr::SE`), [`S`](`Qr::S`), [`SW`](`Qr::SW`),
@@ -82,7 +82,7 @@ argument that specifies whether the intercardinal directions
 
 ### `Grid`: a `Qa`-indexed array
 
-A grid is a generic array that can be indexed by a [`Qa`]
+A [`grid`] is a generic array that can be indexed by a [`Qa`]
 
 We can create the type from a suitable [`Sqrid`] type by using the
 [`grid_create`] macro. We can then interact with specific lines
@@ -127,7 +127,7 @@ gridnums.as_mut().reverse();
 
 ### `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
 
-`Gridbool` is a compact abstraction of a grid of booleans.
+[`Gridbool`] is a compact abstraction of a grid of booleans.
 
 The type itself can be created with [`gridbool_create`] macro.
 It's optimized for getting and setting values at specific
