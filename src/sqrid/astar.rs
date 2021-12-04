@@ -98,7 +98,7 @@ where
 
 /// Make an A* search, return the "came from" direction grid
 /// (Grid<Qr>), used internally
-fn search_qrgrid<
+pub fn search_qrgrid<
     F,
     const W: u16,
     const H: u16,

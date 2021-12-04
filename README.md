@@ -68,9 +68,8 @@ the grid. Some of the ways to create instances:
 
 The [`Qr`] type represents a relative movement of one square. It can
 only be one of the 8 cardinal and intercardinal directions:
-[`N`](`Qr::N`), [`NE`](`Qr::NE`), [`E`](`Qr::E`),
-[`SE`](`Qr::SE`), [`S`](`Qr::S`), [`SW`](`Qr::SW`),
-[`W`](`Qr::W`), [`NW`](`Qr::NW`).
+[`Qr::N`], [`Qr::NE`], [`Qr::E`], [`Qr::SE`], [`Qr::S`], [`Qr::SW`],
+[`Qr::W`], [`Qr::NW`].
 
 It's a building block for paths, iterating on a [`Qa`] neighbors,
 etc. It effectively represents the edges in a graph where the
@@ -87,8 +86,8 @@ A [`grid`] is a generic array that can be indexed by a [`Qa`]
 We can create the type from a suitable [`Sqrid`] type by using the
 [`grid_create`] macro. We can then interact with specific lines
 with [`Grid::line`] and [`Grid::line_mut`], or with the whole
-underlying array with [`as_ref`](std::convert::AsRef) and
-[`as_mut`](std::convert::AsMut).
+underlying array with `as_ref` (see [`std::convert::AsRef`]) and
+`as_mut` (see [`std::convert::AsMut`]).
 
 Usage example:
 
@@ -253,6 +252,8 @@ if let Ok(path) = Sqrid::astar_path(sqrid::qaqr_eval, &Qa::TOP_LEFT,
 }
 ```
 
+[`std::convert::AsRef`]: https://doc.rust-lang.org/std/convert/trait.AsRef.html
+[`std::convert::AsMut`]: https://doc.rust-lang.org/std/convert/trait.AsMut.html
 [`Qa`]: https://docs.rs/sqrid/latest/sqrid/qa/struct.Qa.html
 [`Qa::FIRST`]: https://docs.rs/sqrid/latest/sqrid/qa/struct.Qa.html#associatedconstant.FIRST
 [`Qa::LAST`]: https://docs.rs/sqrid/latest/sqrid/qa/struct.Qa.html#associatedconstant.LAST
