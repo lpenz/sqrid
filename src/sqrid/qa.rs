@@ -177,6 +177,12 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         QaIter::<W, H>::default()
     }
 
+    /// Return an iterator that returns all `Qa`'s within the grid
+    /// coordinates.
+    pub fn iter_range(topleft: Self, botright: Self) -> QaIterRange<W, H> {
+        QaIterRange::<W, H>::new(topleft, botright)
+    }
+
     /// Return an iterator that returns all `Qa`'s in a column.
     pub fn iter_in_x(x: u16) -> Option<QaIterInX<W, H>> {
         Some(QaIterInX::<W, H>(Qa::tryfrom_tuple((x, 0)).ok()))
@@ -366,6 +372,72 @@ impl<const W: u16, const H: u16> Iterator for QaIter<W, H> {
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = W as usize * H as usize;
+        (size, Some(size))
+    }
+}
+
+/* QaIterRange */
+
+/// Iterator for sqrid coordinates inside a square range
+///
+/// Returns all [`Qa`] values of a certain type inside a range.
+///
+/// Example that prints all coordinates in a 4x4 grid inside a 9x9
+/// grid:
+///
+/// ```
+/// type Qa = sqrid::Qa<9,9>;
+/// let topleft = Qa::new::<1, 1>();
+/// let botright = Qa::new::<5, 5>();
+///
+/// for i in Qa::iter_range(topleft, botright) {
+///     println!("{}", i);
+/// }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct QaIterRange<const W: u16, const H: u16> {
+    topleft: (u16, u16),
+    botright: (u16, u16),
+    value: Option<Qa<W, H>>,
+}
+
+impl<const W: u16, const H: u16> QaIterRange<W, H> {
+    /// Create a new [`QaIterRange`] for the given top-left and
+    /// bottom-right corners (inclusive).
+    pub fn new(topleft: Qa<W, H>, botright: Qa<W, H>) -> Self {
+        QaIterRange {
+            topleft: topleft.tuple(),
+            botright: botright.tuple(),
+            value: Some(topleft),
+        }
+    }
+}
+
+impl<const W: u16, const H: u16> Iterator for QaIterRange<W, H> {
+    type Item = Qa<W, H>;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(i) = self.value.take() {
+            let mut t = i.tuple();
+            t.0 += 1;
+            if t.0 > self.botright.0 {
+                t.0 = self.topleft.0;
+                t.1 += 1;
+            }
+            if t.1 > self.botright.1 {
+                self.value = None;
+            } else {
+                self.value = Qa::try_from(t).ok();
+            }
+            Some(i)
+        } else {
+            None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let xrange = self.botright.0 - self.topleft.0 + 1;
+        let yrange = self.botright.1 - self.topleft.1 + 1;
+        let size = xrange as usize * yrange as usize;
         (size, Some(size))
     }
 }

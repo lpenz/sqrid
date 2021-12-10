@@ -169,3 +169,25 @@ fn test_rotate_cc() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn test_iter_range() -> Result<()> {
+    assert_eq!(
+        Qa::iter_range(Qa::TOP_LEFT, Qa::BOTTOM_RIGHT).collect::<Vec<_>>(),
+        Qa::iter().collect::<Vec<_>>()
+    );
+    let tl = Qa::try_from((1, 1))?;
+    let br = Qa::try_from((2, 2))?;
+    let range = Qa::iter_range(tl, br).collect::<Vec<_>>();
+    assert_eq!(range.len(), 4);
+    assert_eq!(
+        range,
+        vec![
+            Qa::try_from((1, 1))?,
+            Qa::try_from((2, 1))?,
+            Qa::try_from((1, 2))?,
+            Qa::try_from((2, 2))?,
+        ]
+    );
+    Ok(())
+}
