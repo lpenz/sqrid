@@ -21,7 +21,24 @@ use super::Sqrid;
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
     Sqrid<W, H, D, WORDS, SIZE>
 {
-    /// Create new breadth-first iterator; see [`BfIterator::new`]
+    /// Create new breadth-first iterator
+    ///
+    /// This is used to iterate coordinates in breadth-first order,
+    /// from a given origin, using a provided function to evaluate a
+    /// given [`Qa`] position + [`Qr`] direction into the next `Qa`
+    /// position.
+    ///
+    /// Example usage:
+    ///
+    /// ```
+    /// type Sqrid = sqrid::sqrid_create!(3, 3, false);
+    /// type Qa = sqrid::qa_create!(Sqrid);
+    ///
+    /// for (qa, qr) in Sqrid::bf_iter(sqrid::qaqr_eval, &Qa::CENTER)
+    ///                 .flatten() {
+    ///     println!("breadth-first qa {} from {}", qa, qr);
+    /// }
+    /// ```
     pub fn bf_iter<F>(go: F, orig: &Qa<W, H>) -> BfIterator<F, W, H, D, WORDS>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
@@ -67,10 +84,7 @@ impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize>
 {
     /// Create new breadth-first iterator
     ///
-    /// This is used to iterate coordinates in breadth-first order,
-    /// from a given origin, using a provided function to evaluate a
-    /// given [`Qa`] position + [`Qr`] direction into the next `Qa`
-    /// position.
+    /// See [`Sqrid::bf_iter`]
     pub fn new(go: F, orig: &Qa<W, H>) -> BfIterator<F, W, H, D, WORDS>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
