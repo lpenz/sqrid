@@ -15,8 +15,11 @@ type Gbool2 = sqrid::Gridbool<11, 3, 2>;
 type Qa5 = sqrid::Qa<5, 5>;
 type Gbool5 = sqrid::Gridbool<5, 5, 1>;
 
-type _QaScale = sqrid::Qa<0xffff, 0xffff>;
-type _GridboolScale = sqrid::gridbool_create!(_QaScale);
+type QaScale = sqrid::Qa<2000, 2000>;
+type GridboolScale = sqrid::gridbool_create!(QaScale);
+
+type _QaMax = sqrid::Qa<0xffff, 0xffff>;
+type _GridboolMax = sqrid::gridbool_create!(_QaMax);
 
 #[test]
 fn test_getset() -> Result<()> {
@@ -146,5 +149,20 @@ fn test_rotate() -> Result<()> {
     // point:
     gb2.rotate_cc();
     assert_eq!(gb2, gb);
+    Ok(())
+}
+
+#[test]
+fn test_scale() -> Result<()> {
+    let mut gb = Box::new(GridboolScale::default());
+    for qa in QaScale::iter() {
+        gb.set_t(qa);
+    }
+    for value in gb.iter() {
+        // Dummy operation, we are really just testing gb.iter
+        if !value {
+            break;
+        }
+    }
     Ok(())
 }

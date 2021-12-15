@@ -151,7 +151,7 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
     /// Iterate over all `true`/`false` values in the `Gridbool`.
     #[inline]
     pub fn iter(&self) -> impl iter::Iterator<Item = bool> + '_ {
-        (0..(W * H)).map(move |i| {
+        (0..(W as usize * H as usize)).map(move |i| {
             let (byte, bit) = Self::byte_bit(i);
             self.0[byte] & bit != 0
         })
