@@ -428,9 +428,9 @@ pub fn display_fmt_helper(
     mut it: impl Iterator<Item = String>,
 ) -> fmt::Result {
     // Max digits for column numbers:
-    let ndigits_x = format!("{}", w).len();
+    let ndigits_x = format!("{}", w - 1).len();
     // Max digits for line numbers:
-    let ndigits_y = format!("{}", h).len();
+    let ndigits_y = format!("{}", h - 1).len();
     // Column labels as a vec of vec of chars, which we will
     // output vertically:
     let str_x = (0..w)
