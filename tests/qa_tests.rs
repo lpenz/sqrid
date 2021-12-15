@@ -35,6 +35,16 @@ fn test_usize() -> Result<()> {
 }
 
 #[test]
+fn test_tryfrom_qa() -> Result<()> {
+    assert_eq!(Qa::tryfrom_qa(Qa2::FIRST)?, Qa::try_from(0_usize)?);
+    assert_eq!(Qa::tryfrom_qa(Qa5::FIRST)?, Qa::try_from(0_usize)?);
+    assert_eq!(Qa::tryfrom_qa(Qa2::LAST)?, Qa::tryfrom_tuple((1, 1))?);
+    assert_eq!(Qa::tryfrom_qa(Qa5::LAST)?, Qa::tryfrom_tuple((4, 4))?);
+    assert!(Qa2::tryfrom_qa(Qa::LAST).is_err());
+    Ok(())
+}
+
+#[test]
 fn test_out_of_bounds() -> Result<()> {
     let q1result = Qa::try_from((6_u16, 3_u16));
     assert!(q1result.is_err());

@@ -143,6 +143,16 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         }
     }
 
+    /// Create a new `Qa` from the provided `Qa` with different
+    /// dimensions, if possible; return an error otherwise.
+    #[inline]
+    pub fn tryfrom_qa<const W2: u16, const H2: u16>(
+        aqa2: impl Borrow<Qa<W2, H2>>,
+    ) -> Result<Qa<W, H>, Error> {
+        let qa2 = aqa2.borrow();
+        Self::tryfrom_tuple(qa2.tuple())
+    }
+
     /// Create a new `Qa` from the provided `usize`, if possible;
     /// return an error otherwise.
     #[inline]
