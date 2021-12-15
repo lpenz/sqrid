@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid;
+use sqrid::Cost;
 
 use anyhow::anyhow;
 use anyhow::Result;
@@ -41,6 +42,16 @@ fn path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<Qa> + '_> {
     })
 }
 
+fn ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<(Qa, Cost)> + '_> {
+    Box::new(move |qa: Qa, qr| {
+        {
+            let newqa = (qa + qr)?;
+            Some((newqa, 1))
+        }
+        .filter(|(qa, _)| !wall.get(qa))
+    })
+}
+
 fn goal(end: &Qa) -> Box<impl Fn(Qa) -> bool + '_> {
     Box::new(move |qa| qa == *end)
 }
@@ -75,6 +86,10 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         assert_eq!(path1.len(), i);
         // A*:
         let path = Sqrid::astar_path(path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        // UCS:
+        let path = Sqrid::ucs_path(ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // Try next coordinate:

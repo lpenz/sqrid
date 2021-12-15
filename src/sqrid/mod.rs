@@ -35,3 +35,5 @@ pub mod bf;
 pub use self::bf::*;
 pub mod astar;
 pub use self::astar::*;
+pub mod ucs;
+pub use self::ucs::*;
