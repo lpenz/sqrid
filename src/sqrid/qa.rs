@@ -213,6 +213,27 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         };
         dx + dy
     }
+
+    /// Check that the `Qa` is inside the provided limits
+    pub fn inside<AQA1, AQA2>(&self, aqa1: AQA1, aqa2: AQA2) -> bool
+    where
+        AQA1: Borrow<Qa<W, H>>,
+        AQA2: Borrow<Qa<W, H>>,
+    {
+        let qa1 = aqa1.borrow();
+        let qa2 = aqa2.borrow();
+        let (xmin, xmax) = if qa1.x < qa2.x {
+            (qa1.x, qa2.x)
+        } else {
+            (qa2.x, qa1.x)
+        };
+        let (ymin, ymax) = if qa1.y < qa2.y {
+            (qa1.y, qa2.y)
+        } else {
+            (qa2.y, qa1.y)
+        };
+        xmin <= self.x && self.x <= xmax && ymin <= self.y && self.y <= ymax
+    }
 }
 
 // Rotations are only available for "square" grid coordinates

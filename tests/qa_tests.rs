@@ -122,6 +122,16 @@ fn test_manhattan() -> Result<()> {
 }
 
 #[test]
+fn test_inside() -> Result<()> {
+    for qa in Qa::iter() {
+        assert!(qa.inside(Qa::TOP_LEFT, Qa::BOTTOM_RIGHT));
+        assert!(qa.inside(qa, qa));
+    }
+    assert!(!Qa::BOTTOM_RIGHT.inside(Qa::TOP_LEFT, Qa::CENTER));
+    Ok(())
+}
+
+#[test]
 fn test_flips() -> Result<()> {
     assert_eq!(Qa::TOP_LEFT.flip_v(), Qa::BOTTOM_LEFT);
     assert_eq!(Qa::TOP_RIGHT.flip_v(), Qa::BOTTOM_RIGHT);
