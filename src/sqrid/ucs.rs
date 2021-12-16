@@ -26,7 +26,7 @@ pub type Cost = usize;
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
     Sqrid<W, H, D, WORDS, SIZE>
 {
-    /// Perform a uniform-cost search; see [`search_path`]
+    /// Perform a uniform-cost search; see [`ucs::search_path`](search_path)
     pub fn ucs_path<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
@@ -126,10 +126,12 @@ where
     Err(Error::DestinationUnreachable)
 }
 
-/// Make a UCS search, return path (Vec<Qr>)
+/// Makes a UCS search, returns the path as a `Vec<Qr>`
 ///
-/// This is essentially [`search_qrgrid`] followed by a call to
-/// [`Grid::camefrom_into_path`].
+/// This function takes a movement-cost function, an origin and a
+/// destination, and figures out the path with the lowest cost by using
+/// uniform-cost search, which is essentially a variation of
+/// [Dijkstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).
 ///
 /// Example usage:
 ///

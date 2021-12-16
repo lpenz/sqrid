@@ -46,7 +46,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         BfIterator::<F, W, H, D, WORDS>::new(go, orig)
     }
 
-    /// Perform a breadth-first search; see [`search_qrgrid`]
+    /// Perform a breadth-first search; see [`bf::search_qrgrid`](search_qrgrid)
     pub fn bfs_qrgrid<F, G>(
         go: F,
         orig: &Qa<W, H>,
@@ -59,7 +59,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         search_qrgrid::<G, F, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 
-    /// Perform a breadth-first search; see [`search_path`]
+    /// Perform a breadth-first search; see [`bf::search_path`](search_path)
     pub fn bfs_path<F, G>(go: F, orig: &Qa<W, H>, found: G) -> Result<(Qa<W, H>, Vec<Qr>), Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
@@ -128,7 +128,7 @@ where
 }
 
 /// Make a breadth-first search, return the "came from" direction grid
-/// (Grid<Qr>)
+/// as a `Grid<Qr>`
 ///
 /// Starting at `origin`, iterate coordinates in breadth-first order using
 /// `go` to get more coordinates, until `found` returns true. When that happens,
@@ -181,7 +181,7 @@ where
     Err(Error::DestinationUnreachable)
 }
 
-/// Make a breadth-first search, return path (Vec<Qr>)
+/// Makes a breadth-first search, returns the path as a `Vec<Qr>`
 ///
 /// This is essentially [`search_qrgrid`] followed by a call to
 /// [`Grid::camefrom_into_path`].

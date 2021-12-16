@@ -21,7 +21,7 @@ use super::Sqrid;
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
     Sqrid<W, H, D, WORDS, SIZE>
 {
-    /// Perform an A* search; see [`search_path`]
+    /// Perform an A* search; see [`astar::search_path`](search_path)
     pub fn astar_path<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
@@ -123,10 +123,11 @@ where
     Err(Error::DestinationUnreachable)
 }
 
-/// Make an A* search, return path (Vec<Qr>)
+/// Makes an A* search, returns the path as a `Vec<Qr>`
 ///
-/// This is essentially [`search_qrgrid`] followed by a call to
-/// [`Grid::camefrom_into_path`].
+/// This function takes a movement function, an origin and a
+/// destination, and figures out the shortest path by using
+/// [A*](https://www.redblobgames.com/pathfinding/a-star/introduction.html).
 ///
 /// Example usage:
 ///

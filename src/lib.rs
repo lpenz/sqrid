@@ -254,6 +254,34 @@
 //! }
 //! ```
 //!
+//! ## Uniform-cost search
+//!
+//! [`Sqrid::ucs_path`] takes a movement-cost function, an origin and a
+//! destination, and figures out the path with the lowest cost by using
+//! uniform-cost search, which is essentially a variation of
+//! [Dijkstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).
+//!
+//! The function returns path in the form of a `Vec<Qr>`.
+//!
+//! Example usage:
+//!
+//! ```rust
+//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Qa = sqrid::qa_create!(Sqrid);
+//!
+//! fn traverse(position: Qa, direction: sqrid::Qr) -> Option<(Qa, usize)> {
+//!     let next_position = (position + direction)?;
+//!     let cost = 1;
+//!     Some((next_position, cost))
+//! }
+//!
+//! // Generate the grid of "came from" directions from bottom-right to
+//! // top-left:
+//! if let Ok(path) = Sqrid::ucs_path(traverse, &Qa::TOP_LEFT,
+//!                                   &Qa::BOTTOM_RIGHT) {
+//!     println!("path: {:?}", path);
+//! }
+//! ```
 
 mod sqrid;
 pub use self::sqrid::*;
