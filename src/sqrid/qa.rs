@@ -486,7 +486,7 @@ impl<const W: u16, const H: u16> Iterator for QaIterInX<W, H> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
-            if i.y >= H - 1 {
+            if i.y >= H {
                 None
             } else {
                 self.0 = Qa::tryfrom_tuple((i.x, i.y + 1)).ok();
@@ -513,7 +513,7 @@ impl<const W: u16, const H: u16> Iterator for QaIterInY<W, H> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
-            if i.x >= W - 1 {
+            if i.x >= W {
                 None
             } else {
                 self.0 = Qa::tryfrom_tuple((i.x + 1, i.y)).ok();

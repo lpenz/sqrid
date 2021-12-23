@@ -73,6 +73,10 @@ fn test_iter() -> Result<()> {
 
 #[test]
 fn test_iter_in_xy() -> Result<()> {
+    let ally = Qa::iter_in_x(0)
+        .ok_or(anyhow!("iter_in_x error"))?
+        .collect::<Vec<_>>();
+    assert_eq!(ally.len(), Qa::HEIGHT as usize);
     for x in 0..Qa::WIDTH {
         let qax1 = Qa::iter_in_x(x)
             .ok_or(anyhow!("iter_in_x error"))?
@@ -81,6 +85,10 @@ fn test_iter_in_xy() -> Result<()> {
             assert_eq!(qa.tuple(), (x, y));
         }
     }
+    let allx = Qa::iter_in_y(0)
+        .ok_or(anyhow!("iter_in_y error"))?
+        .collect::<Vec<_>>();
+    assert_eq!(allx.len(), Qa::WIDTH as usize);
     for y in 0..Qa::HEIGHT {
         let qay1 = Qa::iter_in_y(y)
             .ok_or(anyhow!("iter_in_y error"))?
