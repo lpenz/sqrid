@@ -29,6 +29,8 @@
 //! - [`Sqrid::bfs_path`]: breadth-first search that accepts an
 //!   arbitrary `found` function.
 //! - [`Sqrid::astar_path`]: A* search that takes a destination `Qa`
+//! - [`Sqrid::ucs_path`]: Uniform-cost search that takes a
+//!   destionation `Qa` and a cost function.
 //!
 //! All basic types have the standard `iter`, `iter_mut`, `extend`,
 //! `as_ref`, and conversion operations that should be expected.
