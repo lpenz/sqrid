@@ -89,7 +89,16 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // UCS:
+        //   with Grid:
         let path = Sqrid::ucs_path(ucs_path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        //   with HashMap:
+        let path = Sqrid::ucs_path_hashmap(ucs_path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        //   with BTreeMap:
+        let path = Sqrid::ucs_path_btreemap(ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // Try next coordinate:

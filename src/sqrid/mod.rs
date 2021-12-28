@@ -31,6 +31,8 @@ pub use self::qrgrid::*;
 pub mod gridbool;
 pub use self::gridbool::*;
 
+pub mod mapqa;
+pub use self::mapqa::*;
 pub mod bf;
 pub use self::bf::*;
 pub mod astar;

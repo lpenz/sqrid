@@ -10,10 +10,12 @@
 //! Also known as Dijkstra shortest path algorithm.
 
 use std::cmp::Reverse;
+use std::collections;
 use std::collections::BinaryHeap;
 
 use super::Error;
 use super::Grid;
+use super::MapQa;
 use super::Qa;
 use super::Qr;
 use super::Sqrid;
@@ -31,7 +33,61 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
     {
-        search_path::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        Self::ucs_path_grid::<F>(go, orig, dest)
+    }
+
+    /// Perform a uniform-cost search using a [`Grid`] internally;
+    /// see [`ucs::search_path`](search_path)
+    pub fn ucs_path_grid<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    {
+        search_path::<
+            F,
+            Grid<Option<Qr>, W, H, SIZE>,
+            Grid<Option<usize>, W, H, SIZE>,
+            W,
+            H,
+            D,
+            WORDS,
+            SIZE,
+        >(go, orig, dest)
+    }
+
+    /// Perform a uniform-cost search using a HashMap internally;
+    /// see [`ucs::search_path`](search_path)
+    pub fn ucs_path_hashmap<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    {
+        search_path::<
+            F,
+            collections::HashMap<Qa<W, H>, Qr>,
+            collections::HashMap<Qa<W, H>, usize>,
+            W,
+            H,
+            D,
+            WORDS,
+            SIZE,
+        >(go, orig, dest)
+    }
+
+    /// Perform a uniform-cost search using a BTreeMap internally;
+    /// see [`ucs::search_path`](search_path)
+    pub fn ucs_path_btreemap<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    where
+        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    {
+        search_path::<
+            F,
+            collections::BTreeMap<Qa<W, H>, Qr>,
+            collections::BTreeMap<Qa<W, H>, usize>,
+            W,
+            H,
+            D,
+            WORDS,
+            SIZE,
+        >(go, orig, dest)
     }
 }
 
@@ -41,42 +97,59 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 #[derive(Debug, Clone)]
 pub struct UcsIterator<
     F,
+    MapQaUsize,
     const W: u16,
     const H: u16,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 > {
-    cost: Grid<usize, W, H, SIZE>,
+    cost: MapQaUsize,
     frontier: BinaryHeap<(Reverse<usize>, (Qa<W, H>, Qr))>,
     go: F,
 }
 
-impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
-    UcsIterator<F, W, H, D, WORDS, SIZE>
+impl<
+        F,
+        MapQaUsize,
+        const W: u16,
+        const H: u16,
+        const D: bool,
+        const WORDS: usize,
+        const SIZE: usize,
+    > UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
 {
     /// Create a new UCS iterator
     ///
     /// This is used internally to yield coordinates in cost order.
-    pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, W, H, D, WORDS, SIZE>
+    pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+        MapQaUsize: MapQa<usize, W, H, SIZE>,
     {
         let mut it = UcsIterator {
-            cost: Grid::<usize, W, H, SIZE>::repeat(usize::MAX),
+            cost: MapQaUsize::new(),
             frontier: BinaryHeap::default(),
             go,
         };
         it.frontier.push((Reverse(0), (*orig, Qr::default())));
-        it.cost[orig] = 0;
+        it.cost.set(*orig, 0);
         it
     }
 }
 
-impl<F, const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize> Iterator
-    for UcsIterator<F, W, H, D, WORDS, SIZE>
+impl<
+        F,
+        MapQaUsize,
+        const W: u16,
+        const H: u16,
+        const D: bool,
+        const WORDS: usize,
+        const SIZE: usize,
+    > Iterator for UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    MapQaUsize: MapQa<usize, W, H, SIZE>,
 {
     type Item = (Qa<W, H>, Qr);
     fn next(&mut self) -> Option<Self::Item> {
@@ -84,9 +157,13 @@ where
             let qa = qaqr.0;
             for qr in Qr::iter::<D>() {
                 if let Some((nextqa, costincr)) = (self.go)(qa, qr) {
-                    let newcost = self.cost[qa] + costincr;
-                    if newcost < self.cost[nextqa] {
-                        self.cost[nextqa] = newcost;
+                    let newcost = self
+                        .cost
+                        .get(&qa)
+                        .expect("internal error while getting cost")
+                        + costincr;
+                    if newcost < *self.cost.get(&nextqa).unwrap_or(&usize::MAX) {
+                        self.cost.set(nextqa, newcost);
                         let priority = Reverse(newcost);
                         self.frontier.push((priority, (nextqa, -qr)));
                     }
@@ -99,10 +176,11 @@ where
     }
 }
 
-/// Make a UCS search, return the "came from" direction grid
-/// (Grid<Qr>), used internally
+/// Make a UCS search, return the "came from" direction [`MapQa`]
 pub fn search_qrgrid<
     F,
+    MapQaQr,
+    MapQaUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -112,13 +190,15 @@ pub fn search_qrgrid<
     go: F,
     orig: &Qa<W, H>,
     dest: &Qa<W, H>,
-) -> Result<Grid<Qr, W, H, SIZE>, Error>
+) -> Result<MapQaQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    MapQaQr: MapQa<Qr, W, H, SIZE>,
+    MapQaUsize: MapQa<usize, W, H, SIZE>,
 {
-    let mut from = Grid::<Qr, W, H, SIZE>::default();
-    for (qa, qr) in UcsIterator::<F, W, H, D, WORDS, SIZE>::new(go, orig) {
-        from[qa] = qr;
+    let mut from = MapQaQr::new();
+    for (qa, qr) in UcsIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
+        from.set(qa, qr);
         if qa == *dest {
             return Ok(from);
         }
@@ -154,6 +234,8 @@ where
 /// ```
 pub fn search_path<
     F,
+    MapQaQr,
+    MapQaUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -166,7 +248,9 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    MapQaQr: MapQa<Qr, W, H, SIZE>,
+    MapQaUsize: MapQa<usize, W, H, SIZE>,
 {
-    let qrgrid = search_qrgrid::<F, W, H, D, WORDS, SIZE>(go, orig, dest)?;
-    qrgrid.camefrom_into_path(orig, dest)
+    let mapqaqr = search_qrgrid::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
+    crate::camefrom_into_path::<MapQaQr, W, H, D, WORDS, SIZE>(mapqaqr, orig, dest)
 }
