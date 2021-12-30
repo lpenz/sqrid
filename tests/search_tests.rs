@@ -32,7 +32,7 @@ fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Qa, Qa) {
     (walls, start, end)
 }
 
-fn path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<Qa> + '_> {
+fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<Qa> + '_> {
     Box::new(move |qa: Qa, qr| {
         {
             let newqa: Option<Qa> = qa + qr;
@@ -42,7 +42,7 @@ fn path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<Qa> + '_> {
     })
 }
 
-fn ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<(Qa, Cost)> + '_> {
+fn calc_ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<(Qa, Cost)> + '_> {
     Box::new(move |qa: Qa, qr| {
         {
             let newqa = (qa + qr)?;
@@ -74,31 +74,40 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         eprintln!("from {} to {}: {}", qa, end, i);
         eprintln!("{}", wall);
         // BFS:
-        let (g1, dirgrid) = Sqrid::bfs_qrgrid(path(&wall), &qa, goal(&end))?;
+        let (g1, dirgrid) = Sqrid::bfs_qrgrid(calc_path(&wall), &qa, goal(&end))?;
         assert_eq!(g1, *end);
         let path1 = dirgrid.camefrom_into_path(&qa, &end)?;
         test_path(&wall, &qa, end, &path1)?;
-        let (g2, path2) = Sqrid::bfs_path(path(&wall), &qa, goal(&end))?;
+        let (g2, path2) = Sqrid::bfs_path(calc_path(&wall), &qa, goal(&end))?;
         test_path(&wall, &qa, end, &path2)?;
         assert_eq!(g1, g2);
         assert_eq!(path1, path2);
         eprintln!("{:?}", path1);
         assert_eq!(path1.len(), i);
         // A*:
-        let path = Sqrid::astar_path(path(&wall), &qa, end)?;
+        //   with Grid:
+        let path = Sqrid::astar_path(calc_path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        //   with HashMap:
+        let path = Sqrid::astar_path_hashmap(calc_path(&wall), &qa, end)?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        //   with BTreeMap:
+        let path = Sqrid::astar_path_btreemap(calc_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // UCS:
         //   with Grid:
-        let path = Sqrid::ucs_path(ucs_path(&wall), &qa, end)?;
+        let path = Sqrid::ucs_path(calc_ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let path = Sqrid::ucs_path_hashmap(ucs_path(&wall), &qa, end)?;
+        let path = Sqrid::ucs_path_hashmap(calc_ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let path = Sqrid::ucs_path_btreemap(ucs_path(&wall), &qa, end)?;
+        let path = Sqrid::ucs_path_btreemap(calc_ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // Try next coordinate:
@@ -157,11 +166,11 @@ fn test_unreachable() -> Result<()> {
         "#.............#..............#",
         "##############################",
     ]);
-    let search_result = Sqrid::bfs_path(path(&wall), &start, goal(&end));
+    let search_result = Sqrid::bfs_path(calc_path(&wall), &start, goal(&end));
     assert_eq!(search_result, Err(sqrid::Error::DestinationUnreachable));
     eprintln!("{}", search_result.unwrap_err());
     assert_eq!(
-        Sqrid::astar_path(path(&wall), &start, &end),
+        Sqrid::astar_path(calc_path(&wall), &start, &end),
         Err(sqrid::Error::DestinationUnreachable)
     );
     Ok(())

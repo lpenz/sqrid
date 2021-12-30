@@ -19,59 +19,77 @@ use std::collections;
 
 use super::error::Error;
 use super::grid::Grid;
+use super::gridbool::Gridbool;
 use super::qa::Qa;
 use super::qr::Qr;
+use super::Sqrid;
 
 /* MapQa */
 
 /// Trait that abstracts maps with [`Qa`] indexes
-pub trait MapQa<Item, const W: u16, const H: u16, const SIZE: usize> {
+///
+/// The generic parameters allow us to support implementing [`Grid`].
+pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
     /// Create a new MapQa
     fn new() -> Self;
     /// Get the item corresponding to the provided [`Qa`]
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item>;
+    fn get(&self, qa: &Qa<W, H>) -> Option<Item>;
     /// Set the item corresponding to the provided [`Qa`]
     fn set(&mut self, qa: Qa<W, H>, item: Item);
 }
 
-impl<Item, const W: u16, const H: u16, const SIZE: usize> MapQa<Item, W, H, SIZE>
-    for Grid<Option<Item>, W, H, SIZE>
+impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    MapQa<Item, W, H, WORDS, SIZE> for Grid<Option<Item>, W, H, SIZE>
 where
     Grid<Option<Item>, W, H, SIZE>: Default,
 {
     fn new() -> Self {
         Self::default()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
-        self[qa].as_ref()
+    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
+        self[qa]
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self[qa] = Some(item);
     }
 }
 
-impl<Item, const W: u16, const H: u16, const SIZE: usize> MapQa<Item, W, H, SIZE>
-    for collections::HashMap<Qa<W, H>, Item>
+impl<const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    MapQa<bool, W, H, WORDS, SIZE> for Gridbool<W, H, WORDS>
+{
+    fn new() -> Self {
+        Self::default()
+    }
+    fn get(&self, qa: &Qa<W, H>) -> Option<bool> {
+        Some(self.get(qa))
+    }
+    fn set(&mut self, qa: Qa<W, H>, item: bool) {
+        self.set(qa, item);
+    }
+}
+
+impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    MapQa<Item, W, H, WORDS, SIZE> for collections::HashMap<Qa<W, H>, Item>
 {
     fn new() -> Self {
         Self::new()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
-        self.get(qa)
+    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
+        self.get(qa).copied()
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self.insert(qa, item);
     }
 }
 
-impl<Item, const W: u16, const H: u16, const SIZE: usize> MapQa<Item, W, H, SIZE>
-    for collections::BTreeMap<Qa<W, H>, Item>
+impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    MapQa<Item, W, H, WORDS, SIZE> for collections::BTreeMap<Qa<W, H>, Item>
 {
     fn new() -> Self {
         Self::new()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
-        self.get(qa)
+    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
+        self.get(qa).copied()
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self.insert(qa, item);
@@ -90,7 +108,6 @@ pub fn camefrom_into_path<
     MapQaQr,
     const W: u16,
     const H: u16,
-    const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 >(
@@ -99,7 +116,7 @@ pub fn camefrom_into_path<
     dest: &Qa<W, H>,
 ) -> Result<Vec<Qr>, Error>
 where
-    MapQaQr: MapQa<Qr, W, H, SIZE>,
+    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
 {
     let distance = Qa::manhattan(orig, dest);
     let mut ret = collections::VecDeque::<Qr>::with_capacity(2 * distance);
@@ -111,7 +128,7 @@ where
     let mut maxiter = W as usize * H as usize + 1;
     while &qa != orig {
         let qr = map.get(&qa).ok_or(Error::InvalidMovement)?;
-        ret.push_front(-*qr);
+        ret.push_front(-qr);
         qa = (qa + qr).ok_or(Error::InvalidMovement)?;
         maxiter -= 1;
         if maxiter == 0 {
@@ -121,4 +138,22 @@ where
         }
     }
     Ok(Vec::from(ret))
+}
+
+/* Add camfrom_into_path to Sqrid */
+
+impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
+    Sqrid<W, H, D, WORDS, SIZE>
+{
+    /// TODO
+    pub fn camefrom_into_path<MapQaQr>(
+        map: MapQaQr,
+        orig: &Qa<W, H>,
+        dest: &Qa<W, H>,
+    ) -> Result<Vec<Qr>, Error>
+    where
+        MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+    {
+        crate::camefrom_into_path(map, orig, dest)
+    }
 }

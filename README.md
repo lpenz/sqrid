@@ -22,14 +22,10 @@ types it provides:
 - [`Sqrid`]: "factory" type that acts as an entry point to the
   fundamental types below and to algorithms.
 
-Besides these fundamental types, we also have some algorithms
-attached to [`Sqrid`]:
-- [`Sqrid::bf_iter`]: breadth-first iteration
-- [`Sqrid::bfs_path`]: breadth-first search that accepts an
-  arbitrary `found` function.
-- [`Sqrid::astar_path`]: A* search that takes a destination `Qa`
-- [`Sqrid::ucs_path`]: Uniform-cost search that takes a
-  destionation `Qa` and a cost function.
+Besides these fundamental types, as also have algorithm modules:
+- [`bf`]: breadth-first iteration and search.
+- [`astar`]: A* search that takes a destination `Qa`.
+- [`ucs`]: uniform-cost search.
 
 All basic types have the standard `iter`, `iter_mut`, `extend`,
 `as_ref`, and conversion operations that should be expected.
@@ -311,7 +307,9 @@ if let Ok(path) = Sqrid::ucs_path(traverse, &Qa::TOP_LEFT,
 [`Sqrid`]: https://docs.rs/sqrid/latest/sqrid/struct.Sqrid.html
 [`Sqrid::bf_iter`]: https://docs.rs/sqrid/latest/sqrid/base/struct.Sqrid.html#method.bf_iter
 [`BfIterator`]: https://docs.rs/sqrid/latest/sqrid/struct.BfIterator.html
+[`bf`]: https://docs.rs/sqrid/latest/sqrid/bf
+[`astar`]: https://docs.rs/sqrid/latest/sqrid/astar
+[`ucs`]: https://docs.rs/sqrid/latest/sqrid/ucs
 [`Sqrid::bfs_path`]: https://docs.rs/sqrid/latest/sqrid/base/struct.Sqrid.html#method.bfs_path
 [`Sqrid::astar_path`]: https://docs.rs/sqrid/latest/sqrid/base/struct.Sqrid.html#method.astar_path
 [`Sqrid::ucs_path`]: https://docs.rs/sqrid/latest/sqrid/base/struct.Sqrid.html#method.ucs_path
-
