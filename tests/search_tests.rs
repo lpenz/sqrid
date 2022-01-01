@@ -10,7 +10,7 @@ use anyhow::Result;
 
 type Sqrid = sqrid::sqrid_create!(30, 15, false);
 type Qa = sqrid::qa_create!(Sqrid);
-type GridQr = sqrid::grid_create!(Sqrid, sqrid::Qr);
+type GridQr = sqrid::grid_create!(Sqrid, Option<sqrid::Qr>);
 type Gridbool = sqrid::gridbool_create!(Sqrid);
 
 fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Qa, Qa) {
@@ -74,16 +74,18 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         eprintln!("from {} to {}: {}", qa, end, i);
         eprintln!("{}", wall);
         // BFS:
-        let (g1, dirgrid) = Sqrid::bfs_qrgrid(calc_path(&wall), &qa, goal(&end))?;
-        assert_eq!(g1, *end);
-        let path1 = dirgrid.camefrom_into_path(&qa, &end)?;
-        test_path(&wall, &qa, end, &path1)?;
-        let (g2, path2) = Sqrid::bfs_path(calc_path(&wall), &qa, goal(&end))?;
-        test_path(&wall, &qa, end, &path2)?;
-        assert_eq!(g1, g2);
-        assert_eq!(path1, path2);
-        eprintln!("{:?}", path1);
-        assert_eq!(path1.len(), i);
+        //   with Grid:
+        let (_, path) = Sqrid::bfs_path(calc_path(&wall), &qa, goal(&end))?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        //   with HashMap:
+        let (_, path) = Sqrid::bfs_path_hashmap(calc_path(&wall), &qa, goal(&end))?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
+        //   with BTreeMap:
+        let (_, path) = Sqrid::bfs_path_btreemap(calc_path(&wall), &qa, goal(&end))?;
+        test_path(&wall, &qa, end, &path)?;
+        assert_eq!(path.len(), i);
         // A*:
         //   with Grid:
         let path = Sqrid::astar_path(calc_path(&wall), &qa, end)?;
@@ -111,7 +113,7 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // Try next coordinate:
-        let first = path1.first().ok_or(anyhow!("unexpected empty path"))?;
+        let first = path.first().ok_or(anyhow!("unexpected empty path"))?;
         qa = (qa + first).ok_or(anyhow!("sum failed"))?;
         i -= 1;
     }
@@ -138,9 +140,9 @@ fn do_test(distance: usize, wallstr: &Vec<&str>) -> Result<()> {
 
 #[test]
 fn test_loop() -> Result<()> {
-    let mut gridqr = GridQr::default();
-    gridqr[Qa::TOP_LEFT] = sqrid::Qr::S;
-    let path_result = gridqr.camefrom_into_path(&Qa::BOTTOM_RIGHT, &Qa::TOP_LEFT);
+    let mut gridqr = GridQr::repeat(Some(sqrid::Qr::N));
+    gridqr[Qa::TOP_LEFT] = Some(sqrid::Qr::S);
+    let path_result = Sqrid::camefrom_into_path(gridqr, &Qa::BOTTOM_RIGHT, &Qa::TOP_LEFT);
     assert_eq!(path_result, Err(sqrid::Error::Loop));
     Ok(())
 }
