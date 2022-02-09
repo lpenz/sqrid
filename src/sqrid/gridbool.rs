@@ -320,7 +320,7 @@ impl<const W: u16, const H: u16, const WORDS: usize> iter::FromIterator<bool>
                 panic!("iterator too short for gridbool type");
             }
         }
-        assert!(!it.next().is_some(), "iterator too long for grid type");
+        assert!(it.next().is_none(), "iterator too long for grid type");
         gb
     }
 }

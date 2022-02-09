@@ -10,7 +10,6 @@
 //! This submodule has the [`Grid`] type and the associated
 //! functionality.
 
-use std::array;
 use std::borrow::Borrow;
 use std::convert;
 use std::convert::TryFrom;
@@ -314,7 +313,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for Grid<T, 
     type IntoIter = std::array::IntoIter<T, SIZE>;
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        array::IntoIter::new(self.0)
+        IntoIterator::into_iter(self.0)
     }
 }
 
@@ -341,7 +340,7 @@ impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
                 panic!("iterator too short for grid type");
             }
         }
-        assert!(!it.next().is_some(), "iterator too long for grid type");
+        assert!(it.next().is_none(), "iterator too long for grid type");
         g
     }
 }
@@ -367,7 +366,7 @@ impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> iter::Fro
                 panic!("iterator too short for grid type");
             }
         }
-        assert!(!it.next().is_some(), "iterator too long for grid type");
+        assert!(it.next().is_none(), "iterator too long for grid type");
         g
     }
 }
