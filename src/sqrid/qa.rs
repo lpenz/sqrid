@@ -167,6 +167,31 @@ impl<const W: u16, const H: u16> Qa<W, H> {
         }
     }
 
+    /// Calculate a top-left and a bottom-right Qa's that contains all iterated points.
+    pub fn tlbr_of(
+        mut iter: impl Iterator<Item = Qa<W, H>>,
+    ) -> Result<(Qa<W, H>, Qa<W, H>), Error> {
+        if let Some(firstqa) = iter.next() {
+            let (tl_tuple, br_tuple) =
+                iter.fold((firstqa.tuple(), firstqa.tuple()), |(tl, br), qa| {
+                    let t = qa.tuple();
+                    (
+                        (
+                            if t.0 < tl.0 { t.0 } else { tl.0 },
+                            if t.1 < tl.1 { t.1 } else { tl.1 },
+                        ),
+                        (
+                            if t.0 > br.0 { t.0 } else { br.0 },
+                            if t.1 > br.1 { t.1 } else { br.1 },
+                        ),
+                    )
+                });
+            Ok((Qa::try_from(tl_tuple)?, Qa::try_from(br_tuple)?))
+        } else {
+            Err(Error::Empty)
+        }
+    }
+
     /// Return a usize index corresponding to the `Qa`.
     #[inline]
     pub fn to_usize(&self) -> usize {

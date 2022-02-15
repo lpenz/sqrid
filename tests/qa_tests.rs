@@ -219,3 +219,24 @@ fn test_iter_range() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_tlbr() -> Result<()> {
+    let (tl, br) = Qa::tlbr_of(Qa::iter())?;
+    assert_eq!(Qa::TOP_LEFT, tl);
+    assert_eq!(Qa::BOTTOM_RIGHT, br);
+    let tr = Qa::try_from((4_u16, 3_u16))?;
+    let bl = Qa::try_from((1_u16, 5_u16))?;
+    let v = vec![
+        tr,
+        Qa::try_from((4_u16, 4_u16))?,
+        Qa::try_from((1_u16, 4_u16))?,
+        Qa::try_from((3_u16, 4_u16))?,
+        Qa::try_from((2_u16, 4_u16))?,
+        bl,
+    ];
+    let (tl, br) = Qa::tlbr_of(v.into_iter())?;
+    assert_eq!((1_u16, 3_u16), tl.into());
+    assert_eq!((4_u16, 5_u16), br.into());
+    Ok(())
+}

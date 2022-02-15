@@ -27,6 +27,8 @@ pub enum Error {
     Loop,
     /// A search algorithm unexpectedly could no reach the destination
     DestinationUnreachable,
+    /// An empty list or iterator was passed where one was not expected
+    Empty,
 }
 
 impl error::Error for Error {}
@@ -39,6 +41,7 @@ impl fmt::Display for Error {
             Error::InvalidMovement => write!(f, "invalid movement (Qa+Qr)"),
             Error::Loop => write!(f, "unexpected loop detected"),
             Error::DestinationUnreachable => write!(f, "destination unreachable"),
+            Error::Empty => write!(f, "empty list of iterator"),
         }
     }
 }
