@@ -146,10 +146,7 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     /// Create a new `Qa` from the provided `Qa` with different
     /// dimensions, if possible; return an error otherwise.
     #[inline]
-    pub fn tryfrom_qa<const W2: u16, const H2: u16>(
-        aqa2: impl Borrow<Qa<W2, H2>>,
-    ) -> Result<Qa<W, H>, Error> {
-        let qa2 = aqa2.borrow();
+    pub fn tryfrom_qa<const W2: u16, const H2: u16>(qa2: Qa<W2, H2>) -> Result<Qa<W, H>, Error> {
         Self::tryfrom_tuple(qa2.tuple())
     }
 
@@ -229,13 +226,7 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     }
 
     /// Return the manhattan distance between 2 `Qa`s of the same type
-    pub fn manhattan<AQA1, AQA2>(aqa1: AQA1, aqa2: AQA2) -> usize
-    where
-        AQA1: Borrow<Qa<W, H>>,
-        AQA2: Borrow<Qa<W, H>>,
-    {
-        let qa1 = aqa1.borrow();
-        let qa2 = aqa2.borrow();
+    pub fn manhattan(qa1: &Qa<W, H>, qa2: &Qa<W, H>) -> usize {
         let dx = if qa1.x > qa2.x {
             qa1.x as usize - qa2.x as usize
         } else {
@@ -250,13 +241,7 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     }
 
     /// Check that the `Qa` is inside the provided limits
-    pub fn inside<AQA1, AQA2>(&self, aqa1: AQA1, aqa2: AQA2) -> bool
-    where
-        AQA1: Borrow<Qa<W, H>>,
-        AQA2: Borrow<Qa<W, H>>,
-    {
-        let qa1 = aqa1.borrow();
-        let qa2 = aqa2.borrow();
+    pub fn inside(&self, qa1: &Qa<W, H>, qa2: &Qa<W, H>) -> bool {
         let (xmin, xmax) = if qa1.x < qa2.x {
             (qa1.x, qa2.x)
         } else {

@@ -134,18 +134,18 @@ fn test_corner_side() -> Result<()> {
 
 #[test]
 fn test_manhattan() -> Result<()> {
-    assert_eq!(Qa2::manhattan(&Qa2::TOP_LEFT, Qa2::BOTTOM_RIGHT), 2);
-    assert_eq!(Qa2::manhattan(Qa2::BOTTOM_RIGHT, &Qa2::TOP_LEFT), 2);
+    assert_eq!(Qa2::manhattan(&Qa2::TOP_LEFT, &Qa2::BOTTOM_RIGHT), 2);
+    assert_eq!(Qa2::manhattan(&Qa2::BOTTOM_RIGHT, &Qa2::TOP_LEFT), 2);
     Ok(())
 }
 
 #[test]
 fn test_inside() -> Result<()> {
     for qa in Qa::iter() {
-        assert!(qa.inside(Qa::TOP_LEFT, Qa::BOTTOM_RIGHT));
-        assert!(qa.inside(qa, qa));
+        assert!(qa.inside(&Qa::TOP_LEFT, &Qa::BOTTOM_RIGHT));
+        assert!(qa.inside(&qa, &qa));
     }
-    assert!(!Qa::BOTTOM_RIGHT.inside(Qa::TOP_LEFT, Qa::CENTER));
+    assert!(!Qa::BOTTOM_RIGHT.inside(&Qa::TOP_LEFT, &Qa::CENTER));
     Ok(())
 }
 
