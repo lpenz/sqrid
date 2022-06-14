@@ -98,7 +98,7 @@ impl<
     pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, GridUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-        GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+        GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
     {
         let mut it = UcsIterator {
             cost: GridUsize::new(),
@@ -106,7 +106,7 @@ impl<
             go,
         };
         it.frontier.push((Reverse(0), (*orig, Qr::default())));
-        it.cost.set(*orig, 0);
+        it.cost.set(*orig, Some(0));
         it
     }
 }
@@ -122,7 +122,7 @@ impl<
     > Iterator for UcsIterator<F, GridUsize, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+    GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
 {
     type Item = (Qa<W, H>, Qr);
     fn next(&mut self) -> Option<Self::Item> {
@@ -136,7 +136,7 @@ where
                         .expect("internal error while getting cost")
                         + costincr;
                     if newcost < self.cost.get(&nextqa).unwrap_or(usize::MAX) {
-                        self.cost.set(nextqa, newcost);
+                        self.cost.set(nextqa, Some(newcost));
                         let priority = Reverse(newcost);
                         self.frontier.push((priority, (nextqa, -qr)));
                     }
@@ -170,12 +170,12 @@ pub fn search_mapqaqr<
 ) -> Result<GridQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
-    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
+    GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
 {
     let mut from = GridQr::new();
     for (qa, qr) in UcsIterator::<F, GridUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
-        from.set(qa, qr);
+        from.set(qa, Some(qr));
         if qa == *dest {
             return Ok(from);
         }
@@ -205,8 +205,8 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
-    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
+    GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
 {
     let mapqaqr = search_mapqaqr::<F, GridQr, GridUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
     crate::camefrom_into_path(mapqaqr, orig, dest)
@@ -261,8 +261,8 @@ where
 {
     search_path::<
         F,
-        collections::HashMap<Qa<W, H>, Qr>,
-        collections::HashMap<Qa<W, H>, usize>,
+        collections::HashMap<Qa<W, H>, Option<Qr>>,
+        collections::HashMap<Qa<W, H>, Option<usize>>,
         W,
         H,
         D,
@@ -290,8 +290,8 @@ where
 {
     search_path::<
         F,
-        collections::BTreeMap<Qa<W, H>, Qr>,
-        collections::BTreeMap<Qa<W, H>, usize>,
+        collections::BTreeMap<Qa<W, H>, Option<Qr>>,
+        collections::BTreeMap<Qa<W, H>, Option<usize>>,
         W,
         H,
         D,

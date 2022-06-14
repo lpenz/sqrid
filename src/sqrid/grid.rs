@@ -31,7 +31,9 @@ pub trait Grid<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE:
     /// Create a new Grid
     fn new() -> Self;
     /// Get the item corresponding to the provided [`Qa`]
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item>;
+    fn get(&self, qa: &Qa<W, H>) -> Item
+    where
+        Item: Default;
     /// Set the item corresponding to the provided [`Qa`]
     fn set(&mut self, qa: Qa<W, H>, item: Item);
 }
@@ -42,8 +44,11 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
     fn new() -> Self {
         Self::new()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
-        self.get(qa).copied()
+    fn get(&self, qa: &Qa<W, H>) -> Item
+    where
+        Item: Default,
+    {
+        self.get(qa).copied().unwrap_or_default()
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self.insert(qa, item);
@@ -56,8 +61,11 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
     fn new() -> Self {
         Self::new()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
-        self.get(qa).copied()
+    fn get(&self, qa: &Qa<W, H>) -> Item
+    where
+        Item: Default,
+    {
+        self.get(qa).copied().unwrap_or_default()
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self.insert(qa, item);
@@ -84,7 +92,7 @@ pub fn camefrom_into_path<
     dest: &Qa<W, H>,
 ) -> Result<Vec<Qr>, Error>
 where
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
 {
     let distance = Qa::manhattan(orig, dest);
     let mut ret = collections::VecDeque::<Qr>::with_capacity(2 * distance);
@@ -120,7 +128,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         dest: &Qa<W, H>,
     ) -> Result<Vec<Qr>, Error>
     where
-        GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+        GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
     {
         crate::camefrom_into_path(map, orig, dest)
     }

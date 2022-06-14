@@ -347,8 +347,8 @@ impl<const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
     fn new() -> Self {
         Self::default()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<bool> {
-        Some(self.get(qa))
+    fn get(&self, qa: &Qa<W, H>) -> bool {
+        self.get(qa)
     }
     fn set(&mut self, qa: Qa<W, H>, item: bool) {
         self.set(qa, item);

@@ -94,7 +94,7 @@ impl<
     ) -> AstarIterator<F, GridUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-        GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+        GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
     {
         let mut it = AstarIterator {
             cost: GridUsize::new(),
@@ -103,7 +103,7 @@ impl<
             dest: *dest,
         };
         it.frontier.push((Reverse(0), (*orig, Qr::default())));
-        it.cost.set(*orig, 0);
+        it.cost.set(*orig, Some(0));
         it
     }
 }
@@ -119,7 +119,7 @@ impl<
     > Iterator for AstarIterator<F, GridUsize, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+    GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
 {
     type Item = (Qa<W, H>, Qr);
     fn next(&mut self) -> Option<Self::Item> {
@@ -133,7 +133,7 @@ where
                     + 1;
                 if let Some(nextqa) = (self.go)(qa, qr) {
                     if newcost < self.cost.get(&nextqa).unwrap_or(usize::MAX) {
-                        self.cost.set(nextqa, newcost);
+                        self.cost.set(nextqa, Some(newcost));
                         let priority = Reverse(newcost + Qa::manhattan(&nextqa, &self.dest));
                         self.frontier.push((priority, (nextqa, -qr)));
                     }
@@ -167,12 +167,12 @@ pub fn search_mapqaqr<
 ) -> Result<GridQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
-    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
+    GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
 {
     let mut from = GridQr::new();
     for (qa, qr) in AstarIterator::<F, GridUsize, W, H, D, WORDS, SIZE>::new(go, orig, dest) {
-        from.set(qa, qr);
+        from.set(qa, Some(qr));
         if qa == *dest {
             return Ok(from);
         }
@@ -202,8 +202,8 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
-    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
+    GridUsize: Grid<Option<usize>, W, H, WORDS, SIZE>,
 {
     let mapqaqr = search_mapqaqr::<F, GridQr, GridUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
     crate::camefrom_into_path(mapqaqr, orig, dest)
@@ -258,8 +258,8 @@ where
 {
     search_path::<
         F,
-        collections::HashMap<Qa<W, H>, Qr>,
-        collections::HashMap<Qa<W, H>, usize>,
+        collections::HashMap<Qa<W, H>, Option<Qr>>,
+        collections::HashMap<Qa<W, H>, Option<usize>>,
         W,
         H,
         D,
@@ -287,8 +287,8 @@ where
 {
     search_path::<
         F,
-        collections::BTreeMap<Qa<W, H>, Qr>,
-        collections::BTreeMap<Qa<W, H>, usize>,
+        collections::BTreeMap<Qa<W, H>, Option<Qr>>,
+        collections::BTreeMap<Qa<W, H>, Option<usize>>,
         W,
         H,
         D,

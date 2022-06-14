@@ -155,7 +155,7 @@ where
         for &(qa, _) in &front {
             for qr in Qr::iter::<D>() {
                 if let Some(nextqa) = (self.go)(qa, qr) {
-                    if self.visited.get(&nextqa) == Some(true) {
+                    if self.visited.get(&nextqa) {
                         continue;
                     }
                     self.nextfront.push((nextqa, -qr));
@@ -213,12 +213,12 @@ pub fn search_mapqaqr<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
     MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
     let mut from = GridQr::new();
     for (qa, qr) in bf_iter::<GoFn, MapQaBool, W, H, D, WORDS, SIZE>(go, orig).flatten() {
-        from.set(qa, qr);
+        from.set(qa, Some(qr));
         if found(qa) {
             return Ok((qa, from));
         }
@@ -250,7 +250,7 @@ pub fn search_path<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
     MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
     let (dest, mapqaqr) =
@@ -373,7 +373,7 @@ where
     search_path::<
         GoFn,
         FoundFn,
-        collections::HashMap<Qa<W, H>, Qr>,
+        collections::HashMap<Qa<W, H>, Option<Qr>>,
         collections::HashMap<Qa<W, H>, bool>,
         W,
         H,
@@ -405,7 +405,7 @@ where
     search_path::<
         GoFn,
         FoundFn,
-        collections::BTreeMap<Qa<W, H>, Qr>,
+        collections::BTreeMap<Qa<W, H>, Option<Qr>>,
         collections::BTreeMap<Qa<W, H>, bool>,
         W,
         H,

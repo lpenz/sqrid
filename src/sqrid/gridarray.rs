@@ -493,17 +493,17 @@ impl<T: fmt::Display, const W: u16, const H: u16, const SIZE: usize> fmt::Displa
 // Grid
 
 impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    Grid<Item, W, H, WORDS, SIZE> for GridArray<Option<Item>, W, H, SIZE>
+    Grid<Item, W, H, WORDS, SIZE> for GridArray<Item, W, H, SIZE>
 where
-    GridArray<Option<Item>, W, H, SIZE>: Default,
+    GridArray<Item, W, H, SIZE>: Default,
 {
     fn new() -> Self {
         Self::default()
     }
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
+    fn get(&self, qa: &Qa<W, H>) -> Item {
         self[qa]
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self[qa] = Some(item);
+        self[qa] = item;
     }
 }
