@@ -7,7 +7,7 @@
 
 //! A grid is a generic array that can be indexed by a [`Qa`]
 //!
-//! This submodule has the [`Grid`] type and the associated
+//! This submodule has the [`GridArray`] type and the associated
 //! functionality.
 
 use std::borrow::Borrow;
@@ -28,8 +28,8 @@ macro_rules! impl_assert {
 
 /// A grid is a generic array that can be indexed by a [`Qa`]
 ///
-/// We can also interact with specific lines with [`Grid::line`] and
-/// [`Grid::line_mut`], or with the whole underlying array with
+/// We can also interact with specific lines with [`GridArray::line`] and
+/// [`GridArray::line_mut`], or with the whole underlying array with
 /// [`as_ref`](std::convert::AsRef::as_ref) and
 /// [`as_mut`](std::convert::AsMut::as_mut).
 ///
@@ -40,7 +40,7 @@ macro_rules! impl_assert {
 /// We can use the [`grid_create`] macro to use a [`Qa`] as a source
 /// of these values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
+pub struct GridArray<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
 
 /// Helper macro for grid type creation.
 ///
@@ -50,17 +50,17 @@ pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; S
 /// Example usage:
 /// ```
 /// type Sqrid = sqrid::sqrid_create!(3, 3, false);
-/// type Grid = sqrid::grid_create!(Sqrid, i32);
+/// type GridArray = sqrid::grid_create!(Sqrid, i32);
 /// ```
 #[macro_export]
 macro_rules! grid_create {
     ($sqrid: ty, $member: ty) => {
-        $crate::Grid<$member, { <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT },
+        $crate::GridArray<$member, { <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT },
                      { (<$sqrid>::WIDTH as usize * <$sqrid>::HEIGHT as usize) }>
     };
 }
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
+impl<T, const W: u16, const H: u16, const SIZE: usize> GridArray<T, W, H, SIZE> {
     // Create the _ASSERTS constant to check W * H == SIZE
     // We have to instantiate it in all low-level constructors to
     // actually perform the check.
@@ -79,7 +79,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
         T: Copy,
     {
         let _ = Self::_ASSERTS;
-        Grid([item; SIZE])
+        GridArray([item; SIZE])
     }
 
     /// Create a grid filled with copies of the provided item
@@ -88,10 +88,10 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     where
         T: Default + Copy,
     {
-        Grid([T::default(); SIZE])
+        GridArray([T::default(); SIZE])
     }
 
-    /// "Dismantle" a Grid into the inner array; consumes self.
+    /// "Dismantle" a GridArray into the inner array; consumes self.
     #[inline]
     pub fn into_inner(self) -> [T; SIZE] {
         self.0
@@ -187,7 +187,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
 }
 
 // Rotations are only available for "square" grids
-impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
+impl<T, const W: u16, const SIZE: usize> GridArray<T, W, W, SIZE> {
     /// Rotate all elements 90 degrees clockwise
     pub fn rotate_cw(&mut self) {
         for y in 0..W / 2 {
@@ -218,7 +218,7 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
     }
 }
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE>
+impl<T, const W: u16, const H: u16, const SIZE: usize> Default for GridArray<T, W, H, SIZE>
 where
     T: Default + Copy,
 {
@@ -230,7 +230,7 @@ where
 }
 
 impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> ops::Neg
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 where
     T: ops::Neg<Output = T>,
 {
@@ -242,7 +242,8 @@ where
 
 // Indexing
 
-impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::Index<AQA> for Grid<T, W, H, SIZE>
+impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::Index<AQA>
+    for GridArray<T, W, H, SIZE>
 where
     AQA: Borrow<Qa<W, H>>,
 {
@@ -254,7 +255,7 @@ where
 }
 
 impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::IndexMut<AQA>
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 where
     AQA: Borrow<Qa<W, H>>,
 {
@@ -267,7 +268,7 @@ where
 // as_ref, as_mut
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsRef<[T; SIZE]>
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn as_ref(&self) -> &[T; SIZE] {
@@ -276,7 +277,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsRef<[T; SIZE]>
 }
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsMut<[T; SIZE]>
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn as_mut(&mut self) -> &mut [T; SIZE] {
@@ -287,7 +288,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsMut<[T; SIZE]>
 // into_iter
 
 impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
-    for &'a Grid<T, W, H, SIZE>
+    for &'a GridArray<T, W, H, SIZE>
 {
     type Item = &'a T;
     type IntoIter = std::slice::Iter<'a, T>;
@@ -298,7 +299,7 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
 }
 
 impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
-    for &'a mut Grid<T, W, H, SIZE>
+    for &'a mut GridArray<T, W, H, SIZE>
 {
     type Item = &'a mut T;
     type IntoIter = std::slice::IterMut<'a, T>;
@@ -308,7 +309,7 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     }
 }
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for Grid<T, W, H, SIZE> {
+impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for GridArray<T, W, H, SIZE> {
     type Item = T;
     type IntoIter = std::array::IntoIter<T, SIZE>;
     #[inline]
@@ -319,12 +320,12 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for Grid<T, 
 
 // from_iter
 
-/// Creates a Grid from an iterator that returns references
+/// Creates a GridArray from an iterator that returns references
 ///
 /// Assumes we are getting exactly all grid elements; it panics
 /// otherwise.
 impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
-    iter::FromIterator<&'a T> for Grid<T, W, H, SIZE>
+    iter::FromIterator<&'a T> for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
@@ -345,12 +346,12 @@ impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
     }
 }
 
-/// Creates a Grid from an iterator that returns values
+/// Creates a GridArray from an iterator that returns values
 ///
 /// Assumes we are getting exactly all grid elements; it panics
 /// otherwise.
 impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<T>
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
@@ -374,7 +375,7 @@ impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> iter::Fro
 // Extend
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W, H>, T)>
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
@@ -388,7 +389,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W, H>, T
 }
 
 impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
-    iter::Extend<(Qa<W, H>, &'a T)> for Grid<T, W, H, SIZE>
+    iter::Extend<(Qa<W, H>, &'a T)> for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
@@ -402,7 +403,7 @@ impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
 }
 
 impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
-    iter::Extend<&'a (Qa<W, H>, T)> for Grid<T, W, H, SIZE>
+    iter::Extend<&'a (Qa<W, H>, T)> for GridArray<T, W, H, SIZE>
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
@@ -417,9 +418,9 @@ impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
 
 // Display, with helper
 
-/// Grid Display helper function
+/// GridArray Display helper function
 ///
-/// Used in Display implementation of Grid and Gridbool.
+/// Used in Display implementation of GridArray and Gridbool.
 pub fn display_fmt_helper(
     f: &mut fmt::Formatter<'_>,
     w: u16,
@@ -474,14 +475,14 @@ pub fn display_fmt_helper(
     headerfooter(f)
 }
 
-/// Pretty-printer [`Grid`] display implementation
+/// Pretty-printer [`GridArray`] display implementation
 ///
 /// The [`Display`](std::fmt::Display) implementation of grid was made
 /// to print an ascii-like grid.
 /// It does that in one pass, and uses the padding parameter as the
 /// size to reserve for each member.
 impl<T: fmt::Display, const W: u16, const H: u16, const SIZE: usize> fmt::Display
-    for Grid<T, W, H, SIZE>
+    for GridArray<T, W, H, SIZE>
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         display_fmt_helper(f, W, H, self.iter().map(|v| format!("{}", v)))

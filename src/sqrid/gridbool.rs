@@ -16,7 +16,7 @@ use std::fmt;
 use std::iter;
 use std::ops;
 
-use super::grid;
+use super::gridarray;
 use super::qa::Qa;
 
 /// Assert const generic expressions inside `impl` blocks
@@ -329,7 +329,7 @@ impl<const W: u16, const H: u16, const WORDS: usize> iter::FromIterator<bool>
 
 impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W, H, WORDS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        grid::display_fmt_helper(
+        gridarray::display_fmt_helper(
             f,
             W,
             H,

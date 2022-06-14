@@ -74,7 +74,7 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         eprintln!("from {} to {}: {}", qa, end, i);
         eprintln!("{}", wall);
         // BFS:
-        //   with Grid:
+        //   with GridArray:
         let (_, path) = Sqrid::bfs_path(calc_path(&wall), &qa, goal(&end))?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
@@ -87,7 +87,7 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // A*:
-        //   with Grid:
+        //   with GridArray:
         let path = Sqrid::astar_path(calc_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
@@ -100,7 +100,7 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // UCS:
-        //   with Grid:
+        //   with GridArray:
         let path = Sqrid::ucs_path(calc_ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);

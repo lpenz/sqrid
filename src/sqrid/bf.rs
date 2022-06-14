@@ -80,7 +80,7 @@ use std::collections;
 use std::mem;
 
 use super::Error;
-use super::Grid;
+use super::GridArray;
 use super::Gridbool;
 use super::MapQa;
 use super::Qa;
@@ -262,7 +262,7 @@ where
 
 /* bf_iter parameterized: */
 
-/// Create new breadth-first iterator using [`Grid`] internally
+/// Create new breadth-first iterator using [`GridArray`] internally
 pub fn bf_iter_grid<
     GoFn,
     const W: u16,
@@ -320,7 +320,7 @@ where
 
 /* search_path parameterized: */
 
-/// Makes an BF search using [`Grid`], returns the path as a `Vec<Qr>`
+/// Makes an BF search using [`GridArray`], returns the path as a `Vec<Qr>`
 pub fn search_path_grid<
     GoFn,
     FoundFn,
@@ -341,7 +341,7 @@ where
     search_path::<
         GoFn,
         FoundFn,
-        Grid<Option<Qr>, W, H, SIZE>,
+        GridArray<Option<Qr>, W, H, SIZE>,
         Gridbool<W, H, WORDS>,
         W,
         H,
@@ -434,7 +434,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         Self::bf_iter_grid(go, orig)
     }
 
-    /// Create new breadth-first iterator using [`Grid`] internally;
+    /// Create new breadth-first iterator using [`GridArray`] internally;
     /// see [`bf`](crate::bf)
     pub fn bf_iter_grid<GoFn>(
         go: GoFn,
@@ -492,7 +492,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         Self::bfs_path_grid::<GoFn, FoundFn>(go, orig, found)
     }
 
-    /// Perform a breadth-first search using a [`Grid`] internally;
+    /// Perform a breadth-first search using a [`GridArray`] internally;
     /// see [`bf`](crate::bf)
     pub fn bfs_path_grid<GoFn, FoundFn>(
         go: GoFn,
