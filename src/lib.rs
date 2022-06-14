@@ -18,7 +18,7 @@
 //!   cardinal (and intercardinal) directions.
 //!   Addition is implemented in the form of `Qa + Qr = Option<Qa>`,
 //!   which can be `None` if the result is outside the grid.
-//! - [`Grid`]: a `Qa`-indexed array.
+//! - [`GridArray`]: a `Qa`-indexed array.
 //! - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
 //! - [`Sqrid`]: "factory" type that acts as an entry point to the
 //!   fundamental types below and to algorithms.
@@ -78,13 +78,13 @@
 //! argument that specifies whether the intercardinal directions
 //! (`NE`, `SE`, `SW`, `NW`) should be considered.
 //!
-//! ## `Grid`: a `Qa`-indexed array
+//! ## `GridArray`: a `Qa`-indexed array
 //!
-//! A [`Grid`] is a generic array that can be indexed by a [`Qa`].
+//! A [`GridArray`] is a generic array that can be indexed by a [`Qa`].
 //!
 //! We can create the type from a suitable [`Sqrid`] type by using the
 //! [`grid_create`] macro. We can then interact with specific lines
-//! with [`Grid::line`] and [`Grid::line_mut`], or with the whole
+//! with [`GridArray::line`] and [`GridArray::line_mut`], or with the whole
 //! underlying array with `as_ref` (see [`std::convert::AsRef`]) and
 //! `as_mut` (see [`std::convert::AsMut`]).
 //!
@@ -93,14 +93,14 @@
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
 //! type Qa = sqrid::qa_create!(Sqrid);
-//! type Grid = sqrid::grid_create!(Sqrid, i32);
+//! type GridArray = sqrid::grid_create!(Sqrid, i32);
 //!
 //! // The grid create macro above is currently equivalent to:
-//! type Grid2 = sqrid::Grid<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
+//! type Grid2 = sqrid::GridArray<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
 //!                               { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
 //!
 //! // We can create grids from iterators via `collect`:
-//! let mut gridnums = (0..9).collect::<Grid>();
+//! let mut gridnums = (0..9).collect::<GridArray>();
 //!
 //! // Iterate on their members:
 //! for i in &gridnums {
@@ -167,7 +167,7 @@
 //!
 //! The [`Qa`] type and some methods on the [`Qr`] type require const
 //! generic arguments that usually don't change inside an application.
-//! Both [`Grid`] and [`Gridbool`] also require further arguments that
+//! Both [`GridArray`] and [`Gridbool`] also require further arguments that
 //! can actually be derived from the width and height of the grid, but
 //! that have to be explicitly specified due to some Rust limitations.
 //!
@@ -180,7 +180,7 @@
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(4, 4, false);
 //! type Qa = sqrid::qa_create!(Sqrid);
-//! type Grid = sqrid::grid_create!(Sqrid, i32);
+//! type GridArray = sqrid::grid_create!(Sqrid, i32);
 //! type Gridbool = sqrid::gridbool_create!(Sqrid);
 //! ```
 //!

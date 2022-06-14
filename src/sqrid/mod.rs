@@ -24,8 +24,8 @@ pub use self::qr::*;
 pub mod qaqr;
 pub use self::qaqr::*;
 
-pub mod grid;
-pub use self::grid::*;
+pub mod gridarray;
+pub use self::gridarray::*;
 pub mod gridbool;
 pub use self::gridbool::*;
 
