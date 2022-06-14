@@ -17,6 +17,7 @@ use std::fmt;
 use std::iter;
 use std::ops;
 
+use super::grid::Grid;
 use super::qa::Qa;
 
 /// Assert const generic expressions inside `impl` blocks
@@ -486,5 +487,23 @@ impl<T: fmt::Display, const W: u16, const H: u16, const SIZE: usize> fmt::Displa
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         display_fmt_helper(f, W, H, self.iter().map(|v| format!("{}", v)))
+    }
+}
+
+// Grid
+
+impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    Grid<Item, W, H, WORDS, SIZE> for GridArray<Option<Item>, W, H, SIZE>
+where
+    GridArray<Option<Item>, W, H, SIZE>: Default,
+{
+    fn new() -> Self {
+        Self::default()
+    }
+    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
+        self[qa]
+    }
+    fn set(&mut self, qa: Qa<W, H>, item: Item) {
+        self[qa] = Some(item);
     }
 }

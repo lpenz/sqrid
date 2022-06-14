@@ -49,8 +49,8 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::Error;
+use super::Grid;
 use super::GridArray;
-use super::MapQa;
 use super::Qa;
 use super::Qr;
 use super::Sqrid;
@@ -61,14 +61,14 @@ use super::Sqrid;
 #[derive(Debug, Clone)]
 pub struct AstarIterator<
     F,
-    MapQaUsize,
+    GridUsize,
     const W: u16,
     const H: u16,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 > {
-    cost: MapQaUsize,
+    cost: GridUsize,
     frontier: BinaryHeap<(Reverse<usize>, (Qa<W, H>, Qr))>,
     go: F,
     dest: Qa<W, H>,
@@ -76,13 +76,13 @@ pub struct AstarIterator<
 
 impl<
         F,
-        MapQaUsize,
+        GridUsize,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > AstarIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    > AstarIterator<F, GridUsize, W, H, D, WORDS, SIZE>
 {
     /// Create a new A* iterator
     ///
@@ -91,13 +91,13 @@ impl<
         go: F,
         orig: &Qa<W, H>,
         dest: &Qa<W, H>,
-    ) -> AstarIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    ) -> AstarIterator<F, GridUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-        MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+        GridUsize: Grid<usize, W, H, WORDS, SIZE>,
     {
         let mut it = AstarIterator {
-            cost: MapQaUsize::new(),
+            cost: GridUsize::new(),
             frontier: BinaryHeap::default(),
             go,
             dest: *dest,
@@ -110,16 +110,16 @@ impl<
 
 impl<
         F,
-        MapQaUsize,
+        GridUsize,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > Iterator for AstarIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    > Iterator for AstarIterator<F, GridUsize, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
     type Item = (Qa<W, H>, Qr);
     fn next(&mut self) -> Option<Self::Item> {
@@ -148,13 +148,13 @@ where
 
 /* Generic interface **********************************************************/
 
-/// Make an A* search, return the "came from" direction [`MapQa`]
+/// Make an A* search, return the "came from" direction [`Grid`]
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn search_mapqaqr<
     F,
-    MapQaQr,
-    MapQaUsize,
+    GridQr,
+    GridUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -164,14 +164,14 @@ pub fn search_mapqaqr<
     go: F,
     orig: &Qa<W, H>,
     dest: &Qa<W, H>,
-) -> Result<MapQaQr, Error>
+) -> Result<GridQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
-    let mut from = MapQaQr::new();
-    for (qa, qr) in AstarIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig, dest) {
+    let mut from = GridQr::new();
+    for (qa, qr) in AstarIterator::<F, GridUsize, W, H, D, WORDS, SIZE>::new(go, orig, dest) {
         from.set(qa, qr);
         if qa == *dest {
             return Ok(from);
@@ -182,14 +182,14 @@ where
 
 /// Makes an A* search, returns the path as a `Vec<Qr>`
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 ///
 /// This is essentially [`search_mapqaqr`] followed by a call to
 /// [`camefrom_into_path`](crate::camefrom_into_path).
 pub fn search_path<
     F,
-    MapQaQr,
-    MapQaUsize,
+    GridQr,
+    GridUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -202,10 +202,10 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
-    let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
+    let mapqaqr = search_mapqaqr::<F, GridQr, GridUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
     crate::camefrom_into_path(mapqaqr, orig, dest)
 }
 
