@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Leandro Lisboa Penz <lpenz@lpenz.org>
+// Copyright (C) 2022 Leandro Lisboa Penz <lpenz@lpenz.org>
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
@@ -7,7 +7,7 @@
 
 //! Module that abstracts maps with [`Qa`] indexes
 //!
-//! The [`MapQa`] trait is used to parameterize the search algorithms,
+//! The [`Grid`] trait is used to parameterize the search algorithms,
 //! allowing us to use [`GridArray`], [`std::collections::HashMap`] or
 //! [`std::collections::BTreeMap`] for the internal algorithm
 //! structures.
@@ -18,19 +18,17 @@
 use std::collections;
 
 use super::error::Error;
-use super::gridarray::GridArray;
-use super::gridbool::Gridbool;
 use super::qa::Qa;
 use super::qr::Qr;
 use super::Sqrid;
 
-/* MapQa */
+/* Grid */
 
 /// Trait that abstracts maps with [`Qa`] indexes
 ///
 /// The generic parameters allow us to support implementing [`GridArray`].
-pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
-    /// Create a new MapQa
+pub trait Grid<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
+    /// Create a new Grid
     fn new() -> Self;
     /// Get the item corresponding to the provided [`Qa`]
     fn get(&self, qa: &Qa<W, H>) -> Option<Item>;
@@ -39,37 +37,7 @@ pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE
 }
 
 impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for GridArray<Option<Item>, W, H, SIZE>
-where
-    GridArray<Option<Item>, W, H, SIZE>: Default,
-{
-    fn new() -> Self {
-        Self::default()
-    }
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
-        self[qa]
-    }
-    fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self[qa] = Some(item);
-    }
-}
-
-impl<const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<bool, W, H, WORDS, SIZE> for Gridbool<W, H, WORDS>
-{
-    fn new() -> Self {
-        Self::default()
-    }
-    fn get(&self, qa: &Qa<W, H>) -> Option<bool> {
-        Some(self.get(qa))
-    }
-    fn set(&mut self, qa: Qa<W, H>, item: bool) {
-        self.set(qa, item);
-    }
-}
-
-impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for collections::HashMap<Qa<W, H>, Item>
+    Grid<Item, W, H, WORDS, SIZE> for collections::HashMap<Qa<W, H>, Item>
 {
     fn new() -> Self {
         Self::new()
@@ -83,7 +51,7 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
 }
 
 impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for collections::BTreeMap<Qa<W, H>, Item>
+    Grid<Item, W, H, WORDS, SIZE> for collections::BTreeMap<Qa<W, H>, Item>
 {
     fn new() -> Self {
         Self::new()
@@ -97,7 +65,7 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
 }
 
 /// Generate a [`Qr`] vector (i.e. a vector of directions) from a
-/// "came from" `Qr` [`MapQa`] by following the grid, starting at
+/// "came from" `Qr` [`Grid`] by following the grid, starting at
 /// `orig`, until reaching `dest`.
 ///
 /// Can return [`Error::InvalidMovement`] if following the
@@ -105,18 +73,18 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
 /// if a cycle is found or [`Error::DestinationUnreachable`] if `dest`
 /// is not in the provided map.
 pub fn camefrom_into_path<
-    MapQaQr,
+    GridQr,
     const W: u16,
     const H: u16,
     const WORDS: usize,
     const SIZE: usize,
 >(
-    map: MapQaQr,
+    map: GridQr,
     orig: &Qa<W, H>,
     dest: &Qa<W, H>,
 ) -> Result<Vec<Qr>, Error>
 where
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
 {
     let distance = Qa::manhattan(orig, dest);
     let mut ret = collections::VecDeque::<Qr>::with_capacity(2 * distance);
@@ -146,13 +114,13 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     Sqrid<W, H, D, WORDS, SIZE>
 {
     /// TODO
-    pub fn camefrom_into_path<MapQaQr>(
-        map: MapQaQr,
+    pub fn camefrom_into_path<GridQr>(
+        map: GridQr,
         orig: &Qa<W, H>,
         dest: &Qa<W, H>,
     ) -> Result<Vec<Qr>, Error>
     where
-        MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+        GridQr: Grid<Qr, W, H, WORDS, SIZE>,
     {
         crate::camefrom_into_path(map, orig, dest)
     }

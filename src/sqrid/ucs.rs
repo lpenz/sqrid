@@ -55,8 +55,8 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::Error;
+use super::Grid;
 use super::GridArray;
-use super::MapQa;
 use super::Qa;
 use super::Qr;
 use super::Sqrid;
@@ -70,38 +70,38 @@ pub type Cost = usize;
 #[derive(Debug, Clone)]
 pub struct UcsIterator<
     F,
-    MapQaUsize,
+    GridUsize,
     const W: u16,
     const H: u16,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 > {
-    cost: MapQaUsize,
+    cost: GridUsize,
     frontier: BinaryHeap<(Reverse<usize>, (Qa<W, H>, Qr))>,
     go: F,
 }
 
 impl<
         F,
-        MapQaUsize,
+        GridUsize,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    > UcsIterator<F, GridUsize, W, H, D, WORDS, SIZE>
 {
     /// Create a new UCS iterator
     ///
     /// This is used internally to yield coordinates in cost order.
-    pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, GridUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-        MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+        GridUsize: Grid<usize, W, H, WORDS, SIZE>,
     {
         let mut it = UcsIterator {
-            cost: MapQaUsize::new(),
+            cost: GridUsize::new(),
             frontier: BinaryHeap::default(),
             go,
         };
@@ -113,16 +113,16 @@ impl<
 
 impl<
         F,
-        MapQaUsize,
+        GridUsize,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > Iterator for UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    > Iterator for UcsIterator<F, GridUsize, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
     type Item = (Qa<W, H>, Qr);
     fn next(&mut self) -> Option<Self::Item> {
@@ -151,13 +151,13 @@ where
 
 /* Generic interface **********************************************************/
 
-/// Make a UCS search, return the "came from" direction [`MapQa`]
+/// Make a UCS search, return the "came from" direction [`Grid`]
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn search_mapqaqr<
     F,
-    MapQaQr,
-    MapQaUsize,
+    GridQr,
+    GridUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -167,14 +167,14 @@ pub fn search_mapqaqr<
     go: F,
     orig: &Qa<W, H>,
     dest: &Qa<W, H>,
-) -> Result<MapQaQr, Error>
+) -> Result<GridQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
-    let mut from = MapQaQr::new();
-    for (qa, qr) in UcsIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
+    let mut from = GridQr::new();
+    for (qa, qr) in UcsIterator::<F, GridUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
         from.set(qa, qr);
         if qa == *dest {
             return Ok(from);
@@ -185,14 +185,14 @@ where
 
 /// Makes a UCS search, returns the path as a `Vec<Qr>`
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 ///
 /// This is essentially [`search_mapqaqr`] followed by a call to
 /// [`camefrom_into_path`](crate::camefrom_into_path).
 pub fn search_path<
     F,
-    MapQaQr,
-    MapQaUsize,
+    GridQr,
+    GridUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -205,10 +205,10 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    GridUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
-    let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
+    let mapqaqr = search_mapqaqr::<F, GridQr, GridUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
     crate::camefrom_into_path(mapqaqr, orig, dest)
 }
 

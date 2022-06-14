@@ -80,9 +80,9 @@ use std::collections;
 use std::mem;
 
 use super::Error;
+use super::Grid;
 use super::GridArray;
 use super::Gridbool;
-use super::MapQa;
 use super::Qa;
 use super::Qr;
 use super::Sqrid;
@@ -115,7 +115,7 @@ impl<
         const SIZE: usize,
     > BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
 where
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
     /// Create new breadth-first iterator
     pub fn new(go: GoFn, orig: &Qa<W, H>) -> BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
@@ -144,7 +144,7 @@ impl<
     > Iterator for BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
     type Item = Vec<(Qa<W, H>, Qr)>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -172,7 +172,7 @@ where
 
 /// Create new breadth-first iterator
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn bf_iter<
     GoFn,
     MapQaBool,
@@ -187,18 +187,18 @@ pub fn bf_iter<
 ) -> BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
     BfIterator::new(go, orig)
 }
 
-/// Make a breadth-first search, return the "came from" direction [`MapQa`]
+/// Make a breadth-first search, return the "came from" direction [`Grid`]
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn search_mapqaqr<
     GoFn,
     FoundFn,
-    MapQaQr,
+    GridQr,
     MapQaBool,
     const W: u16,
     const H: u16,
@@ -209,14 +209,14 @@ pub fn search_mapqaqr<
     go: GoFn,
     orig: &Qa<W, H>,
     found: FoundFn,
-) -> Result<(Qa<W, H>, MapQaQr), Error>
+) -> Result<(Qa<W, H>, GridQr), Error>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
-    let mut from = MapQaQr::new();
+    let mut from = GridQr::new();
     for (qa, qr) in bf_iter::<GoFn, MapQaBool, W, H, D, WORDS, SIZE>(go, orig).flatten() {
         from.set(qa, qr);
         if found(qa) {
@@ -228,14 +228,14 @@ where
 
 /// Makes a breadth-first search, returns the path as a `Vec<Qr>`
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 ///
 /// This is essentially [`search_mapqaqr`] followed by a call to
 /// [`camefrom_into_path`](crate::camefrom_into_path).
 pub fn search_path<
     GoFn,
     FoundFn,
-    MapQaQr,
+    GridQr,
     MapQaBool,
     const W: u16,
     const H: u16,
@@ -250,11 +250,11 @@ pub fn search_path<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    GridQr: Grid<Qr, W, H, WORDS, SIZE>,
+    MapQaBool: Grid<bool, W, H, WORDS, SIZE>,
 {
     let (dest, mapqaqr) =
-        search_mapqaqr::<GoFn, FoundFn, MapQaQr, MapQaBool, W, H, D, WORDS, SIZE>(go, orig, found)?;
+        search_mapqaqr::<GoFn, FoundFn, GridQr, MapQaBool, W, H, D, WORDS, SIZE>(go, orig, found)?;
     Ok((dest, crate::camefrom_into_path(mapqaqr, orig, &dest)?))
 }
 

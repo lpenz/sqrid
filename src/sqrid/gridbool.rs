@@ -16,6 +16,7 @@ use std::fmt;
 use std::iter;
 use std::ops;
 
+use super::grid::Grid;
 use super::gridarray;
 use super::qa::Qa;
 
@@ -335,5 +336,21 @@ impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W
             H,
             self.iter().map(|b| (if b { "#" } else { "." }).to_string()),
         )
+    }
+}
+
+// Grid
+
+impl<const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    Grid<bool, W, H, WORDS, SIZE> for Gridbool<W, H, WORDS>
+{
+    fn new() -> Self {
+        Self::default()
+    }
+    fn get(&self, qa: &Qa<W, H>) -> Option<bool> {
+        Some(self.get(qa))
+    }
+    fn set(&mut self, qa: Qa<W, H>, item: bool) {
+        self.set(qa, item);
     }
 }
