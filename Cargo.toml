@@ -8,6 +8,8 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/lpenz/sqrid"
 repository = "https://github.com/lpenz/sqrid"
+categories = ["data-structures"]
+keywords = ["grid", "square", "arrays"]
 
 [lib]
 bench = false
