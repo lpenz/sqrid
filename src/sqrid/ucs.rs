@@ -98,10 +98,10 @@ impl<
     pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-        MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+        MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
     {
         let mut it = UcsIterator {
-            cost: MapQaUsize::new(),
+            cost: MapQaUsize::default(),
             frontier: BinaryHeap::default(),
             go,
         };
@@ -170,10 +170,10 @@ pub fn search_mapqaqr<
 ) -> Result<MapQaQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
-    let mut from = MapQaQr::new();
+    let mut from = MapQaQr::default();
     for (qa, qr) in UcsIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
         from.set(qa, qr);
         if qa == *dest {
@@ -205,8 +205,8 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
     let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
     crate::camefrom_into_path(mapqaqr, orig, dest)

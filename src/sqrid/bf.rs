@@ -214,10 +214,10 @@ pub fn search_mapqaqr<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
     MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
-    let mut from = MapQaQr::new();
+    let mut from = MapQaQr::default();
     for (qa, qr) in bf_iter::<GoFn, MySetQa, W, H, D, WORDS, SIZE>(go, orig).flatten() {
         from.set(qa, qr);
         if found(qa) {
@@ -251,7 +251,7 @@ pub fn search_path<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
     MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let (dest, mapqaqr) =

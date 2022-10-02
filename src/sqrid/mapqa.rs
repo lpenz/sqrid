@@ -29,8 +29,6 @@ use super::Sqrid;
 ///
 /// The generic parameters allow us to support implementing [`Grid`].
 pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
-    /// Create a new MapQa
-    fn new() -> Self;
     /// Get the item corresponding to the provided [`Qa`]
     fn get(&self, qa: &Qa<W, H>) -> Option<Item>;
     /// Set the item corresponding to the provided [`Qa`]
@@ -42,9 +40,6 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
 where
     Grid<Option<Item>, W, H, SIZE>: Default,
 {
-    fn new() -> Self {
-        Self::default()
-    }
     fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
         self[qa]
     }
@@ -56,9 +51,6 @@ where
 impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
     MapQa<Item, W, H, WORDS, SIZE> for collections::HashMap<Qa<W, H>, Item>
 {
-    fn new() -> Self {
-        Self::new()
-    }
     fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
         self.get(qa).copied()
     }
@@ -70,9 +62,6 @@ impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usi
 impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
     MapQa<Item, W, H, WORDS, SIZE> for collections::BTreeMap<Qa<W, H>, Item>
 {
-    fn new() -> Self {
-        Self::new()
-    }
     fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
         self.get(qa).copied()
     }
