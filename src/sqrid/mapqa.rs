@@ -30,40 +30,40 @@ use super::Sqrid;
 /// The generic parameters allow us to support implementing [`Grid`].
 pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
     /// Get the item corresponding to the provided [`Qa`]
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item>;
+    fn get(&self, qa: &Qa<W, H>) -> Option<&Item>;
     /// Set the item corresponding to the provided [`Qa`]
     fn set(&mut self, qa: Qa<W, H>, item: Item);
 }
 
-impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
     MapQa<Item, W, H, WORDS, SIZE> for Grid<Option<Item>, W, H, SIZE>
 where
     Grid<Option<Item>, W, H, SIZE>: Default,
 {
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
-        self[qa]
+    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
+        self[qa].as_ref()
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self[qa] = Some(item);
     }
 }
 
-impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
     MapQa<Item, W, H, WORDS, SIZE> for collections::HashMap<Qa<W, H>, Item>
 {
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
-        self.get(qa).copied()
+    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
+        self.get(qa)
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self.insert(qa, item);
     }
 }
 
-impl<Item: Copy, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
     MapQa<Item, W, H, WORDS, SIZE> for collections::BTreeMap<Qa<W, H>, Item>
 {
-    fn get(&self, qa: &Qa<W, H>) -> Option<Item> {
-        self.get(qa).copied()
+    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
+        self.get(qa)
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self.insert(qa, item);

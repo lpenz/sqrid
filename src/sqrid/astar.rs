@@ -132,7 +132,7 @@ where
                     .expect("internal error while getting cost")
                     + 1;
                 if let Some(nextqa) = (self.go)(qa, qr) {
-                    if newcost < self.cost.get(&nextqa).unwrap_or(usize::MAX) {
+                    if newcost < *self.cost.get(&nextqa).unwrap_or(&usize::MAX) {
                         self.cost.set(nextqa, newcost);
                         let priority = Reverse(newcost + Qa::manhattan(&nextqa, &self.dest));
                         self.frontier.push((priority, (nextqa, -qr)));
