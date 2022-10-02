@@ -160,10 +160,10 @@ where
                         continue;
                     }
                     self.nextfront.push((nextqa, -qr));
-                    self.visited.set(&nextqa, true);
+                    self.visited.insert(&nextqa);
                 }
             }
-            self.visited.set(&qa, true);
+            self.visited.insert(&qa);
         }
         Some(front)
     }
