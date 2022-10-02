@@ -1,16 +1,16 @@
 ---
 name: CI
-on: [ push, pull_request ]
+on: [ workflow_dispatch, push, pull_request ]
 jobs:
   omnilint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: docker://lpenz/omnilint:0.4
+      - uses: actions/checkout@v3.0.2
+      - uses: docker://lpenz/omnilint:0.5
   rust:
-    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.2
+    uses: lpenz/ghworkflow-rust/.github/workflows/rust.yml@v0.10.0
     with:
       coveralls: true
+      publish_cratesio: true
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
