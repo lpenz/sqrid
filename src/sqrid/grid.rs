@@ -26,22 +26,6 @@ macro_rules! impl_assert {
     };
 }
 
-/// A grid is a generic array that can be indexed by a [`Qa`]
-///
-/// We can also interact with specific lines with [`Grid::line`] and
-/// [`Grid::line_mut`], or with the whole underlying array with
-/// [`as_ref`](std::convert::AsRef::as_ref) and
-/// [`as_mut`](std::convert::AsMut::as_mut).
-///
-/// At the moment we have to provide a `SIZE` argument = `WIDTH` *
-/// `HEIGHT`. This value is checked at compile time, but can't be
-/// ellided at the moment, due to rust const generics limitations.
-///
-/// We can use the [`grid_create`] macro to use a [`Qa`] as a source
-/// of these values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
-
 /// Helper macro for grid type creation.
 ///
 /// More often than not we want to create a grid form an associated
@@ -59,6 +43,22 @@ macro_rules! grid_create {
                      { (<$sqrid>::WIDTH as usize * <$sqrid>::HEIGHT as usize) }>
     };
 }
+
+/// A grid is a generic array that can be indexed by a [`Qa`]
+///
+/// We can also interact with specific lines with [`Grid::line`] and
+/// [`Grid::line_mut`], or with the whole underlying array with
+/// [`as_ref`](std::convert::AsRef::as_ref) and
+/// [`as_mut`](std::convert::AsMut::as_mut).
+///
+/// At the moment we have to provide a `SIZE` argument = `WIDTH` *
+/// `HEIGHT`. This value is checked at compile time, but can't be
+/// ellided at the moment, due to rust const generics limitations.
+///
+/// We can use the [`grid_create`] macro to use a [`Qa`] as a source
+/// of these values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     // Create the _ASSERTS constant to check W * H == SIZE

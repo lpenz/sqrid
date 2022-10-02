@@ -26,8 +26,8 @@
 //! several generic parameters. An easier alternative is provided by the wrappers plugged into
 //! the [`Sqrid`] type:
 //! - [`Sqrid::astar_path_grid`]
-//! - [`Sqrid::astar_path_hashmap`]
-//! - [`Sqrid::astar_path_btreemap`]
+//! - [`Sqrid::astar_path_hash`]
+//! - [`Sqrid::astar_path_btree`]
 //! - [`Sqrid::astar_path`]: alias for `astar_path_grid`.
 //!
 //! Example of recommended usage:
@@ -241,7 +241,7 @@ where
 
 /// Makes an A* search using the [`HashMap`](std::collections::HashMap)] type,
 /// returns the path as a `Vec<Qr>`
-pub fn search_path_hashmap<
+pub fn search_path_hash<
     F,
     const W: u16,
     const H: u16,
@@ -270,7 +270,7 @@ where
 
 /// Makes an A* search using the [`BTreeMap`](std::collections::BTreeMap) type,
 /// returns the path as a `Vec<Qr>`
-pub fn search_path_btreemap<
+pub fn search_path_btree<
     F,
     const W: u16,
     const H: u16,
@@ -322,19 +322,19 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 
     /// Perform an A* search using a [`HashMap`](std::collections::HashMap) internally;
     /// see [`astar`](crate::astar)
-    pub fn astar_path_hashmap<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn astar_path_hash<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        search_path_hashmap::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_hash::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
 
     /// Perform an A* search using a [`BTreeMap`](std::collections::BTreeMap) internally;
     /// see [`astar`](crate::astar)
-    pub fn astar_path_btreemap<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn astar_path_btree<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        search_path_btreemap::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_btree::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
 }

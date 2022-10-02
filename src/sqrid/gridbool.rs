@@ -26,20 +26,6 @@ macro_rules! impl_assert {
     };
 }
 
-/// Space-optimized grid of booleans using bitmaps
-///
-/// `Gridbool` uses an array of u32 to implement a [`Qa`]-indexable
-/// grid of booleans, balancing space and performance.
-///
-/// At the moment we need to provide the number of u32 WORDS to
-/// use due to rust generic const limitations. We are able to check
-/// that the value is appropriate, though.
-///
-/// We can use the [`gridbool_create`] macro to use a [`Qa`] as a
-/// source of these values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u32; WORDS]);
-
 /// Helper macro for Gridbool type creation.
 ///
 /// More often than not we want to create a grid form an associated
@@ -57,6 +43,20 @@ macro_rules! gridbool_create {
         { (((<$sqrid>::WIDTH as usize) * (<$sqrid>::HEIGHT as usize) + 31) / 32) }>
     };
 }
+
+/// Space-optimized grid of booleans using bitmaps
+///
+/// `Gridbool` uses an array of u32 to implement a [`Qa`]-indexable
+/// grid of booleans, balancing space and performance.
+///
+/// At the moment we need to provide the number of u32 WORDS to
+/// use due to rust generic const limitations. We are able to check
+/// that the value is appropriate, though.
+///
+/// We can use the [`gridbool_create`] macro to use a [`Qa`] as a
+/// source of these values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u32; WORDS]);
 
 impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
     // Create the _ASSERTS constant to check W * H == SIZE

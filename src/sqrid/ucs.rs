@@ -26,8 +26,8 @@
 //! several generic parameters. An easier alternative is provided by the wrappers plugged into
 //! the [`Sqrid`] type:
 //! - [`Sqrid::ucs_path_grid`]
-//! - [`Sqrid::ucs_path_hashmap`]
-//! - [`Sqrid::ucs_path_btreemap`]
+//! - [`Sqrid::ucs_path_hash`]
+//! - [`Sqrid::ucs_path_btree`]
 //! - [`Sqrid::ucs_path`]: alias for `ucs_path_grid`.
 //!
 //! Example of recommended usage:
@@ -244,7 +244,7 @@ where
 
 /// Makes a UCS search using the [`HashMap`](std::collections::HashMap) type,
 /// returns the path as a `Vec<Qr>`
-pub fn search_path_hashmap<
+pub fn search_path_hash<
     F,
     const W: u16,
     const H: u16,
@@ -273,7 +273,7 @@ where
 
 /// Makes a UCS search using the [`BTreeMap`](std::collections::BTreeMap) type,
 /// returns the path as a `Vec<Qr>`
-pub fn search_path_btreemap<
+pub fn search_path_btree<
     F,
     const W: u16,
     const H: u16,
@@ -325,20 +325,20 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 
     /// Perform a uniform-cost search using a [`HashMap`](std::collections::HashMap) internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_hashmap<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn ucs_path_hash<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
     {
-        search_path_hashmap::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_hash::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
 
     /// Perform a uniform-cost search using a [`BTreeMap`](std::collections::BTreeMap)
     /// internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_btreemap<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn ucs_path_btree<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
     {
-        search_path_btreemap::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_btree::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
 }

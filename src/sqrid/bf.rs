@@ -19,8 +19,8 @@
 //! convenient set of functions plugged into [`Sqrid`] that has no such
 //! requirement:
 //! - [`Sqrid::bf_iter_grid`]
-//! - [`Sqrid::bf_iter_hashmap`]
-//! - [`Sqrid::bf_iter_btreemap`]
+//! - [`Sqrid::bf_iter_hash`]
+//! - [`Sqrid::bf_iter_btree`]
 //! - [`Sqrid::bf_iter`]: alias for `bf_iter_grid`.
 //!
 //! Example of recommended usage:
@@ -57,8 +57,8 @@
 //! generic parameters explicitly, and a more convenient set of
 //! functions plugged into the [`Sqrid`] type:
 //! - [`Sqrid::bfs_path_grid`]
-//! - [`Sqrid::bfs_path_hashmap`]
-//! - [`Sqrid::bfs_path_btreemap`]
+//! - [`Sqrid::bfs_path_hash`]
+//! - [`Sqrid::bfs_path_btree`]
 //! - [`Sqrid::bfs_path`]: alias for `bf_path_grid`.
 //!
 //! Example of recommended usage:
@@ -85,6 +85,7 @@ use super::Gridbool;
 use super::MapQa;
 use super::Qa;
 use super::Qr;
+use super::SetQa;
 use super::Sqrid;
 
 /* BfIterator *****************************************************************/
@@ -93,37 +94,37 @@ use super::Sqrid;
 #[derive(Debug, Clone)]
 pub struct BfIterator<
     GoFn,
-    MapQaBool,
+    MySetQa,
     const W: u16,
     const H: u16,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 > {
-    visited: MapQaBool,
+    visited: MySetQa,
     nextfront: Vec<(Qa<W, H>, Qr)>,
     go: GoFn,
 }
 
 impl<
         GoFn,
-        MapQaBool,
+        MySetQa,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
+    > BfIterator<GoFn, MySetQa, W, H, D, WORDS, SIZE>
 where
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     /// Create new breadth-first iterator
-    pub fn new(go: GoFn, orig: &Qa<W, H>) -> BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
+    pub fn new(go: GoFn, orig: &Qa<W, H>) -> BfIterator<GoFn, MySetQa, W, H, D, WORDS, SIZE>
     where
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
         let mut bfs = BfIterator {
-            visited: MapQaBool::new(),
+            visited: MySetQa::default(),
             nextfront: vec![(*orig, Qr::default())],
             go,
         };
@@ -135,16 +136,16 @@ where
 
 impl<
         GoFn,
-        MapQaBool,
+        MySetQa,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > Iterator for BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
+    > Iterator for BfIterator<GoFn, MySetQa, W, H, D, WORDS, SIZE>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MySetQa: SetQa<W, H, WORDS, SIZE>,
 {
     type Item = Vec<(Qa<W, H>, Qr)>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -155,14 +156,14 @@ where
         for &(qa, _) in &front {
             for qr in Qr::iter::<D>() {
                 if let Some(nextqa) = (self.go)(qa, qr) {
-                    if self.visited.get(&nextqa) == Some(true) {
+                    if self.visited.contains(&nextqa) {
                         continue;
                     }
                     self.nextfront.push((nextqa, -qr));
-                    self.visited.set(nextqa, true);
+                    self.visited.set(&nextqa, true);
                 }
             }
-            self.visited.set(qa, true);
+            self.visited.set(&qa, true);
         }
         Some(front)
     }
@@ -175,7 +176,7 @@ where
 /// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
 pub fn bf_iter<
     GoFn,
-    MapQaBool,
+    MySetQa,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -184,10 +185,10 @@ pub fn bf_iter<
 >(
     go: GoFn,
     orig: &Qa<W, H>,
-) -> BfIterator<GoFn, MapQaBool, W, H, D, WORDS, SIZE>
+) -> BfIterator<GoFn, MySetQa, W, H, D, WORDS, SIZE>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     BfIterator::new(go, orig)
 }
@@ -199,7 +200,7 @@ pub fn search_mapqaqr<
     GoFn,
     FoundFn,
     MapQaQr,
-    MapQaBool,
+    MySetQa,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -214,10 +215,10 @@ where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
     MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let mut from = MapQaQr::new();
-    for (qa, qr) in bf_iter::<GoFn, MapQaBool, W, H, D, WORDS, SIZE>(go, orig).flatten() {
+    for (qa, qr) in bf_iter::<GoFn, MySetQa, W, H, D, WORDS, SIZE>(go, orig).flatten() {
         from.set(qa, qr);
         if found(qa) {
             return Ok((qa, from));
@@ -236,7 +237,7 @@ pub fn search_path<
     GoFn,
     FoundFn,
     MapQaQr,
-    MapQaBool,
+    MySetQa,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -251,10 +252,10 @@ where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
     MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
-    MapQaBool: MapQa<bool, W, H, WORDS, SIZE>,
+    MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let (dest, mapqaqr) =
-        search_mapqaqr::<GoFn, FoundFn, MapQaQr, MapQaBool, W, H, D, WORDS, SIZE>(go, orig, found)?;
+        search_mapqaqr::<GoFn, FoundFn, MapQaQr, MySetQa, W, H, D, WORDS, SIZE>(go, orig, found)?;
     Ok((dest, crate::camefrom_into_path(mapqaqr, orig, &dest)?))
 }
 
@@ -281,8 +282,8 @@ where
 }
 
 /// Create new breadth-first iterator using the
-/// [`HashMap`](std::collections::HashMap)] type internally
-pub fn bf_iter_hashmap<
+/// [`HashSet`](std::collections::HashSet)] type internally
+pub fn bf_iter_hash<
     GoFn,
     const W: u16,
     const H: u16,
@@ -292,16 +293,16 @@ pub fn bf_iter_hashmap<
 >(
     go: GoFn,
     orig: &Qa<W, H>,
-) -> BfIterator<GoFn, collections::HashMap<Qa<W, H>, bool>, W, H, D, WORDS, SIZE>
+) -> BfIterator<GoFn, collections::HashSet<Qa<W, H>>, W, H, D, WORDS, SIZE>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
 {
-    bf_iter::<GoFn, collections::HashMap<Qa<W, H>, bool>, W, H, D, WORDS, SIZE>(go, orig)
+    bf_iter::<GoFn, collections::HashSet<Qa<W, H>>, W, H, D, WORDS, SIZE>(go, orig)
 }
 
 /// Create new breadth-first iterator using the
-/// [`BTreeMap`](std::collections::BTreeMap) type internally
-pub fn bf_iter_btreemap<
+/// [`BTreeSet`](std::collections::BTreeSet) type internally
+pub fn bf_iter_btree<
     GoFn,
     const W: u16,
     const H: u16,
@@ -311,11 +312,11 @@ pub fn bf_iter_btreemap<
 >(
     go: GoFn,
     orig: &Qa<W, H>,
-) -> BfIterator<GoFn, collections::BTreeMap<Qa<W, H>, bool>, W, H, D, WORDS, SIZE>
+) -> BfIterator<GoFn, collections::BTreeSet<Qa<W, H>>, W, H, D, WORDS, SIZE>
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
 {
-    bf_iter::<GoFn, collections::BTreeMap<Qa<W, H>, bool>, W, H, D, WORDS, SIZE>(go, orig)
+    bf_iter::<GoFn, collections::BTreeSet<Qa<W, H>>, W, H, D, WORDS, SIZE>(go, orig)
 }
 
 /* search_path parameterized: */
@@ -351,9 +352,10 @@ where
     >(go, orig, found)
 }
 
-/// Makes an BF search using the [`HashMap`](std::collections::HashMap) type,
-/// returns the path as a `Vec<Qr>`
-pub fn search_path_hashmap<
+/// Makes an BF search using the
+/// [`HashMap`](std::collections::HashMap)/[`HashSet`](std::collections::HashSet)
+/// types; returns the path as a `Vec<Qr>`
+pub fn search_path_hash<
     GoFn,
     FoundFn,
     const W: u16,
@@ -374,7 +376,7 @@ where
         GoFn,
         FoundFn,
         collections::HashMap<Qa<W, H>, Qr>,
-        collections::HashMap<Qa<W, H>, bool>,
+        collections::HashSet<Qa<W, H>>,
         W,
         H,
         D,
@@ -383,9 +385,10 @@ where
     >(go, orig, found)
 }
 
-/// Makes an BF search using the [`BTreeMap`](std::collections::BTreeMap) type,
-/// returns the path as a `Vec<Qr>`
-pub fn search_path_btreemap<
+/// Makes an BF search using the
+/// [`BTreeMap`](std::collections::BTreeMap)/[`BTreeSet`](std::collections::BTreeSet)
+/// type; returns the path as a `Vec<Qr>`
+pub fn search_path_btree<
     GoFn,
     FoundFn,
     const W: u16,
@@ -406,7 +409,7 @@ where
         GoFn,
         FoundFn,
         collections::BTreeMap<Qa<W, H>, Qr>,
-        collections::BTreeMap<Qa<W, H>, bool>,
+        collections::BTreeSet<Qa<W, H>>,
         W,
         H,
         D,
@@ -434,7 +437,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         Self::bf_iter_grid(go, orig)
     }
 
-    /// Create new breadth-first iterator using [`Grid`] internally;
+    /// Create new breadth-first iterator using [`Grid`]/[`Gridbool`] internally;
     /// see [`bf`](crate::bf)
     pub fn bf_iter_grid<GoFn>(
         go: GoFn,
@@ -447,29 +450,29 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     }
 
     /// Create new breadth-first iterator using the
-    /// [`HashMap`](std::collections::HashMap)] type internally;
-    /// see [`bf`](crate::bf)
-    pub fn bf_iter_hashmap<GoFn>(
+    /// [`HashMap`](std::collections::HashMap)]/[`HashSet`](std::collections::HashSet)]
+    /// types internally; see [`bf`](crate::bf)
+    pub fn bf_iter_hash<GoFn>(
         go: GoFn,
         orig: &Qa<W, H>,
-    ) -> BfIterator<GoFn, collections::HashMap<Qa<W, H>, bool>, W, H, D, WORDS, SIZE>
+    ) -> BfIterator<GoFn, collections::HashSet<Qa<W, H>>, W, H, D, WORDS, SIZE>
     where
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        bf_iter_hashmap::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
+        bf_iter_hash::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
     }
 
     /// Create new breadth-first iterator using the
-    /// [`BTreeMap`](std::collections::BTreeMap) type internally;
-    /// see [`bf`](crate::bf)
-    pub fn bf_iter_btreemap<GoFn>(
+    /// [`BTreeMap`](std::collections::BTreeMap)/[`BTreeSet`](std::collections::BTreeSet)
+    /// types internally; see [`bf`](crate::bf)
+    pub fn bf_iter_btree<GoFn>(
         go: GoFn,
         orig: &Qa<W, H>,
-    ) -> BfIterator<GoFn, collections::BTreeMap<Qa<W, H>, bool>, W, H, D, WORDS, SIZE>
+    ) -> BfIterator<GoFn, collections::BTreeSet<Qa<W, H>>, W, H, D, WORDS, SIZE>
     where
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        bf_iter_btreemap::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
+        bf_iter_btree::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
     }
 }
 
@@ -506,9 +509,10 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         search_path_grid::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 
-    /// Perform a breadth-first search using a [`HashMap`](std::collections::HashMap) internally;
-    /// see [`bf`](crate::bf)
-    pub fn bfs_path_hashmap<GoFn, FoundFn>(
+    /// Perform a breadth-first search using the
+    /// [`HashMap`](std::collections::HashMap)/[`HashSet`](std::collections::HashSet)
+    /// types internally; see [`bf`](crate::bf)
+    pub fn bfs_path_hash<GoFn, FoundFn>(
         go: GoFn,
         orig: &Qa<W, H>,
         found: FoundFn,
@@ -517,12 +521,13 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         FoundFn: Fn(Qa<W, H>) -> bool,
     {
-        search_path_hashmap::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
+        search_path_hash::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 
-    /// Perform a breadth-first search using a [`BTreeMap`](std::collections::BTreeMap) internally;
-    /// see [`bf`](crate::bf)
-    pub fn bfs_path_btreemap<GoFn, FoundFn>(
+    /// Perform a breadth-first search using the
+    /// [`HashMap`](std::collections::HashMap)/[`HashSet`](std::collections::HashSet)
+    /// types internally; see [`bf`](crate::bf)
+    pub fn bfs_path_btree<GoFn, FoundFn>(
         go: GoFn,
         orig: &Qa<W, H>,
         found: FoundFn,
@@ -531,6 +536,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         FoundFn: Fn(Qa<W, H>) -> bool,
     {
-        search_path_btreemap::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
+        search_path_btree::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 }

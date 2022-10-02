@@ -79,11 +79,11 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let (_, path) = Sqrid::bfs_path_hashmap(calc_path(&wall), &qa, goal(&end))?;
+        let (_, path) = Sqrid::bfs_path_hash(calc_path(&wall), &qa, goal(&end))?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let (_, path) = Sqrid::bfs_path_btreemap(calc_path(&wall), &qa, goal(&end))?;
+        let (_, path) = Sqrid::bfs_path_btree(calc_path(&wall), &qa, goal(&end))?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // A*:
@@ -92,11 +92,11 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let path = Sqrid::astar_path_hashmap(calc_path(&wall), &qa, end)?;
+        let path = Sqrid::astar_path_hash(calc_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let path = Sqrid::astar_path_btreemap(calc_path(&wall), &qa, end)?;
+        let path = Sqrid::astar_path_btree(calc_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // UCS:
@@ -105,11 +105,11 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let path = Sqrid::ucs_path_hashmap(calc_ucs_path(&wall), &qa, end)?;
+        let path = Sqrid::ucs_path_hash(calc_ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let path = Sqrid::ucs_path_btreemap(calc_ucs_path(&wall), &qa, end)?;
+        let path = Sqrid::ucs_path_btree(calc_ucs_path(&wall), &qa, end)?;
         test_path(&wall, &qa, end, &path)?;
         assert_eq!(path.len(), i);
         // Try next coordinate:

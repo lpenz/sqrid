@@ -19,7 +19,6 @@ use std::collections;
 
 use super::error::Error;
 use super::grid::Grid;
-use super::gridbool::Gridbool;
 use super::qa::Qa;
 use super::qr::Qr;
 use super::Sqrid;
@@ -51,20 +50,6 @@ where
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
         self[qa] = Some(item);
-    }
-}
-
-impl<const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<bool, W, H, WORDS, SIZE> for Gridbool<W, H, WORDS>
-{
-    fn new() -> Self {
-        Self::default()
-    }
-    fn get(&self, qa: &Qa<W, H>) -> Option<bool> {
-        Some(self.get(qa))
-    }
-    fn set(&mut self, qa: Qa<W, H>, item: bool) {
-        self.set(qa, item);
     }
 }
 
