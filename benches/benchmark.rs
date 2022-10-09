@@ -32,8 +32,8 @@ fn qaqr_mutual() {
 
 fn grid_index() {
     type Qa = sqrid::Qa<256, 257>;
-    type Grid = sqrid::Grid<usize, 256, 257, { 256 * 257 }>;
-    let mut g = Grid::default();
+    type GridArray = sqrid::GridArray<usize, 256, 257, { 256 * 257 }>;
+    let mut g = GridArray::default();
     for qa in Qa::iter() {
         g[qa] = qa.to_usize();
     }

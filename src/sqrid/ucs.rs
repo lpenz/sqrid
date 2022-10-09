@@ -55,7 +55,7 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::Error;
-use super::Grid;
+use super::GridArray;
 use super::MapQa;
 use super::Qa;
 use super::Qr;
@@ -210,7 +210,7 @@ where
 
 /* Parameterized interface ****************************************************/
 
-/// Makes a UCS search using [`Grid`], returns the path as a `Vec<Qr>`
+/// Makes a UCS search using [`GridArray`], returns the path as a `Vec<Qr>`
 pub fn search_path_grid<
     F,
     const W: u16,
@@ -226,9 +226,16 @@ pub fn search_path_grid<
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
 {
-    search_path::<F, Grid<Option<Qr>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
-        go, orig, dest,
-    )
+    search_path::<
+        F,
+        GridArray<Option<Qr>, W, H, SIZE>,
+        GridArray<usize, W, H, SIZE>,
+        W,
+        H,
+        D,
+        WORDS,
+        SIZE,
+    >(go, orig, dest)
 }
 
 /// Makes a UCS search using the [`HashMap`](std::collections::HashMap) type,
@@ -303,7 +310,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         Self::ucs_path_grid::<F>(go, orig, dest)
     }
 
-    /// Perform a uniform-cost search using a [`Grid`] internally;
+    /// Perform a uniform-cost search using a [`GridArray`] internally;
     /// see [`ucs`](crate::ucs).
     pub fn ucs_path_grid<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where

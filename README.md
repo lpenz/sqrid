@@ -17,7 +17,7 @@ types it provides:
   cardinal (and intercardinal) directions.
   Addition is implemented in the form of `Qa + Qr = Option<Qa>`,
   which can be `None` if the result is outside the grid.
-- [`Grid`]: a `Qa`-indexed array.
+- [`GridArray`]: a `Qa`-indexed array.
 - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
 - [`Sqrid`]: "factory" type that acts as an entry point to the
   fundamental types below and to algorithms.
@@ -77,13 +77,13 @@ All functions that iterate on `Qr` values accept a boolean const
 argument that specifies whether the intercardinal directions
 (`NE`, `SE`, `SW`, `NW`) should be considered.
 
-### `Grid`: a `Qa`-indexed array
+### `GridArray`: a `Qa`-indexed array
 
-A [`Grid`] is a generic array that can be indexed by a [`Qa`].
+A [`GridArray`] is a generic array that can be indexed by a [`Qa`].
 
 We can create the type from a suitable [`Sqrid`] type by using the
 [`grid_create`] macro. We can then interact with specific lines
-with [`Grid::line`] and [`Grid::line_mut`], or with the whole
+with [`GridArray::line`] and [`GridArray::line_mut`], or with the whole
 underlying array with `as_ref` (see [`std::convert::AsRef`]) and
 `as_mut` (see [`std::convert::AsMut`]).
 
@@ -92,14 +92,14 @@ Usage example:
 ```rust
 type Sqrid = sqrid::sqrid_create!(3, 3, false);
 type Qa = sqrid::qa_create!(Sqrid);
-type Grid = sqrid::grid_create!(Sqrid, i32);
+type GridArray = sqrid::grid_create!(Sqrid, i32);
 
 // The grid create macro above is currently equivalent to:
-type Grid2 = sqrid::Grid<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
+type Grid2 = sqrid::GridArray<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
                               { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
 
 // We can create grids from iterators via `collect`:
-let mut gridnums = (0..9).collect::<Grid>();
+let mut gridnums = (0..9).collect::<GridArray>();
 
 // Iterate on their members:
 for i in &gridnums {
@@ -166,7 +166,7 @@ for (qa, b) in gb.iter_qa() {
 
 The [`Qa`] type and some methods on the [`Qr`] type require const
 generic arguments that usually don't change inside an application.
-Both [`Grid`] and [`Gridbool`] also require further arguments that
+Both [`GridArray`] and [`Gridbool`] also require further arguments that
 can actually be derived from the width and height of the grid, but
 that have to be explicitly specified due to some Rust limitations.
 
@@ -179,7 +179,7 @@ Example usage:
 ```rust
 type Sqrid = sqrid::sqrid_create!(4, 4, false);
 type Qa = sqrid::qa_create!(Sqrid);
-type Grid = sqrid::grid_create!(Sqrid, i32);
+type GridArray = sqrid::grid_create!(Sqrid, i32);
 type Gridbool = sqrid::gridbool_create!(Sqrid);
 ```
 
@@ -298,10 +298,10 @@ if let Ok(path) = Sqrid::ucs_path(traverse, &Qa::TOP_LEFT,
 [`Qr::SW`]: https://docs.rs/sqrid/latest/sqrid/qr/enum.Qr.html#variant.SW
 [`Qr::W`]: https://docs.rs/sqrid/latest/sqrid/qr/enum.Qr.html#variant.W
 [`Qr::NW`]: https://docs.rs/sqrid/latest/sqrid/qr/enum.Qr.html#variant.NW
-[`Grid`]: https://docs.rs/sqrid/latest/sqrid/grid/struct.Grid.html
+[`GridArray`]: https://docs.rs/sqrid/latest/sqrid/gridarray/struct.GridArray.html
 [`grid_create`]: https://docs.rs/sqrid/latest/sqrid/macro.grid_create.html
-[`Grid::line`]: https://docs.rs/sqrid/latest/sqrid/grid/struct.Grid.html#method.line
-[`Grid::line_mut`]: https://docs.rs/sqrid/latest/sqrid/grid/struct.Grid.html#method.line_mut
+[`GridArray::line`]: https://docs.rs/sqrid/latest/sqrid/gridarray/struct.GridArray.html#method.line
+[`GridArray::line_mut`]: https://docs.rs/sqrid/latest/sqrid/gridarray/struct.GridArray.html#method.line_mut
 [`Gridbool`]: https://docs.rs/sqrid/latest/sqrid/gridbool/struct.Gridbool.html
 [`gridbool_create`]: https://docs.rs/sqrid/latest/sqrid/macro.gridbool_create.html
 [`Sqrid`]: https://docs.rs/sqrid/latest/sqrid/struct.Sqrid.html

@@ -49,7 +49,7 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::Error;
-use super::Grid;
+use super::GridArray;
 use super::MapQa;
 use super::Qa;
 use super::Qr;
@@ -207,7 +207,7 @@ where
 
 /* Parameterized interface ****************************************************/
 
-/// Makes an A* search using [`Grid`], returns the path as a `Vec<Qr>`
+/// Makes an A* search using [`GridArray`], returns the path as a `Vec<Qr>`
 pub fn search_path_grid<
     F,
     const W: u16,
@@ -223,9 +223,16 @@ pub fn search_path_grid<
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
 {
-    search_path::<F, Grid<Option<Qr>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
-        go, orig, dest,
-    )
+    search_path::<
+        F,
+        GridArray<Option<Qr>, W, H, SIZE>,
+        GridArray<usize, W, H, SIZE>,
+        W,
+        H,
+        D,
+        WORDS,
+        SIZE,
+    >(go, orig, dest)
 }
 
 /// Makes an A* search using the [`HashMap`](std::collections::HashMap)] type,
@@ -300,7 +307,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         Self::astar_path_grid::<F>(go, orig, dest)
     }
 
-    /// Perform an A* search using a [`Grid`] internally;
+    /// Perform an A* search using a [`GridArray`] internally;
     /// see [`astar`](crate::astar)
     pub fn astar_path_grid<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where

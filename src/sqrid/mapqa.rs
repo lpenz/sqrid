@@ -8,17 +8,17 @@
 //! Module that abstracts maps with [`Qa`] indexes
 //!
 //! The [`MapQa`] trait is used to parameterize the search algorithms,
-//! allowing us to use [`Grid`], [`std::collections::HashMap`] or
+//! allowing us to use [`GridArray`], [`std::collections::HashMap`] or
 //! [`std::collections::BTreeMap`] for the internal algorithm
 //! structures.
 //!
-//! Note: Using [`Grid`] is not always feasible depending on the
+//! Note: Using [`GridArray`] is not always feasible depending on the
 //! dimensions of the grid.
 
 use std::collections;
 
 use super::error::Error;
-use super::grid::Grid;
+use super::gridarray::GridArray;
 use super::qa::Qa;
 use super::qr::Qr;
 use super::Sqrid;
@@ -27,7 +27,7 @@ use super::Sqrid;
 
 /// Trait that abstracts maps with [`Qa`] indexes
 ///
-/// The generic parameters allow us to support implementing [`Grid`].
+/// The generic parameters allow us to support implementing [`GridArray`].
 pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
     /// Create a new `MapQa` with the provided value for all items
     fn new(item: Item) -> Self;
@@ -38,12 +38,12 @@ pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for Grid<Item, W, H, SIZE>
+    MapQa<Item, W, H, WORDS, SIZE> for GridArray<Item, W, H, SIZE>
 where
     Item: Copy,
 {
     fn new(item: Item) -> Self {
-        Grid::<Item, W, H, SIZE>::repeat(item)
+        GridArray::<Item, W, H, SIZE>::repeat(item)
     }
     fn get(&self, qa: &Qa<W, H>) -> &Item {
         &self[qa]

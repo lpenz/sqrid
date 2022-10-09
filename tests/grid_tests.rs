@@ -9,7 +9,7 @@ use anyhow::Result;
 use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<5, 3>;
-type Grid = sqrid::Grid<i32, 5, 3, 15>;
+type GridArray = sqrid::GridArray<i32, 5, 3, 15>;
 type _QaScale = sqrid::Qa<0xffff, 0xffff>;
 type _GridScale = sqrid::grid_create!(_QaScale, i32);
 
@@ -20,7 +20,7 @@ type Grid5 = sqrid::grid_create!(Qa5, i32);
 
 #[test]
 fn test_basic() -> Result<()> {
-    let mut grid = Grid::default();
+    let mut grid = GridArray::default();
     for (i, element) in (&mut grid).into_iter().enumerate() {
         *element = i as i32;
     }
@@ -28,7 +28,7 @@ fn test_basic() -> Result<()> {
         assert_eq!(grid[qa], i as i32);
         assert_eq!(grid[&qa], usize::from(qa) as i32);
     }
-    let grid2 = grid.into_iter().collect::<Grid>();
+    let grid2 = grid.into_iter().collect::<GridArray>();
     assert_eq!(grid, grid2);
     assert_eq!(grid.as_ref(), grid2.as_ref());
     println!("{}", grid);
@@ -37,7 +37,7 @@ fn test_basic() -> Result<()> {
 
 #[test]
 fn test_basic2() -> Result<()> {
-    let mut grid = Grid::default();
+    let mut grid = GridArray::default();
     for element in &mut grid {
         *element = 1;
     }
@@ -56,7 +56,7 @@ fn test_basic2() -> Result<()> {
 #[test]
 fn test_into_iter() -> Result<()> {
     let vec = (0..15).collect::<Vec<_>>();
-    let grid = vec.iter().collect::<Grid>();
+    let grid = vec.iter().collect::<GridArray>();
     let mut v = 0;
     for &i in &grid {
         assert_eq!(i, v);
@@ -73,7 +73,7 @@ fn test_into_iter() -> Result<()> {
 #[test]
 fn test_from_iter_ok() -> Result<()> {
     let v = (0..15_i32).collect::<Vec<_>>();
-    let grid = v.into_iter().collect::<Grid>();
+    let grid = v.into_iter().collect::<GridArray>();
     assert_eq!(
         grid.as_ref(),
         &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
@@ -83,8 +83,8 @@ fn test_from_iter_ok() -> Result<()> {
 
 #[test]
 fn test_into_from_iter_qa() -> Result<()> {
-    let grid = (0..15_i32).collect::<Grid>();
-    let mut grid2 = Grid::default();
+    let grid = (0..15_i32).collect::<GridArray>();
+    let mut grid2 = GridArray::default();
     grid2.extend(grid.iter_qa());
     assert_eq!(grid.as_ref(), grid2.as_ref());
     Ok(())
@@ -94,33 +94,33 @@ fn test_into_from_iter_qa() -> Result<()> {
 #[should_panic]
 fn test_from_iter_underflow() {
     let v = (0..14_i32).collect::<Vec<_>>();
-    let _ = v.iter().cloned().collect::<Grid>();
+    let _ = v.iter().cloned().collect::<GridArray>();
 }
 
 #[test]
 #[should_panic]
 fn test_from_iter_overflow() {
     let v = (0..16_i32).collect::<Vec<_>>();
-    let _ = v.iter().cloned().collect::<Grid>();
+    let _ = v.iter().cloned().collect::<GridArray>();
 }
 
 #[test]
 #[should_panic]
 fn test_from_iter_underflow_refs() {
     let v = (0..14_i32).collect::<Vec<_>>();
-    let _ = v.iter().collect::<Grid>();
+    let _ = v.iter().collect::<GridArray>();
 }
 
 #[test]
 #[should_panic]
 fn test_from_iter_overflow_refs() {
     let v = (0..16_i32).collect::<Vec<_>>();
-    let _ = v.iter().collect::<Grid>();
+    let _ = v.iter().collect::<GridArray>();
 }
 
 #[test]
 fn test_line_mut() -> Result<()> {
-    let mut grid = Grid::default();
+    let mut grid = GridArray::default();
     grid.extend(Qa::iter().map(|qa| (qa, <(i32, i32)>::from(qa).1)));
     assert_eq!(grid.line(1), [1, 1, 1, 1, 1]);
     assert_eq!(grid.line_mut(2), [2, 2, 2, 2, 2]);
@@ -135,7 +135,7 @@ fn test_line_mut() -> Result<()> {
 #[test]
 fn test_qa_iter_ref() -> Result<()> {
     let v = vec![(Qa::try_from((1, 0))?, 5), (Qa::try_from((2, 0))?, 7)];
-    let mut grid = Grid::default();
+    let mut grid = GridArray::default();
     grid.extend((&v).iter());
     assert_eq!(
         grid.into_inner(),
