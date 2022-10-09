@@ -18,10 +18,10 @@
 //! requires us to specify several generic parameters. There's also a more
 //! convenient set of functions plugged into [`Sqrid`] that has no such
 //! requirement:
-//! - [`Sqrid::bf_iter_grid`]
+//! - [`Sqrid::bf_iter_array`]
 //! - [`Sqrid::bf_iter_hash`]
 //! - [`Sqrid::bf_iter_btree`]
-//! - [`Sqrid::bf_iter`]: alias for `bf_iter_grid`.
+//! - [`Sqrid::bf_iter`]: alias for `bf_iter_array`.
 //!
 //! Example of recommended usage:
 //!
@@ -56,10 +56,10 @@
 //! As usual, there is both a [`search_path`] function that takes all
 //! generic parameters explicitly, and a more convenient set of
 //! functions plugged into the [`Sqrid`] type:
-//! - [`Sqrid::bfs_path_grid`]
+//! - [`Sqrid::bfs_path_array`]
 //! - [`Sqrid::bfs_path_hash`]
 //! - [`Sqrid::bfs_path_btree`]
-//! - [`Sqrid::bfs_path`]: alias for `bf_path_grid`.
+//! - [`Sqrid::bfs_path`]: alias for `bf_path_array`.
 //!
 //! Example of recommended usage:
 //!
@@ -80,9 +80,9 @@ use std::collections;
 use std::mem;
 
 use super::Error;
+use super::Grid;
 use super::GridArray;
 use super::Gridbool;
-use super::MapQa;
 use super::Qa;
 use super::Qr;
 use super::SetQa;
@@ -173,7 +173,7 @@ where
 
 /// Create new breadth-first iterator
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn bf_iter<
     GoFn,
     MySetQa,
@@ -193,9 +193,9 @@ where
     BfIterator::new(go, orig)
 }
 
-/// Make a breadth-first search, return the "came from" direction [`MapQa`]
+/// Make a breadth-first search, return the "came from" direction [`Grid`]
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn search_mapqaqr<
     GoFn,
     FoundFn,
@@ -214,7 +214,7 @@ pub fn search_mapqaqr<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
+    MapQaQr: Grid<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let mut from = MapQaQr::default();
@@ -229,7 +229,7 @@ where
 
 /// Makes a breadth-first search, returns the path as a `Vec<Qr>`
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 ///
 /// This is essentially [`search_mapqaqr`] followed by a call to
 /// [`camefrom_into_path`](crate::camefrom_into_path).
@@ -251,7 +251,7 @@ pub fn search_path<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
+    MapQaQr: Grid<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let (dest, mapqaqr) =
@@ -264,7 +264,7 @@ where
 /* bf_iter parameterized: */
 
 /// Create new breadth-first iterator using [`GridArray`] internally
-pub fn bf_iter_grid<
+pub fn bf_iter_array<
     GoFn,
     const W: u16,
     const H: u16,
@@ -322,7 +322,7 @@ where
 /* search_path parameterized: */
 
 /// Makes an BF search using [`GridArray`], returns the path as a `Vec<Qr>`
-pub fn search_path_grid<
+pub fn search_path_array<
     GoFn,
     FoundFn,
     const W: u16,
@@ -434,19 +434,19 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        Self::bf_iter_grid(go, orig)
+        Self::bf_iter_array(go, orig)
     }
 
     /// Create new breadth-first iterator using [`GridArray`]/[`Gridbool`] internally;
     /// see [`bf`](crate::bf)
-    pub fn bf_iter_grid<GoFn>(
+    pub fn bf_iter_array<GoFn>(
         go: GoFn,
         orig: &Qa<W, H>,
     ) -> BfIterator<GoFn, Gridbool<W, H, WORDS>, W, H, D, WORDS, SIZE>
     where
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        bf_iter_grid::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
+        bf_iter_array::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
     }
 
     /// Create new breadth-first iterator using the
@@ -492,12 +492,12 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         FoundFn: Fn(Qa<W, H>) -> bool,
     {
-        Self::bfs_path_grid::<GoFn, FoundFn>(go, orig, found)
+        Self::bfs_path_array::<GoFn, FoundFn>(go, orig, found)
     }
 
     /// Perform a breadth-first search using a [`GridArray`] internally;
     /// see [`bf`](crate::bf)
-    pub fn bfs_path_grid<GoFn, FoundFn>(
+    pub fn bfs_path_array<GoFn, FoundFn>(
         go: GoFn,
         orig: &Qa<W, H>,
         found: FoundFn,
@@ -506,7 +506,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
         FoundFn: Fn(Qa<W, H>) -> bool,
     {
-        search_path_grid::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
+        search_path_array::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
     }
 
     /// Perform a breadth-first search using the

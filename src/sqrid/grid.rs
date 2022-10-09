@@ -7,7 +7,7 @@
 
 //! Module that abstracts maps with [`Qa`] indexes
 //!
-//! The [`MapQa`] trait is used to parameterize the search algorithms,
+//! The [`Grid`] trait is used to parameterize the search algorithms,
 //! allowing us to use [`GridArray`], [`std::collections::HashMap`] or
 //! [`std::collections::BTreeMap`] for the internal algorithm
 //! structures.
@@ -23,13 +23,11 @@ use super::qa::Qa;
 use super::qr::Qr;
 use super::Sqrid;
 
-/* MapQa */
+/* Grid */
 
 /// Trait that abstracts maps with [`Qa`] indexes
-///
-/// The generic parameters allow us to support implementing [`GridArray`].
-pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
-    /// Create a new `MapQa` with the provided value for all items
+pub trait Grid<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
+    /// Create a new `Grid` with the provided value for all items
     fn new(item: Item) -> Self;
     /// Get the item corresponding to the provided [`Qa`]
     fn get(&self, qa: &Qa<W, H>) -> &Item;
@@ -38,7 +36,7 @@ pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for GridArray<Item, W, H, SIZE>
+    Grid<Item, W, H, WORDS, SIZE> for GridArray<Item, W, H, SIZE>
 where
     Item: Copy,
 {
@@ -54,7 +52,7 @@ where
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for (collections::HashMap<Qa<W, H>, Item>, Item)
+    Grid<Item, W, H, WORDS, SIZE> for (collections::HashMap<Qa<W, H>, Item>, Item)
 {
     fn new(item: Item) -> Self {
         (Default::default(), item)
@@ -68,7 +66,7 @@ impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for (collections::BTreeMap<Qa<W, H>, Item>, Item)
+    Grid<Item, W, H, WORDS, SIZE> for (collections::BTreeMap<Qa<W, H>, Item>, Item)
 {
     fn new(item: Item) -> Self {
         (Default::default(), item)
@@ -82,7 +80,7 @@ impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
 }
 
 /// Generate a [`Qr`] vector (i.e. a vector of directions) from a
-/// "came from" `Qr` [`MapQa`] by following the grid, starting at
+/// "came from" `Qr` [`Grid`] by following the grid, starting at
 /// `orig`, until reaching `dest`.
 ///
 /// Can return [`Error::InvalidMovement`] if following the
@@ -101,7 +99,7 @@ pub fn camefrom_into_path<
     dest: &Qa<W, H>,
 ) -> Result<Vec<Qr>, Error>
 where
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
+    MapQaQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
 {
     let distance = Qa::manhattan(orig, dest);
     let mut ret = collections::VecDeque::<Qr>::with_capacity(2 * distance);
@@ -137,7 +135,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         dest: &Qa<W, H>,
     ) -> Result<Vec<Qr>, Error>
     where
-        MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
+        MapQaQr: Grid<Option<Qr>, W, H, WORDS, SIZE>,
     {
         crate::camefrom_into_path(map, orig, dest)
     }

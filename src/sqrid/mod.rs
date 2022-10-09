@@ -24,15 +24,16 @@ pub use self::qr::*;
 pub mod qaqr;
 pub use self::qaqr::*;
 
+pub mod grid;
+pub use self::grid::*;
+pub mod setqa;
+pub use self::setqa::*;
+
 pub mod gridarray;
 pub use self::gridarray::*;
 pub mod gridbool;
 pub use self::gridbool::*;
 
-pub mod mapqa;
-pub use self::mapqa::*;
-pub mod setqa;
-pub use self::setqa::*;
 pub mod bf;
 pub use self::bf::*;
 pub mod astar;

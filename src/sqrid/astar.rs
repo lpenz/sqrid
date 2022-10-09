@@ -25,10 +25,10 @@
 //! All these functions can be called directly, but that's a bit inconvenient, as they require
 //! several generic parameters. An easier alternative is provided by the wrappers plugged into
 //! the [`Sqrid`] type:
-//! - [`Sqrid::astar_path_grid`]
+//! - [`Sqrid::astar_path_array`]
 //! - [`Sqrid::astar_path_hash`]
 //! - [`Sqrid::astar_path_btree`]
-//! - [`Sqrid::astar_path`]: alias for `astar_path_grid`.
+//! - [`Sqrid::astar_path`]: alias for `astar_path_array`.
 //!
 //! Example of recommended usage:
 //!
@@ -49,8 +49,8 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::Error;
+use super::Grid;
 use super::GridArray;
-use super::MapQa;
 use super::Qa;
 use super::Qr;
 use super::Sqrid;
@@ -94,7 +94,7 @@ impl<
     ) -> AstarIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-        MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
+        MapQaUsize: Grid<usize, W, H, WORDS, SIZE> + Default,
     {
         let mut it = AstarIterator {
             cost: MapQaUsize::new(usize::MAX),
@@ -119,7 +119,7 @@ impl<
     > Iterator for AstarIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    MapQaUsize: Grid<usize, W, H, WORDS, SIZE>,
 {
     type Item = (Qa<W, H>, Qr);
     fn next(&mut self) -> Option<Self::Item> {
@@ -144,9 +144,9 @@ where
 
 /* Generic interface **********************************************************/
 
-/// Make an A* search, return the "came from" direction [`MapQa`]
+/// Make an A* search, return the "came from" direction [`Grid`]
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 pub fn search_mapqaqr<
     F,
     MapQaQr,
@@ -163,8 +163,8 @@ pub fn search_mapqaqr<
 ) -> Result<MapQaQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
+    MapQaQr: Grid<Option<Qr>, W, H, WORDS, SIZE> + Default,
+    MapQaUsize: Grid<usize, W, H, WORDS, SIZE> + Default,
 {
     let mut from = MapQaQr::default();
     for (qa, qr) in AstarIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig, dest) {
@@ -178,7 +178,7 @@ where
 
 /// Makes an A* search, returns the path as a `Vec<Qr>`
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`Grid`] for [`Qr`] and `usize`
 ///
 /// This is essentially [`search_mapqaqr`] followed by a call to
 /// [`camefrom_into_path`](crate::camefrom_into_path).
@@ -198,8 +198,8 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
+    MapQaQr: Grid<Option<Qr>, W, H, WORDS, SIZE> + Default,
+    MapQaUsize: Grid<usize, W, H, WORDS, SIZE> + Default,
 {
     let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
     crate::camefrom_into_path(mapqaqr, orig, dest)
@@ -208,7 +208,7 @@ where
 /* Parameterized interface ****************************************************/
 
 /// Makes an A* search using [`GridArray`], returns the path as a `Vec<Qr>`
-pub fn search_path_grid<
+pub fn search_path_array<
     F,
     const W: u16,
     const H: u16,
@@ -304,16 +304,16 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        Self::astar_path_grid::<F>(go, orig, dest)
+        Self::astar_path_array::<F>(go, orig, dest)
     }
 
     /// Perform an A* search using a [`GridArray`] internally;
     /// see [`astar`](crate::astar)
-    pub fn astar_path_grid<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn astar_path_array<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
     where
         F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     {
-        search_path_grid::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_array::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
 
     /// Perform an A* search using a [`HashMap`](std::collections::HashMap) internally;
