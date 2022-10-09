@@ -101,7 +101,7 @@ impl<
         MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
     {
         let mut it = UcsIterator {
-            cost: MapQaUsize::default(),
+            cost: MapQaUsize::new(usize::MAX),
             frontier: BinaryHeap::default(),
             go,
         };
@@ -130,12 +130,8 @@ where
             let qa = qaqr.0;
             for qr in Qr::iter::<D>() {
                 if let Some((nextqa, costincr)) = (self.go)(qa, qr) {
-                    let newcost = self
-                        .cost
-                        .get(&qa)
-                        .expect("internal error while getting cost")
-                        + costincr;
-                    if newcost < *self.cost.get(&nextqa).unwrap_or(&usize::MAX) {
+                    let newcost = self.cost.get(&qa) + costincr;
+                    if newcost < *self.cost.get(&nextqa) {
                         self.cost.set(nextqa, newcost);
                         let priority = Reverse(newcost);
                         self.frontier.push((priority, (nextqa, -qr)));
@@ -170,12 +166,12 @@ pub fn search_mapqaqr<
 ) -> Result<MapQaQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
     let mut from = MapQaQr::default();
     for (qa, qr) in UcsIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
-        from.set(qa, qr);
+        from.set(qa, Some(qr));
         if qa == *dest {
             return Ok(from);
         }
@@ -205,7 +201,7 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
     let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
@@ -230,16 +226,9 @@ pub fn search_path_grid<
 where
     F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
 {
-    search_path::<
-        F,
-        Grid<Option<Qr>, W, H, SIZE>,
-        Grid<Option<usize>, W, H, SIZE>,
-        W,
-        H,
-        D,
-        WORDS,
-        SIZE,
-    >(go, orig, dest)
+    search_path::<F, Grid<Option<Qr>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
+        go, orig, dest,
+    )
 }
 
 /// Makes a UCS search using the [`HashMap`](std::collections::HashMap) type,
@@ -261,8 +250,8 @@ where
 {
     search_path::<
         F,
-        collections::HashMap<Qa<W, H>, Qr>,
-        collections::HashMap<Qa<W, H>, usize>,
+        (collections::HashMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
+        (collections::HashMap<Qa<W, H>, usize>, usize),
         W,
         H,
         D,
@@ -290,8 +279,8 @@ where
 {
     search_path::<
         F,
-        collections::BTreeMap<Qa<W, H>, Qr>,
-        collections::BTreeMap<Qa<W, H>, usize>,
+        (collections::BTreeMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
+        (collections::BTreeMap<Qa<W, H>, usize>, usize),
         W,
         H,
         D,

@@ -214,12 +214,12 @@ pub fn search_mapqaqr<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let mut from = MapQaQr::default();
     for (qa, qr) in bf_iter::<GoFn, MySetQa, W, H, D, WORDS, SIZE>(go, orig).flatten() {
-        from.set(qa, qr);
+        from.set(qa, Some(qr));
         if found(qa) {
             return Ok((qa, from));
         }
@@ -251,7 +251,7 @@ pub fn search_path<
 where
     GoFn: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
     FoundFn: Fn(Qa<W, H>) -> bool,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MySetQa: SetQa<W, H, WORDS, SIZE> + Default,
 {
     let (dest, mapqaqr) =
@@ -375,7 +375,7 @@ where
     search_path::<
         GoFn,
         FoundFn,
-        collections::HashMap<Qa<W, H>, Qr>,
+        (collections::HashMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
         collections::HashSet<Qa<W, H>>,
         W,
         H,
@@ -408,7 +408,7 @@ where
     search_path::<
         GoFn,
         FoundFn,
-        collections::BTreeMap<Qa<W, H>, Qr>,
+        (collections::BTreeMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
         collections::BTreeSet<Qa<W, H>>,
         W,
         H,

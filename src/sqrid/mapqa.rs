@@ -29,44 +29,55 @@ use super::Sqrid;
 ///
 /// The generic parameters allow us to support implementing [`Grid`].
 pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
+    /// Create a new `MapQa` with the provided value for all items
+    fn new(item: Item) -> Self;
     /// Get the item corresponding to the provided [`Qa`]
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item>;
+    fn get(&self, qa: &Qa<W, H>) -> &Item;
     /// Set the item corresponding to the provided [`Qa`]
     fn set(&mut self, qa: Qa<W, H>, item: Item);
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for Grid<Option<Item>, W, H, SIZE>
+    MapQa<Item, W, H, WORDS, SIZE> for Grid<Item, W, H, SIZE>
 where
-    Grid<Option<Item>, W, H, SIZE>: Default,
+    Item: Copy,
 {
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
-        self[qa].as_ref()
+    fn new(item: Item) -> Self {
+        Grid::<Item, W, H, SIZE>::repeat(item)
+    }
+    fn get(&self, qa: &Qa<W, H>) -> &Item {
+        &self[qa]
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self[qa] = Some(item);
+        self[qa] = item;
     }
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for collections::HashMap<Qa<W, H>, Item>
+    MapQa<Item, W, H, WORDS, SIZE> for (collections::HashMap<Qa<W, H>, Item>, Item)
 {
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
-        self.get(qa)
+    fn new(item: Item) -> Self {
+        (Default::default(), item)
+    }
+    fn get(&self, qa: &Qa<W, H>) -> &Item {
+        self.0.get(qa).unwrap_or(&self.1)
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self.insert(qa, item);
+        self.0.insert(qa, item);
     }
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for collections::BTreeMap<Qa<W, H>, Item>
+    MapQa<Item, W, H, WORDS, SIZE> for (collections::BTreeMap<Qa<W, H>, Item>, Item)
 {
-    fn get(&self, qa: &Qa<W, H>) -> Option<&Item> {
-        self.get(qa)
+    fn new(item: Item) -> Self {
+        (Default::default(), item)
+    }
+    fn get(&self, qa: &Qa<W, H>) -> &Item {
+        self.0.get(qa).unwrap_or(&self.1)
     }
     fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self.insert(qa, item);
+        self.0.insert(qa, item);
     }
 }
 
@@ -90,7 +101,7 @@ pub fn camefrom_into_path<
     dest: &Qa<W, H>,
 ) -> Result<Vec<Qr>, Error>
 where
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
 {
     let distance = Qa::manhattan(orig, dest);
     let mut ret = collections::VecDeque::<Qr>::with_capacity(2 * distance);
@@ -126,7 +137,7 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         dest: &Qa<W, H>,
     ) -> Result<Vec<Qr>, Error>
     where
-        MapQaQr: MapQa<Qr, W, H, WORDS, SIZE>,
+        MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
     {
         crate::camefrom_into_path(map, orig, dest)
     }

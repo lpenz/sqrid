@@ -97,7 +97,7 @@ impl<
         MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
     {
         let mut it = AstarIterator {
-            cost: MapQaUsize::default(),
+            cost: MapQaUsize::new(usize::MAX),
             frontier: BinaryHeap::default(),
             go,
             dest: *dest,
@@ -126,13 +126,9 @@ where
         if let Some((_, qaqr)) = self.frontier.pop() {
             let qa = qaqr.0;
             for qr in Qr::iter::<D>() {
-                let newcost = self
-                    .cost
-                    .get(&qa)
-                    .expect("internal error while getting cost")
-                    + 1;
+                let newcost = self.cost.get(&qa) + 1;
                 if let Some(nextqa) = (self.go)(qa, qr) {
-                    if newcost < *self.cost.get(&nextqa).unwrap_or(&usize::MAX) {
+                    if newcost < *self.cost.get(&nextqa) {
                         self.cost.set(nextqa, newcost);
                         let priority = Reverse(newcost + Qa::manhattan(&nextqa, &self.dest));
                         self.frontier.push((priority, (nextqa, -qr)));
@@ -167,12 +163,12 @@ pub fn search_mapqaqr<
 ) -> Result<MapQaQr, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
     let mut from = MapQaQr::default();
     for (qa, qr) in AstarIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig, dest) {
-        from.set(qa, qr);
+        from.set(qa, Some(qr));
         if qa == *dest {
             return Ok(from);
         }
@@ -202,7 +198,7 @@ pub fn search_path<
 ) -> Result<Vec<Qr>, Error>
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
-    MapQaQr: MapQa<Qr, W, H, WORDS, SIZE> + Default,
+    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
     MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
     let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
@@ -227,16 +223,9 @@ pub fn search_path_grid<
 where
     F: Fn(Qa<W, H>, Qr) -> Option<Qa<W, H>>,
 {
-    search_path::<
-        F,
-        Grid<Option<Qr>, W, H, SIZE>,
-        Grid<Option<usize>, W, H, SIZE>,
-        W,
-        H,
-        D,
-        WORDS,
-        SIZE,
-    >(go, orig, dest)
+    search_path::<F, Grid<Option<Qr>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
+        go, orig, dest,
+    )
 }
 
 /// Makes an A* search using the [`HashMap`](std::collections::HashMap)] type,
@@ -258,8 +247,8 @@ where
 {
     search_path::<
         F,
-        collections::HashMap<Qa<W, H>, Qr>,
-        collections::HashMap<Qa<W, H>, usize>,
+        (collections::HashMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
+        (collections::HashMap<Qa<W, H>, usize>, usize),
         W,
         H,
         D,
@@ -287,8 +276,8 @@ where
 {
     search_path::<
         F,
-        collections::BTreeMap<Qa<W, H>, Qr>,
-        collections::BTreeMap<Qa<W, H>, usize>,
+        (collections::BTreeMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
+        (collections::BTreeMap<Qa<W, H>, usize>, usize),
         W,
         H,
         D,
