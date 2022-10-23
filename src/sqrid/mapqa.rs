@@ -139,6 +139,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
     {
-        crate::camefrom_into_path(map, orig, dest)
+        super::camefrom_into_path(map, orig, dest)
     }
 }

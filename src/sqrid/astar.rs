@@ -48,6 +48,7 @@ use std::cmp::Reverse;
 use std::collections;
 use std::collections::BinaryHeap;
 
+use super::camefrom_into_path;
 use super::Error;
 use super::Grid;
 use super::MapQa;
@@ -202,7 +203,7 @@ where
     MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
 {
     let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
-    crate::camefrom_into_path(mapqaqr, orig, dest)
+    camefrom_into_path(mapqaqr, orig, dest)
 }
 
 /* Parameterized interface ****************************************************/

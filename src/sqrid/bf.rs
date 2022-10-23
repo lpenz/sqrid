@@ -79,6 +79,7 @@
 use std::collections;
 use std::mem;
 
+use super::camefrom_into_path;
 use super::Error;
 use super::Grid;
 use super::Gridbool;
@@ -256,7 +257,7 @@ where
 {
     let (dest, mapqaqr) =
         search_mapqaqr::<GoFn, FoundFn, MapQaQr, MySetQa, W, H, D, WORDS, SIZE>(go, orig, found)?;
-    Ok((dest, crate::camefrom_into_path(mapqaqr, orig, &dest)?))
+    Ok((dest, camefrom_into_path(mapqaqr, orig, &dest)?))
 }
 
 /* Parameterized interface ****************************************************/
