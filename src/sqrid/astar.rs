@@ -36,8 +36,7 @@
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
 //! type Qa = sqrid::qa_create!(Sqrid);
 //!
-//! // Generate the grid of "came from" directions from bottom-right to
-//! // top-left:
+//! // Generate the vector with the path from bottom-right to top-left:
 //! if let Ok(path) = Sqrid::astar_path(sqrid::qaqr_eval, &Qa::TOP_LEFT,
 //!                                     &Qa::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);

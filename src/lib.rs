@@ -23,7 +23,13 @@
 //! - [`Sqrid`]: "factory" type that acts as an entry point to the
 //!   fundamental types below and to algorithms.
 //!
-//! Besides these fundamental types, as also have algorithm modules:
+//! We also have traits that generalize `Grid` and `Gridbool`:
+//! - [`MapQa`]: trait that maps `Qa` to parameterized items;
+//!   it's implemented by `Grid`, and some `HashMap`/`BTreeMap` based types.
+//! - [`SetQa`]: trait that maps each `Qa` to a bool; it's implemented
+//!   by `Gridbool`, `HashSet<Qa>` and `BTreeSet<Qa>`.
+//!
+//! We then use these generalization to implement some grid algorithms:
 //! - [`bf`]: breadth-first iteration and search.
 //! - [`astar`]: A* search that takes a destination `Qa`.
 //! - [`ucs`]: uniform-cost search.
