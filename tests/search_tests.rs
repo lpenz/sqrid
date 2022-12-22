@@ -4,13 +4,14 @@
 
 use sqrid;
 use sqrid::Cost;
+use sqrid::Qr;
 
 use anyhow::anyhow;
 use anyhow::Result;
 
 type Sqrid = sqrid::sqrid_create!(30, 15, false);
 type Qa = sqrid::qa_create!(Sqrid);
-type GridQr = sqrid::grid_create!(Sqrid, Option<sqrid::Qr>);
+type GridQr = sqrid::grid_create!(Sqrid, Option<Qr>);
 type Gridbool = sqrid::gridbool_create!(Sqrid);
 
 fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Qa, Qa) {
@@ -32,7 +33,7 @@ fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Qa, Qa) {
     (walls, start, end)
 }
 
-fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<Qa> + '_> {
+fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<Qa> + '_> {
     Box::new(move |qa: Qa, qr| {
         {
             let newqa: Option<Qa> = qa + qr;
@@ -42,7 +43,7 @@ fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<Qa> + '_> 
     })
 }
 
-fn calc_ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, sqrid::Qr) -> Option<(Qa, Cost)> + '_> {
+fn calc_ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<(Qa, Cost)> + '_> {
     Box::new(move |qa: Qa, qr| {
         {
             let newqa = (qa + qr)?;
@@ -56,7 +57,7 @@ fn goal(end: &Qa) -> Box<impl Fn(Qa) -> bool + '_> {
     Box::new(move |qa| qa == *end)
 }
 
-fn test_path(wall: &Gridbool, orig: &Qa, dest: &Qa, path: &[sqrid::Qr]) -> Result<()> {
+fn test_path(wall: &Gridbool, orig: &Qa, dest: &Qa, path: &[Qr]) -> Result<()> {
     let mut qa = *orig;
     for dir in path {
         qa = (qa + dir).ok_or(anyhow!("invalid direction in path"))?;
@@ -140,8 +141,8 @@ fn do_test(distance: usize, wallstr: &Vec<&str>) -> Result<()> {
 
 #[test]
 fn test_loop() -> Result<()> {
-    let mut gridqr = GridQr::repeat(Some(sqrid::Qr::N));
-    gridqr[Qa::TOP_LEFT] = Some(sqrid::Qr::S);
+    let mut gridqr = GridQr::repeat(Some(Qr::N));
+    gridqr[Qa::TOP_LEFT] = Some(Qr::S);
     let path_result = Sqrid::camefrom_into_path(gridqr, &Qa::BOTTOM_RIGHT, &Qa::TOP_LEFT);
     assert_eq!(path_result, Err(sqrid::Error::Loop));
     Ok(())
