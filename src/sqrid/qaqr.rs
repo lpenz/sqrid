@@ -8,6 +8,7 @@
 //! Interaction between `Qa` and `Qr`
 
 use std::borrow::Borrow;
+use std::cmp::Ordering::{Equal, Greater, Less};
 use std::convert::TryFrom;
 use std::ops;
 
@@ -56,5 +57,40 @@ impl<const W: u16, const H: u16> ops::Add<&Qr> for Qa<W, H> {
     #[inline]
     fn add(self, rhs: &Qr) -> Self::Output {
         qaqr_eval(self, rhs)
+    }
+}
+
+/// From a given `src`, returns the direction of the provided `dst`
+///
+/// Returns `Some(Qr)` unless `src` == `dst`, in which case we return
+/// `None`.
+pub fn direction_to<const W: u16, const H: u16, const D: bool>(
+    src: &Qa<W, H>,
+    dst: &Qa<W, H>,
+) -> Option<Qr> {
+    let tsrc = src.tuple();
+    let tdst = dst.tuple();
+    if D {
+        // Use subcardinal directions
+        match (tsrc.0.cmp(&tdst.0), tsrc.1.cmp(&tdst.1)) {
+            (Equal, Equal) => None,
+            (Equal, Greater) => Some(Qr::N),
+            (Less, Greater) => Some(Qr::NE),
+            (Less, Equal) => Some(Qr::E),
+            (Less, Less) => Some(Qr::SE),
+            (Equal, Less) => Some(Qr::S),
+            (Greater, Less) => Some(Qr::SW),
+            (Greater, Equal) => Some(Qr::W),
+            (Greater, Greater) => Some(Qr::NW),
+        }
+    } else {
+        // Don't use subcardinal directions
+        match (tsrc.0.cmp(&tdst.0), tsrc.1.cmp(&tdst.1)) {
+            (Equal, Equal) => None,
+            (_, Greater) => Some(Qr::N),
+            (Less, _) => Some(Qr::E),
+            (_, Less) => Some(Qr::S),
+            (Greater, _) => Some(Qr::W),
+        }
     }
 }
