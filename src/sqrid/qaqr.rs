@@ -19,6 +19,8 @@ use super::qr::Qr;
 /// Combine the provided `qa` ([`Qa`]) position with the `qr` ([`Qr`])
 /// direction and returns `Ok(Qa)` if the resulting position is
 /// inside the grid, `Error` if it's not.
+///
+/// This function is used to implement `Qa` + `Qr`.
 #[inline]
 pub fn qaqr_resolve<T, U, const W: u16, const H: u16>(qa: T, qr: U) -> Result<Qa<W, H>, Error>
 where
@@ -34,7 +36,8 @@ where
 /// direction and returns `Some(Qa)` if the resulting position is
 /// inside the grid, `None` if it's not.
 ///
-/// This function is used to implement `Qa` + `Qr`.
+/// This can be used as argument to various algorithms, such as
+/// [`Sqrid::bfs_path`].
 #[inline]
 pub fn qaqr_eval<T, U, const W: u16, const H: u16>(qa: T, qr: U) -> Option<Qa<W, H>>
 where
@@ -45,18 +48,18 @@ where
 }
 
 impl<const W: u16, const H: u16> ops::Add<Qr> for Qa<W, H> {
-    type Output = Option<Self>;
+    type Output = Result<Self, Error>;
     #[inline]
     fn add(self, rhs: Qr) -> Self::Output {
-        qaqr_eval(self, rhs)
+        qaqr_resolve(self, rhs)
     }
 }
 
 impl<const W: u16, const H: u16> ops::Add<&Qr> for Qa<W, H> {
-    type Output = Option<Self>;
+    type Output = Result<Self, Error>;
     #[inline]
     fn add(self, rhs: &Qr) -> Self::Output {
-        qaqr_eval(self, rhs)
+        qaqr_resolve(self, rhs)
     }
 }
 

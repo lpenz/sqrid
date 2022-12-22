@@ -12,7 +12,7 @@ fn test_sum_none() -> Result<()> {
     type Qa = sqrid::Qa<1, 1>;
     let center = Qa::default();
     for qr in Qr::iter::<true>() {
-        assert_eq!(center + qr, None);
+        assert!((center + qr).is_err());
     }
     Ok(())
 }
@@ -22,7 +22,7 @@ fn test_sum_some() -> Result<()> {
     type Qa = sqrid::Qa<3, 3>;
     let center = Qa::new::<1, 1>();
     let neighs = Qr::iter::<true>()
-        .filter_map(|qr| center + qr)
+        .filter_map(|qr| (center + qr).ok())
         .collect::<Vec<_>>();
     assert_eq!(
         neighs,
@@ -38,7 +38,7 @@ fn test_sum_some() -> Result<()> {
         ]
     );
     let neighs = Qr::iter::<false>()
-        .filter_map(|qr| center + qr)
+        .filter_map(|qr| (center + qr).ok())
         .collect::<Vec<_>>();
     assert_eq!(
         neighs,

@@ -13,7 +13,7 @@ type Qa2 = sqrid::Qa<256, 256>;
 type Sqrid2 = sqrid::sqrid_create!(Qa2, false);
 
 fn sumfunc(qa: Qa, qr: sqrid::Qr) -> Option<Qa> {
-    qa + qr
+    (qa + qr).ok()
 }
 
 #[test]
@@ -46,7 +46,7 @@ fn test_walls() -> Result<()> {
     let center = Qa::try_from((1, 1))?;
     let v = Sqrid::bf_iter(
         |qa, qr| {
-            (qa + qr).and_then(|qa| {
+            (qa + qr).ok().and_then(|qa| {
                 let t = qa.tuple();
                 if t != (0, 1) && t != (2, 1) {
                     Some(qa)
@@ -66,7 +66,7 @@ fn test_walls() -> Result<()> {
 
 #[test]
 fn test_scale() -> Result<()> {
-    let v = Sqrid2::bf_iter(|qa, qr| qa + qr, &Qa2::TOP_LEFT)
+    let v = Sqrid2::bf_iter(|qa, qr| (qa + qr).ok(), &Qa2::TOP_LEFT)
         .flatten()
         .map(|(qa, _)| qa)
         .collect::<Vec<_>>();

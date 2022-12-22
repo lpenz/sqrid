@@ -273,7 +273,7 @@
 //! type Qa = sqrid::qa_create!(Sqrid);
 //!
 //! fn traverse(position: Qa, direction: sqrid::Qr) -> Option<(Qa, usize)> {
-//!     let next_position = (position + direction)?;
+//!     let next_position = (position + direction).ok()?;
 //!     let cost = 1;
 //!     Some((next_position, cost))
 //! }

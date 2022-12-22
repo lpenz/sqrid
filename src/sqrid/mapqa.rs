@@ -114,7 +114,7 @@ where
     while &qa != orig {
         let qr = map.get(&qa).ok_or(Error::InvalidMovement)?;
         ret.push_front(-qr);
-        qa = (qa + qr).ok_or(Error::InvalidMovement)?;
+        qa = (qa + qr).or(Err(Error::InvalidMovement))?;
         maxiter -= 1;
         if maxiter == 0 {
             // We have iterated more than the total coordinates,

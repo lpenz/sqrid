@@ -34,9 +34,9 @@ fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Qa, Qa) {
 }
 
 fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<Qa> + '_> {
-    Box::new(move |qa: Qa, qr| {
+    Box::new(move |qa: Qa, qr: Qr| {
         {
-            let newqa: Option<Qa> = qa + qr;
+            let newqa: Option<Qa> = (qa + qr).ok();
             newqa
         }
         .filter(|qa| !wall.get(qa))
@@ -44,9 +44,9 @@ fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<Qa> + '_> {
 }
 
 fn calc_ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<(Qa, Cost)> + '_> {
-    Box::new(move |qa: Qa, qr| {
+    Box::new(move |qa: Qa, qr: Qr| {
         {
-            let newqa = (qa + qr)?;
+            let newqa = (qa + qr).ok()?;
             Some((newqa, 1))
         }
         .filter(|(qa, _)| !wall.get(qa))
@@ -60,7 +60,7 @@ fn goal(end: &Qa) -> Box<impl Fn(Qa) -> bool + '_> {
 fn test_path(wall: &Gridbool, orig: &Qa, dest: &Qa, path: &[Qr]) -> Result<()> {
     let mut qa = *orig;
     for dir in path {
-        qa = (qa + dir).ok_or(anyhow!("invalid direction in path"))?;
+        qa = (qa + dir)?;
         assert!(!wall.get(qa), "hit wall");
     }
     assert_eq!(qa, *dest, "path not leading to dest");
@@ -115,7 +115,7 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result
         assert_eq!(path.len(), i);
         // Try next coordinate:
         let first = path.first().ok_or(anyhow!("unexpected empty path"))?;
-        qa = (qa + first).ok_or(anyhow!("sum failed"))?;
+        qa = (qa + first)?;
         i -= 1;
     }
     Ok(())
