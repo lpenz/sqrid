@@ -48,26 +48,17 @@
 //! We should usually create a type alias for the grid size we are using:
 //!
 //! ```rust
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use sqrid;
 //!
 //! type Qa = sqrid::Qa<6, 7>;
+//!
+//! let qa = Qa::new(3, 3)?;
+//! # Ok(()) }
 //! ```
 //!
-//! We can only generate [`Qa`] instances that are valid - i.e. inside
-//! the grid. Some of the ways to create instances:
-//! - Using one of the const associated items: [`Qa::FIRST`] and
-//!   [`Qa::LAST`]; [`Qa::TOP_LEFT`], etc.; [`Qa::CENTER`].
-//! - Using `try_from` with a `(i16, i16)` tuple or a tuple reference.
-//! - Calling [`Qa::new`], which checks the bounds in const contexts:
-//!   ```rust
-//!   type Qa = sqrid::Qa<6, 7>;
-//!   const MY_FIRST : Qa = Qa::new::<3, 4>();
-//!   ```
-//!   The following, for instance, doesn't compile:
-//!   ```compile_fail
-//!   type Qa = sqrid::Qa<6, 7>;
-//!   const MY_FIRST : Qa = Qa::new::<12, 4>();
-//!   ```
+//! We can only generate [`Qa`] instances that are inside the passed
+//! dimensions.
 //!
 //! ## `Qr`: relative coordinates, direction, movement
 //!

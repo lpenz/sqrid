@@ -20,9 +20,9 @@ fn test_basic() -> Result<()> {
     assert_eq!((3_u16, 4_u16), (&q2).into());
     let q3 = Qa::try_from(&(5_u16, 6_u16));
     assert_eq!((5_u16, 6_u16), q3.unwrap().into());
-    const Q4: Qa = Qa::new::<5, 4>();
+    const Q4: Qa = Qa::new_unwrap(5, 4);
     assert_eq!((5_u16, 4_u16), Q4.into());
-    let q5 = Qa::new::<4, 3>();
+    let q5 = Qa::new_static::<4, 3>();
     assert_eq!((4_u16, 3_u16), q5.into());
     Ok(())
 }
@@ -105,10 +105,10 @@ fn test_max() -> Result<()> {
     type Qa = sqrid::Qa<0x7fff, 0x7fff>;
     assert_eq!(Qa::SIZE, 0x7fff * 0x7fff);
     assert_eq!(usize::from(&Qa::LAST), 0x7fff * 0x7fff - 1);
-    assert_eq!(Qa::new::<0x7ffe, 0x7ffe>(), Qa::LAST);
+    assert_eq!(Qa::new(0x7ffe, 0x7ffe)?, Qa::LAST);
     assert_eq!(Qa::try_from((0x7ffe, 0x7ffe)), Ok(Qa::LAST));
     assert_eq!(Qa::try_from(usize::from(Qa::LAST)), Ok(Qa::LAST));
-    let prevlast = Qa::new::<0x7ffd, 0x7ffe>();
+    let prevlast = Qa::new_static::<0x7ffd, 0x7ffe>();
     assert_eq!(prevlast.next(), Some(Qa::LAST));
     Ok(())
 }
@@ -155,8 +155,8 @@ fn test_flips() -> Result<()> {
     assert_eq!(Qa::TOP_RIGHT.flip_v(), Qa::BOTTOM_RIGHT);
     assert_eq!(Qa::TOP_LEFT.flip_h(), Qa::TOP_RIGHT);
     assert_eq!(Qa::BOTTOM_LEFT.flip_h(), Qa::BOTTOM_RIGHT);
-    assert_eq!(Qa::new::<2, 3>().flip_h(), Qa::new::<3, 3>());
-    assert_eq!(Qa::new::<2, 3>().flip_v(), Qa::new::<2, 3>());
+    assert_eq!(Qa::new_static::<2, 3>().flip_h(), Qa::new_static::<3, 3>());
+    assert_eq!(Qa::new_static::<2, 3>().flip_v(), Qa::new_static::<2, 3>());
     for qa in Qa::iter() {
         assert_eq!(qa.flip_h().flip_h(), qa);
         assert_eq!(qa.flip_v().flip_v(), qa);

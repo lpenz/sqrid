@@ -18,14 +18,6 @@ use std::fmt;
 
 use super::error::Error;
 
-/// Assert const generic expressions inside const functions
-macro_rules! const_assert {
-    ($x:expr $(,)?) => {
-        const ASSERT_FALSE: [(); 1] = [(); 1];
-        let _ = ASSERT_FALSE[$x as usize];
-    };
-}
-
 /// Square grid absolute coordinate
 ///
 /// This generic type receives the dimensions of the square grid as
@@ -38,6 +30,47 @@ macro_rules! const_assert {
 /// ```
 /// type Qa = sqrid::Qa<4, 4>;
 /// ```
+///
+/// We can only generate [`Qa`] instances that are valid - i.e. inside
+/// the grid. Some of the ways to create instances:
+/// - Using one of the const associated items: [`Qa::FIRST`] and
+///   [`Qa::LAST`]; [`Qa::TOP_LEFT`], etc.; [`Qa::CENTER`].
+/// - Using [`Qa::new`] with X and Y coordinates and handling the
+///   `Result`; can also be used in const contexts.
+///   ```rust
+///   # fn main() -> Result<(), Box<dyn std::error::Error>> {
+///   # type Qa = sqrid::Qa<4, 4>;
+///   let qa = Qa::new(3, 3)?;
+///   # Ok(()) }
+///   ```
+/// - Using `try_from` with a `(u16, u16)` tuple or a tuple
+///   reference. It's equivalent to `Qa::new`:
+///   ```rust
+///   # fn main() -> Result<(), Box<dyn std::error::Error>> {
+///   # type Qa = sqrid::Qa<4, 4>;
+///   use std::convert::{TryFrom, TryInto};
+///   let qa1 = Qa::try_from((3, 3))?;
+///   let qa2 : Qa = (3_u16, 3_u16).try_into()?;
+///   # Ok(()) }
+///   ```
+/// - Using [`Qa::new_unwrap`], be be aware that it panics if the
+///   coordinates are not valid. This is convenient in const contexts,
+///   as `unwrap` is not a const fn method.
+///   ```rust
+///   # type Qa = sqrid::Qa<4, 4>;
+///   const qa : Qa = Qa::new_unwrap(3, 3);
+///   ```
+/// - Using [`Qa::new_static`] to create an instance at compile time,
+///   which is also when the validity of the coordinates is checked.
+///   ```rust
+///   # type Qa = sqrid::Qa<4, 4>;
+///   const QA : Qa = Qa::new_static::<3, 3>();
+///   ```
+///   The following, for instance, doesn't compile:
+///   ```compile_fail
+///   # type Qa = sqrid::Qa<4, 4>;
+///   const QA : Qa = Qa::new_static::<3, 30>();
+///   ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Qa<const WIDTH: u16, const HEIGHT: u16> {
     x: u16,
@@ -87,11 +120,32 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     /// Coordinates of the bottom-right coordinate.
     pub const BOTTOM_RIGHT: Qa<W, H> = Qa { x: W - 1, y: H - 1 };
 
-    /// Create a new [`Qa`] instance.
-    /// Can be used in const context.
-    /// Bounds are checked at compile-time, when possible.
-    pub const fn new<const X: u16, const Y: u16>() -> Self {
-        const_assert!(X >= W || Y >= H);
+    /// Create a new [`Qa`] instance; returns error if a coordinate is
+    /// out-of-bounds.
+    pub const fn new(x: u16, y: u16) -> Result<Self, Error> {
+        if x >= W || y >= H {
+            Err(Error::OutOfBounds)
+        } else {
+            Ok(Qa { x, y })
+        }
+    }
+
+    /// Create a new [`Qa`] instance, supports being called in const
+    /// context; panics if a coordinate is out-of-bounds.
+    pub const fn new_unwrap(x: u16, y: u16) -> Self {
+        assert!(x < W && y < H);
+        Qa { x, y }
+    }
+
+    /// Create a new [`Qa`] instance at compile time.
+    ///
+    /// Checks arguments at compile time - for instance, the following
+    /// doesn't compile:
+    /// ```compilation_fail
+    /// const QA : sqrid::Qa<5,5> = sqrid::Qa::<5,5>::new_static::<9,9>();
+    /// ```
+    pub const fn new_static<const X: u16, const Y: u16>() -> Self {
+        assert!(X < W && Y < H);
         Self { x: X, y: Y }
     }
 
@@ -428,8 +482,8 @@ impl<const W: u16, const H: u16> Iterator for QaIter<W, H> {
 ///
 /// ```
 /// type Qa = sqrid::Qa<9,9>;
-/// let topleft = Qa::new::<1, 1>();
-/// let botright = Qa::new::<5, 5>();
+/// let topleft = Qa::new_static::<1, 1>();
+/// let botright = Qa::new_static::<5, 5>();
 ///
 /// for i in Qa::iter_range(topleft, botright) {
 ///     println!("{}", i);

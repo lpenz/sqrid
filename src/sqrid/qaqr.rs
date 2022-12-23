@@ -36,8 +36,7 @@ where
 /// direction and returns `Some(Qa)` if the resulting position is
 /// inside the grid, `None` if it's not.
 ///
-/// This can be used as argument to various algorithms, such as
-/// [`Sqrid::bfs_path`].
+/// This can be used as argument to various algorithms.
 #[inline]
 pub fn qaqr_eval<T, U, const W: u16, const H: u16>(qa: T, qr: U) -> Option<Qa<W, H>>
 where
