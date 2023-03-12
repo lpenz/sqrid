@@ -138,6 +138,18 @@ impl Qr {
         (*self as u8) % 2 == 1
     }
 
+    /// Return true if the `Qr` is vertical: N or S.
+    pub const fn is_vertical(&self) -> bool {
+        // We have to do this in a convoluted way to be able to be const:
+        (*self as u8) == (Qr::N as u8) || (*self as u8 == Qr::S as u8)
+    }
+
+    /// Return true if the `Qr` is horizontal: E or W.
+    pub const fn is_horizontal(&self) -> bool {
+        // We have to do this in a convoluted way to be able to be const:
+        (*self as u8) == (Qr::E as u8) || (*self as u8 == Qr::W as u8)
+    }
+
     /// Return the corresponding `(i8, i8)` tuple.
     #[inline]
     pub fn tuple(&self) -> (i8, i8) {
