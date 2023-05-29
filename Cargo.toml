@@ -1,7 +1,7 @@
 [package]
 name = "sqrid"
 description = "Square coordinates and grid-like arrays, with zero dependencies, in a single file"
-version = "0.0.17"
+version = "0.0.18"
 authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
 edition = "2018"
 license = "MIT"
@@ -16,7 +16,7 @@ bench = false
 
 [dev-dependencies]
 anyhow = "1.0.65"
-criterion = { version = "0.4.0", features = ["html_reports"] }
+criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [[bench]]
 name = "benchmark"
