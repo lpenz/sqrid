@@ -82,15 +82,6 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
         Grid([item; SIZE])
     }
 
-    /// Create a grid filled with copies of the provided item
-    #[inline]
-    pub fn repeat_default() -> Self
-    where
-        T: Default + Copy,
-    {
-        Grid([T::default(); SIZE])
-    }
-
     /// "Dismantle" a Grid into the inner array; consumes self.
     #[inline]
     pub fn into_inner(self) -> [T; SIZE] {
@@ -218,16 +209,15 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
     }
 }
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE>
-where
-    T: Default + Copy,
-{
+// Default
+
+impl<T: Default, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE> {
     fn default() -> Self {
-        // We use the Copy-repeat here because this can overflow the
-        // stack when used with other repeat_* implementations:
-        Self::repeat(Default::default())
+        Self(std::array::from_fn(|_| T::default()))
     }
 }
+
+// Neg
 
 impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> ops::Neg
     for Grid<T, W, H, SIZE>
@@ -349,7 +339,7 @@ impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
 ///
 /// Assumes we are getting exactly all grid elements; it panics
 /// otherwise.
-impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<T>
+impl<T: Default, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<T>
     for Grid<T, W, H, SIZE>
 {
     #[inline]
