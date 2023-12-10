@@ -27,9 +27,10 @@ use super::error::Error;
 /// `Qa` type represents nodes.
 ///
 /// Internally, 0 reprents N, 1 is NE and so forth until 7.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub enum Qr {
     /// North, or up
+    #[default]
     N = 0,
     /// Northeast
     NE,
@@ -47,11 +48,6 @@ pub enum Qr {
     NW,
 }
 
-impl Default for Qr {
-    fn default() -> Self {
-        Qr::N
-    }
-}
 impl Qr {
     /// Number of possible directions
     pub const SIZE: usize = 8;

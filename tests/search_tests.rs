@@ -3,7 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid;
-use sqrid::Cost;
+use sqrid::ucs::Cost;
 use sqrid::Qr;
 
 use anyhow::anyhow;
