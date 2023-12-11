@@ -446,11 +446,17 @@ impl<const W: u16, const H: u16> From<Qa<W, H>> for usize {
 /// }
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct QaIter<const W: u16, const H: u16>(Option<Qa<W, H>>);
+pub struct QaIter<const W: u16, const H: u16> {
+    cur: usize,
+    end: usize,
+}
 
 impl<const W: u16, const H: u16> Default for QaIter<W, H> {
     fn default() -> Self {
-        QaIter(Some(Default::default()))
+        QaIter {
+            cur: 0,
+            end: (W as usize) * (H as usize),
+        }
     }
 }
 
@@ -458,16 +464,31 @@ impl<const W: u16, const H: u16> Iterator for QaIter<W, H> {
     type Item = Qa<W, H>;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(i) = self.0.take() {
-            self.0 = i.next();
-            Some(i)
-        } else {
+        if self.cur == self.end {
             None
+        } else {
+            let old = self.cur;
+            self.cur += 1;
+            // SAFETY: "end" <= W*H and we we never go above
+            Some(Self::Item::try_from(old).unwrap())
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = W as usize * H as usize;
         (size, Some(size))
+    }
+}
+
+impl<const W: u16, const H: u16> DoubleEndedIterator for QaIter<W, H> {
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.end == self.cur {
+            None
+        } else {
+            self.end -= 1;
+            // SAFETY: we start at W*H and only decrement
+            Some(Self::Item::try_from(self.end).unwrap())
+        }
     }
 }
 

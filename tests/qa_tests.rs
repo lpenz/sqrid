@@ -5,6 +5,7 @@
 use sqrid;
 
 use anyhow::{anyhow, Result};
+use std::collections::HashSet;
 use std::convert::TryFrom;
 
 type Qa = sqrid::Qa<6, 7>;
@@ -194,6 +195,33 @@ fn test_rotate_cc() -> Result<()> {
         assert_eq!(qa.rotate_cc().is_side(), qa.is_side());
         assert_eq!(qa.rotate_cc().is_side(), qa.is_side());
         assert_eq!(qa.rotate_cw().rotate_cw(), qa.rotate_cc().rotate_cc());
+    }
+    Ok(())
+}
+
+#[test]
+fn test_iter_back() -> Result<()> {
+    let rev = Qa::iter()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>();
+    assert_eq!(Qa::iter().rev().collect::<Vec<_>>(), rev);
+    let fullset = Qa2::iter().collect::<HashSet<_>>();
+    // Check that we get fullset for all combinations of next and
+    // next_back:
+    for mask in 0..15 {
+        let mut set = HashSet::new();
+        let mut iter = Qa2::iter();
+        for i in 0..Qa2::SIZE {
+            if ((1 << i) & mask) > 0 {
+                set.insert(iter.next().unwrap());
+            } else {
+                set.insert(iter.next_back().unwrap());
+            }
+        }
+        assert_eq!(iter.next(), None);
+        assert_eq!(fullset, set);
     }
     Ok(())
 }
