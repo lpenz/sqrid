@@ -1,9 +1,9 @@
 [package]
 name = "sqrid"
 description = "Square coordinates and grid-like arrays, with zero dependencies, in a single file"
-version = "0.0.18"
+version = "0.0.19"
 authors = ["Leandro Lisboa Penz <lpenz@lpenz.org>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/lpenz/sqrid"
