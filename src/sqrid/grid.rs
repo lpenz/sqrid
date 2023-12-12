@@ -17,6 +17,7 @@ use std::fmt;
 use std::iter;
 use std::ops;
 
+use super::error::Error;
 use super::qa::Qa;
 
 /// Assert const generic expressions inside `impl` blocks
@@ -227,6 +228,30 @@ where
     type Output = Self;
     fn neg(self) -> Self::Output {
         self.into_iter().map(|v| v.neg()).collect()
+    }
+}
+
+// TryFrom
+
+impl<T: Default, const W: u16, const H: u16, const SIZE: usize> TryFrom<Vec<Vec<T>>>
+    for Grid<T, W, H, SIZE>
+{
+    type Error = Error;
+    #[inline]
+    fn try_from(mut vec: Vec<Vec<T>>) -> Result<Self, Self::Error> {
+        if vec.len() > H as usize || vec.iter().any(|v| v.len() > W as usize) {
+            return Err(Error::OutOfBounds);
+        }
+        Ok(Self(std::array::from_fn(|i| {
+            let qa = Qa::<W, H>::try_from(i).unwrap();
+            let t = qa.tuple();
+            let t = (t.0 as usize, t.1 as usize);
+            if t.0 < vec[t.1].len() {
+                std::mem::take(&mut vec[t.1][t.0])
+            } else {
+                T::default()
+            }
+        })))
     }
 }
 

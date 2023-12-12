@@ -119,6 +119,18 @@ fn test_from_iter_overflow_refs() {
 }
 
 #[test]
+fn test_from_vecvec() -> Result<()> {
+    let v = vec![vec![1, 2, 3], vec![4, 5], vec![6]];
+    let grid = Grid3::try_from(v)?;
+    assert_eq!(grid.as_ref(), &[1, 2, 3, 4, 5, 0, 6, 0, 0]);
+    let v = vec![vec![1, 2, 3], vec![4, 5], vec![6], vec![]];
+    assert_eq!(Grid3::try_from(v), Err(sqrid::Error::OutOfBounds));
+    let v = vec![vec![1, 2, 3], vec![4, 3, 2, 1], vec![6]];
+    assert_eq!(Grid3::try_from(v), Err(sqrid::Error::OutOfBounds));
+    Ok(())
+}
+
+#[test]
 fn test_line_mut() -> Result<()> {
     let mut grid = Grid::default();
     grid.extend(Qa::iter().map(|qa| (qa, <(i32, i32)>::from(qa).1)));
