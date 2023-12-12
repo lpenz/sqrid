@@ -200,6 +200,21 @@ fn test_rotate_cc() -> Result<()> {
 }
 
 #[test]
+fn test_iter_vertical() -> Result<()> {
+    let qas = Qa2::iter_vertical().collect::<Vec<_>>();
+    assert_eq!(
+        qas,
+        vec![
+            Qa2::new(0, 0)?,
+            Qa2::new(0, 1)?,
+            Qa2::new(1, 0)?,
+            Qa2::new(1, 1)?,
+        ]
+    );
+    Ok(())
+}
+
+#[test]
 fn test_iter_back() -> Result<()> {
     let rev = Qa::iter()
         .collect::<Vec<_>>()
@@ -210,18 +225,24 @@ fn test_iter_back() -> Result<()> {
     let fullset = Qa2::iter().collect::<HashSet<_>>();
     // Check that we get fullset for all combinations of next and
     // next_back:
-    for mask in 0..15 {
-        let mut set = HashSet::new();
-        let mut iter = Qa2::iter();
-        for i in 0..Qa2::SIZE {
-            if ((1 << i) & mask) > 0 {
-                set.insert(iter.next().unwrap());
+    for vertical in [false, true] {
+        for mask in 0..15 {
+            let mut set = HashSet::new();
+            let mut iter = if vertical {
+                Qa2::iter_vertical()
             } else {
-                set.insert(iter.next_back().unwrap());
+                Qa2::iter_horizontal()
+            };
+            for i in 0..Qa2::SIZE {
+                if ((1 << i) & mask) > 0 {
+                    set.insert(iter.next().unwrap());
+                } else {
+                    set.insert(iter.next_back().unwrap());
+                }
             }
+            assert_eq!(iter.next(), None);
+            assert_eq!(fullset, set);
         }
-        assert_eq!(iter.next(), None);
-        assert_eq!(fullset, set);
     }
     Ok(())
 }

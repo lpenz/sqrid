@@ -264,6 +264,18 @@ impl<const W: u16, const H: u16> Qa<W, H> {
     }
 
     /// Return an iterator that returns all `Qa`'s within the grid
+    /// dimensions horizontally.
+    pub fn iter_horizontal() -> QaIter<W, H> {
+        QaIter::<W, H>::new_horizontal()
+    }
+
+    /// Return an iterator that returns all `Qa`'s within the grid
+    /// dimensions vertically.
+    pub fn iter_vertical() -> QaIter<W, H> {
+        QaIter::<W, H>::new_vertical()
+    }
+
+    /// Return an iterator that returns all `Qa`'s within the grid
     /// coordinates.
     pub fn iter_range(topleft: Self, botright: Self) -> QaIterRange<W, H> {
         QaIterRange::<W, H>::new(topleft, botright)
@@ -449,14 +461,44 @@ impl<const W: u16, const H: u16> From<Qa<W, H>> for usize {
 pub struct QaIter<const W: u16, const H: u16> {
     cur: usize,
     end: usize,
+    xfirst: bool,
+}
+
+impl<const W: u16, const H: u16> QaIter<W, H> {
+    /// Creates a Qa iterator structure for horizontal traversal.
+    pub fn new_horizontal() -> Self {
+        QaIter {
+            cur: 0,
+            end: (W as usize) * (H as usize),
+            xfirst: true,
+        }
+    }
+
+    /// Creates a Qa iterator structure for vertical traversal.
+    pub fn new_vertical() -> Self {
+        QaIter {
+            cur: 0,
+            end: (W as usize) * (H as usize),
+            xfirst: false,
+        }
+    }
+
+    fn qa(&self, i: usize) -> Qa<W, H> {
+        if self.xfirst {
+            let x = (i % W as usize) as u16;
+            let y = (i / W as usize) as u16;
+            Qa { x, y }
+        } else {
+            let y = (i % H as usize) as u16;
+            let x = (i / H as usize) as u16;
+            Qa { x, y }
+        }
+    }
 }
 
 impl<const W: u16, const H: u16> Default for QaIter<W, H> {
     fn default() -> Self {
-        QaIter {
-            cur: 0,
-            end: (W as usize) * (H as usize),
-        }
+        Self::new_horizontal()
     }
 }
 
@@ -470,7 +512,7 @@ impl<const W: u16, const H: u16> Iterator for QaIter<W, H> {
             let old = self.cur;
             self.cur += 1;
             // SAFETY: "end" <= W*H and we we never go above
-            Some(Self::Item::try_from(old).unwrap())
+            Some(self.qa(old))
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -487,7 +529,7 @@ impl<const W: u16, const H: u16> DoubleEndedIterator for QaIter<W, H> {
         } else {
             self.end -= 1;
             // SAFETY: we start at W*H and only decrement
-            Some(Self::Item::try_from(self.end).unwrap())
+            Some(self.qa(self.end))
         }
     }
 }
