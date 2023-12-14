@@ -127,6 +127,11 @@ fn test_from_vecvec() -> Result<()> {
     assert_eq!(Grid3::try_from(v), Err(sqrid::Error::OutOfBounds));
     let v = vec![vec![1, 2, 3], vec![4, 3, 2, 1], vec![6]];
     assert_eq!(Grid3::try_from(v), Err(sqrid::Error::OutOfBounds));
+    let v = vec![vec![1]];
+    assert_eq!(
+        Grid3::try_from(v)?.into_inner(),
+        [1, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
     Ok(())
 }
 

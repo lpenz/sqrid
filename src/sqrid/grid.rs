@@ -246,7 +246,7 @@ impl<T: Default, const W: u16, const H: u16, const SIZE: usize> TryFrom<Vec<Vec<
             let qa = Qa::<W, H>::try_from(i).unwrap();
             let t = qa.tuple();
             let t = (t.0 as usize, t.1 as usize);
-            if t.0 < vec[t.1].len() {
+            if t.1 < vec.len() && t.0 < vec[t.1].len() {
                 std::mem::take(&mut vec[t.1][t.0])
             } else {
                 T::default()
