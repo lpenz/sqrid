@@ -27,11 +27,11 @@ pub struct Sqrid<const W: u16, const H: u16, const D: bool, const WORDS: usize, 
 ///
 /// ```
 /// type Sqrid = sqrid::sqrid_create!(4, 4, false);
-/// type Qa = sqrid::qa_create!(Sqrid);
+/// type Pos = sqrid::pos_create!(Sqrid);
 ///
-/// for (qa, qr) in Sqrid::bf_iter(sqrid::qaqr_eval, &Qa::CENTER)
+/// for (pos, dir) in Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER)
 ///                 .flatten() {
-///     println!("breadth-first qa {} from {}", qa, qr);
+///     println!("breadth-first pos {} from {}", pos, dir);
 /// }
 /// ```
 #[macro_export]
@@ -45,13 +45,13 @@ macro_rules! sqrid_create {
             { ($width as usize) * ($height as usize) },
         >
     };
-    ($qatype: ty, $diags: expr) => {
+    ($postype: ty, $diags: expr) => {
         $crate::Sqrid::<
-            { <$qatype>::WIDTH },
-            { <$qatype>::HEIGHT },
+            { <$postype>::WIDTH },
+            { <$postype>::HEIGHT },
             $diags,
-            { (((<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize)) / 32 + 1) },
-            { (<$qatype>::WIDTH as usize) * (<$qatype>::HEIGHT as usize) },
+            { (((<$postype>::WIDTH as usize) * (<$postype>::HEIGHT as usize)) / 32 + 1) },
+            { (<$postype>::WIDTH as usize) * (<$postype>::HEIGHT as usize) },
         >
     };
 }

@@ -5,9 +5,9 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 
-//! Module that abstracts maps with [`Qa`] indexes
+//! Module that abstracts maps with [`Pos`] indexes
 //!
-//! The [`MapQa`] trait is used to parameterize the search algorithms,
+//! The [`MapPos`] trait is used to parameterize the search algorithms,
 //! allowing us to use [`Grid`], [`std::collections::HashMap`] or
 //! [`std::collections::BTreeMap`] for the internal algorithm
 //! structures.
@@ -17,72 +17,72 @@
 
 use std::collections;
 
+use super::dir::Dir;
 use super::error::Error;
 use super::grid::Grid;
-use super::qa::Qa;
-use super::qr::Qr;
+use super::pos::Pos;
 use super::Sqrid;
 
-/* MapQa */
+/* MapPos */
 
-/// Trait that abstracts maps with [`Qa`] indexes
+/// Trait that abstracts maps with [`Pos`] indexes
 ///
 /// The generic parameters allow us to support implementing [`Grid`].
-pub trait MapQa<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
-    /// Create a new `MapQa` with the provided value for all items
+pub trait MapPos<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
+    /// Create a new `MapPos` with the provided value for all items
     fn new(item: Item) -> Self;
-    /// Get the item corresponding to the provided [`Qa`]
-    fn get(&self, qa: &Qa<W, H>) -> &Item;
-    /// Set the item corresponding to the provided [`Qa`]
-    fn set(&mut self, qa: Qa<W, H>, item: Item);
+    /// Get the item corresponding to the provided [`Pos`]
+    fn get(&self, pos: &Pos<W, H>) -> &Item;
+    /// Set the item corresponding to the provided [`Pos`]
+    fn set(&mut self, pos: Pos<W, H>, item: Item);
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for Grid<Item, W, H, SIZE>
+    MapPos<Item, W, H, WORDS, SIZE> for Grid<Item, W, H, SIZE>
 where
     Item: Copy,
 {
     fn new(item: Item) -> Self {
         Grid::<Item, W, H, SIZE>::repeat(item)
     }
-    fn get(&self, qa: &Qa<W, H>) -> &Item {
-        &self[qa]
+    fn get(&self, pos: &Pos<W, H>) -> &Item {
+        &self[pos]
     }
-    fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self[qa] = item;
-    }
-}
-
-impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for (collections::HashMap<Qa<W, H>, Item>, Item)
-{
-    fn new(item: Item) -> Self {
-        (Default::default(), item)
-    }
-    fn get(&self, qa: &Qa<W, H>) -> &Item {
-        self.0.get(qa).unwrap_or(&self.1)
-    }
-    fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self.0.insert(qa, item);
+    fn set(&mut self, pos: Pos<W, H>, item: Item) {
+        self[pos] = item;
     }
 }
 
 impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapQa<Item, W, H, WORDS, SIZE> for (collections::BTreeMap<Qa<W, H>, Item>, Item)
+    MapPos<Item, W, H, WORDS, SIZE> for (collections::HashMap<Pos<W, H>, Item>, Item)
 {
     fn new(item: Item) -> Self {
         (Default::default(), item)
     }
-    fn get(&self, qa: &Qa<W, H>) -> &Item {
-        self.0.get(qa).unwrap_or(&self.1)
+    fn get(&self, pos: &Pos<W, H>) -> &Item {
+        self.0.get(pos).unwrap_or(&self.1)
     }
-    fn set(&mut self, qa: Qa<W, H>, item: Item) {
-        self.0.insert(qa, item);
+    fn set(&mut self, pos: Pos<W, H>, item: Item) {
+        self.0.insert(pos, item);
     }
 }
 
-/// Generate a [`Qr`] vector (i.e. a vector of directions) from a
-/// "came from" `Qr` [`MapQa`] by following the grid, starting at
+impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
+    MapPos<Item, W, H, WORDS, SIZE> for (collections::BTreeMap<Pos<W, H>, Item>, Item)
+{
+    fn new(item: Item) -> Self {
+        (Default::default(), item)
+    }
+    fn get(&self, pos: &Pos<W, H>) -> &Item {
+        self.0.get(pos).unwrap_or(&self.1)
+    }
+    fn set(&mut self, pos: Pos<W, H>, item: Item) {
+        self.0.insert(pos, item);
+    }
+}
+
+/// Generate a [`Dir`] vector (i.e. a vector of directions) from a
+/// "came from" `Dir` [`MapPos`] by following the grid, starting at
 /// `orig`, until reaching `dest`.
 ///
 /// Can return [`Error::InvalidMovement`] if following the
@@ -90,31 +90,31 @@ impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
 /// if a cycle is found or [`Error::DestinationUnreachable`] if `dest`
 /// is not in the provided map.
 pub fn camefrom_into_path<
-    MapQaQr,
+    MapPosDir,
     const W: u16,
     const H: u16,
     const WORDS: usize,
     const SIZE: usize,
 >(
-    map: MapQaQr,
-    orig: &Qa<W, H>,
-    dest: &Qa<W, H>,
-) -> Result<Vec<Qr>, Error>
+    map: MapPosDir,
+    orig: &Pos<W, H>,
+    dest: &Pos<W, H>,
+) -> Result<Vec<Dir>, Error>
 where
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
+    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE>,
 {
-    let distance = Qa::manhattan(orig, dest);
-    let mut ret = collections::VecDeque::<Qr>::with_capacity(2 * distance);
-    let mut qa = *dest;
-    if map.get(&qa).is_none() {
+    let distance = Pos::manhattan(orig, dest);
+    let mut ret = collections::VecDeque::<Dir>::with_capacity(2 * distance);
+    let mut pos = *dest;
+    if map.get(&pos).is_none() {
         return Err(Error::DestinationUnreachable);
     }
     // Maximum iterations is the number of coordinates
     let mut maxiter = W as usize * H as usize + 1;
-    while &qa != orig {
-        let qr = map.get(&qa).ok_or(Error::InvalidMovement)?;
-        ret.push_front(-qr);
-        qa = (qa + qr).or(Err(Error::InvalidMovement))?;
+    while &pos != orig {
+        let dir = map.get(&pos).ok_or(Error::InvalidMovement)?;
+        ret.push_front(-dir);
+        pos = (pos + dir).or(Err(Error::InvalidMovement))?;
         maxiter -= 1;
         if maxiter == 0 {
             // We have iterated more than the total coordinates,
@@ -131,13 +131,13 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     Sqrid<W, H, D, WORDS, SIZE>
 {
     /// TODO
-    pub fn camefrom_into_path<MapQaQr>(
-        map: MapQaQr,
-        orig: &Qa<W, H>,
-        dest: &Qa<W, H>,
-    ) -> Result<Vec<Qr>, Error>
+    pub fn camefrom_into_path<MapPosDir>(
+        map: MapPosDir,
+        orig: &Pos<W, H>,
+        dest: &Pos<W, H>,
+    ) -> Result<Vec<Dir>, Error>
     where
-        MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE>,
+        MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE>,
     {
         super::camefrom_into_path(map, orig, dest)
     }

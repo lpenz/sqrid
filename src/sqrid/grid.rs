@@ -5,7 +5,7 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 
-//! A grid is a generic array that can be indexed by a [`Qa`]
+//! A grid is a generic array that can be indexed by a [`Pos`]
 //!
 //! This submodule has the [`Grid`] type and the associated
 //! functionality.
@@ -18,7 +18,7 @@ use std::iter;
 use std::ops;
 
 use super::error::Error;
-use super::qa::Qa;
+use super::pos::Pos;
 
 /// Assert const generic expressions inside `impl` blocks
 macro_rules! impl_assert {
@@ -45,7 +45,7 @@ macro_rules! grid_create {
     };
 }
 
-/// A grid is a generic array that can be indexed by a [`Qa`]
+/// A grid is a generic array that can be indexed by a [`Pos`]
 ///
 /// We can also interact with specific lines with [`Grid::line`] and
 /// [`Grid::line_mut`], or with the whole underlying array with
@@ -56,7 +56,7 @@ macro_rules! grid_create {
 /// `HEIGHT`. This value is checked at compile time, but can't be
 /// ellided at the moment, due to rust const generics limitations.
 ///
-/// We can use the [`grid_create`] macro to use a [`Qa`] as a source
+/// We can use the [`grid_create`] macro to use a [`Pos`] as a source
 /// of these values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
@@ -122,19 +122,19 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     /// Get a reference to an element of the grid.
     ///
     /// We use get_unchecked internally, because we guarantee the
-    /// validity of the Qa index on construction.
+    /// validity of the Pos index on construction.
     #[inline]
-    pub fn get(&self, qa: impl Borrow<Qa<W, H>>) -> &T {
-        unsafe { self.0.get_unchecked(qa.borrow().to_usize()) }
+    pub fn get(&self, pos: impl Borrow<Pos<W, H>>) -> &T {
+        unsafe { self.0.get_unchecked(pos.borrow().to_usize()) }
     }
 
     /// Get a mut reference to an element of the grid.
     ///
     /// We use get_unchecked internally, because we guarantee the
-    /// validity of the Qa index on construction.
+    /// validity of the Pos index on construction.
     #[inline]
-    pub fn get_mut(&mut self, qa: impl Borrow<Qa<W, H>>) -> &mut T {
-        unsafe { self.0.get_unchecked_mut(qa.borrow().to_usize()) }
+    pub fn get_mut(&mut self, pos: impl Borrow<Pos<W, H>>) -> &mut T {
+        unsafe { self.0.get_unchecked_mut(pos.borrow().to_usize()) }
     }
 
     /// Returns an iterator over the grid values
@@ -151,17 +151,17 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
 
     /// Returns an iterator over the grid coordinates and values
     #[inline]
-    pub fn iter_qa(&self) -> impl iter::Iterator<Item = (Qa<W, H>, &'_ T)> {
-        Qa::<W, H>::iter().map(move |qa| (qa, &self[qa]))
+    pub fn iter_pos(&self) -> impl iter::Iterator<Item = (Pos<W, H>, &'_ T)> {
+        Pos::<W, H>::iter().map(move |pos| (pos, &self[pos]))
     }
 
     /// Flip all elements horizontally.
     pub fn flip_h(&mut self) {
         for y in 0..H {
             for x in 0..W / 2 {
-                let qa1 = Qa::<W, H>::try_from((x, y)).unwrap();
-                let qa2 = qa1.flip_h();
-                self.0.swap(qa1.to_usize(), qa2.to_usize());
+                let pos1 = Pos::<W, H>::try_from((x, y)).unwrap();
+                let pos2 = pos1.flip_h();
+                self.0.swap(pos1.to_usize(), pos2.to_usize());
             }
         }
     }
@@ -170,9 +170,9 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     pub fn flip_v(&mut self) {
         for y in 0..H / 2 {
             for x in 0..W {
-                let qa1 = Qa::<W, H>::try_from((x, y)).unwrap();
-                let qa2 = qa1.flip_v();
-                self.0.swap(qa1.to_usize(), qa2.to_usize());
+                let pos1 = Pos::<W, H>::try_from((x, y)).unwrap();
+                let pos2 = pos1.flip_v();
+                self.0.swap(pos1.to_usize(), pos2.to_usize());
             }
         }
     }
@@ -184,13 +184,13 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
     pub fn rotate_cw(&mut self) {
         for y in 0..W / 2 {
             for x in y..W - 1 - y {
-                let qa1 = Qa::<W, W>::try_from((x, y)).unwrap();
-                let qa2 = qa1.rotate_cw();
-                let qa3 = qa2.rotate_cw();
-                let qa4 = qa3.rotate_cw();
-                self.0.swap(qa1.to_usize(), qa2.to_usize());
-                self.0.swap(qa1.to_usize(), qa3.to_usize());
-                self.0.swap(qa1.to_usize(), qa4.to_usize());
+                let pos1 = Pos::<W, W>::try_from((x, y)).unwrap();
+                let pos2 = pos1.rotate_cw();
+                let pos3 = pos2.rotate_cw();
+                let pos4 = pos3.rotate_cw();
+                self.0.swap(pos1.to_usize(), pos2.to_usize());
+                self.0.swap(pos1.to_usize(), pos3.to_usize());
+                self.0.swap(pos1.to_usize(), pos4.to_usize());
             }
         }
     }
@@ -198,13 +198,13 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
     pub fn rotate_cc(&mut self) {
         for y in 0..W / 2 {
             for x in y..W - 1 - y {
-                let qa1 = Qa::<W, W>::try_from((x, y)).unwrap();
-                let qa2 = qa1.rotate_cw();
-                let qa3 = qa2.rotate_cw();
-                let qa4 = qa3.rotate_cw();
-                self.0.swap(qa1.to_usize(), qa4.to_usize());
-                self.0.swap(qa1.to_usize(), qa3.to_usize());
-                self.0.swap(qa1.to_usize(), qa2.to_usize());
+                let pos1 = Pos::<W, W>::try_from((x, y)).unwrap();
+                let pos2 = pos1.rotate_cw();
+                let pos3 = pos2.rotate_cw();
+                let pos4 = pos3.rotate_cw();
+                self.0.swap(pos1.to_usize(), pos4.to_usize());
+                self.0.swap(pos1.to_usize(), pos3.to_usize());
+                self.0.swap(pos1.to_usize(), pos2.to_usize());
             }
         }
     }
@@ -243,8 +243,8 @@ impl<T: Default, const W: u16, const H: u16, const SIZE: usize> TryFrom<Vec<Vec<
             return Err(Error::OutOfBounds);
         }
         Ok(Self(std::array::from_fn(|i| {
-            let qa = Qa::<W, H>::try_from(i).unwrap();
-            let t = qa.tuple();
+            let pos = Pos::<W, H>::try_from(i).unwrap();
+            let t = pos.tuple();
             let t = (t.0 as usize, t.1 as usize);
             if t.1 < vec.len() && t.0 < vec[t.1].len() {
                 std::mem::take(&mut vec[t.1][t.0])
@@ -257,25 +257,26 @@ impl<T: Default, const W: u16, const H: u16, const SIZE: usize> TryFrom<Vec<Vec<
 
 // Indexing
 
-impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::Index<AQA> for Grid<T, W, H, SIZE>
+impl<T, APOS, const W: u16, const H: u16, const SIZE: usize> ops::Index<APOS>
+    for Grid<T, W, H, SIZE>
 where
-    AQA: Borrow<Qa<W, H>>,
+    APOS: Borrow<Pos<W, H>>,
 {
     type Output = T;
     #[inline]
-    fn index(&self, aqa: AQA) -> &Self::Output {
-        self.get(aqa)
+    fn index(&self, pos: APOS) -> &Self::Output {
+        self.get(pos)
     }
 }
 
-impl<T, AQA, const W: u16, const H: u16, const SIZE: usize> ops::IndexMut<AQA>
+impl<T, APOS, const W: u16, const H: u16, const SIZE: usize> ops::IndexMut<APOS>
     for Grid<T, W, H, SIZE>
 where
-    AQA: Borrow<Qa<W, H>>,
+    APOS: Borrow<Pos<W, H>>,
 {
     #[inline]
-    fn index_mut(&mut self, aqa: AQA) -> &mut T {
-        self.get_mut(aqa)
+    fn index_mut(&mut self, pos: APOS) -> &mut T {
+        self.get_mut(pos)
     }
 }
 
@@ -388,44 +389,44 @@ impl<T: Default, const W: u16, const H: u16, const SIZE: usize> iter::FromIterat
 
 // Extend
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Qa<W, H>, T)>
+impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Pos<W, H>, T)>
     for Grid<T, W, H, SIZE>
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
-        I: iter::IntoIterator<Item = (Qa<W, H>, T)>,
+        I: iter::IntoIterator<Item = (Pos<W, H>, T)>,
     {
-        for (qa, member) in iter.into_iter() {
-            self[qa] = member;
+        for (pos, member) in iter.into_iter() {
+            self[pos] = member;
         }
     }
 }
 
 impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
-    iter::Extend<(Qa<W, H>, &'a T)> for Grid<T, W, H, SIZE>
+    iter::Extend<(Pos<W, H>, &'a T)> for Grid<T, W, H, SIZE>
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
-        I: iter::IntoIterator<Item = (Qa<W, H>, &'a T)>,
+        I: iter::IntoIterator<Item = (Pos<W, H>, &'a T)>,
     {
-        for (qa, member) in iter.into_iter() {
-            self[qa] = *member;
+        for (pos, member) in iter.into_iter() {
+            self[pos] = *member;
         }
     }
 }
 
 impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
-    iter::Extend<&'a (Qa<W, H>, T)> for Grid<T, W, H, SIZE>
+    iter::Extend<&'a (Pos<W, H>, T)> for Grid<T, W, H, SIZE>
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
-        I: iter::IntoIterator<Item = &'a (Qa<W, H>, T)>,
+        I: iter::IntoIterator<Item = &'a (Pos<W, H>, T)>,
     {
-        for (qa, member) in iter.into_iter() {
-            self[qa] = *member;
+        for (pos, member) in iter.into_iter() {
+            self[pos] = *member;
         }
     }
 }
@@ -467,7 +468,7 @@ pub fn display_fmt_helper(
         Ok(())
     };
     headerfooter(f)?;
-    // Print the cells of the grid, qa by qa, controlling for new lines:
+    // Print the cells of the grid, pos by pos, controlling for new lines:
     let mut last_y = h;
     for y in 0..h {
         for _x in 0..w {

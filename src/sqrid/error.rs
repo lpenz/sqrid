@@ -15,13 +15,13 @@ use std::fmt;
 /// Used by try_from when an invalid value is passed, for instance.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
-    /// Attempted to create a [`super::Qa`] instance that is not
+    /// Attempted to create a [`super::Pos`] instance that is not
     /// in the grid.
     OutOfBounds,
-    /// Attempted to create a [`super::Qr`] instance with a tuple
+    /// Attempted to create a [`super::Dir`] instance with a tuple
     /// that doesn't represent a unitary direction.
     InvalidDirection,
-    /// A [`super::Qa`] + [`super::Qr`] operation unexpectedly failed.
+    /// A [`super::Pos`] + [`super::Dir`] operation unexpectedly failed.
     InvalidMovement,
     /// An unexpected coordinate loop has been detected.
     Loop,
@@ -37,8 +37,8 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::OutOfBounds => write!(f, "value is out-of-bounds"),
-            Error::InvalidDirection => write!(f, "invalid direction for Qr"),
-            Error::InvalidMovement => write!(f, "invalid movement (Qa+Qr)"),
+            Error::InvalidDirection => write!(f, "invalid direction for Dir"),
+            Error::InvalidMovement => write!(f, "invalid movement (Pos+Dir)"),
             Error::Loop => write!(f, "unexpected loop detected"),
             Error::DestinationUnreachable => write!(f, "destination unreachable"),
             Error::Empty => write!(f, "empty list of iterator"),

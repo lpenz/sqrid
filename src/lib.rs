@@ -11,27 +11,27 @@
 //!
 //! It's easier to explain the features of this crate in terms of the
 //! types it provides:
-//! - [`Qa`]: position, as absolute coordinates in a grid of fixed
+//! - [`Pos`]: position, as absolute coordinates in a grid of fixed
 //!   size. The dimensions of the grid are const generics type
 //!   parameters; invalid coordinates can't be created.
-//! - [`Qr`]: "movement", relative coordinates. These are the
+//! - [`Dir`]: "movement", relative coordinates. These are the
 //!   cardinal (and intercardinal) directions.
-//!   Addition is implemented in the form of `Qa + Qr = Option<Qa>`,
+//!   Addition is implemented in the form of `Pos + Dir = Option<Pos>`,
 //!   which can be `None` if the result is outside the grid.
-//! - [`Grid`]: a `Qa`-indexed array.
-//! - [`Gridbool`]: a bitmap-backed `Qa`-indexed grid of booleans.
+//! - [`Grid`]: a `Pos`-indexed array.
+//! - [`Gridbool`]: a bitmap-backed `Pos`-indexed grid of booleans.
 //! - [`Sqrid`]: "factory" type that acts as an entry point to the
 //!   fundamental types below and to algorithms.
 //!
 //! We also have traits that generalize `Grid` and `Gridbool`:
-//! - [`MapQa`]: trait that maps `Qa` to parameterized items;
+//! - [`MapPos`]: trait that maps `Pos` to parameterized items;
 //!   it's implemented by `Grid`, and some `HashMap`/`BTreeMap` based types.
-//! - [`SetQa`]: trait that maps each `Qa` to a bool; it's implemented
-//!   by `Gridbool`, `HashSet<Qa>` and `BTreeSet<Qa>`.
+//! - [`SetPos`]: trait that maps each `Pos` to a bool; it's implemented
+//!   by `Gridbool`, `HashSet<Pos>` and `BTreeSet<Pos>`.
 //!
 //! We then use these generalization to implement some grid algorithms:
 //! - [`bf`]: breadth-first iteration and search.
-//! - [`astar`]: A* search that takes a destination `Qa`.
+//! - [`astar`]: A* search that takes a destination `Pos`.
 //! - [`ucs`]: uniform-cost search.
 //!
 //! All basic types have the standard `iter`, `iter_mut`, `extend`,
@@ -39,9 +39,9 @@
 //!
 //! # Fundamental types
 //!
-//! ## `Qa`: absolute coordinates, position
+//! ## `Pos`: absolute coordinates, position
 //!
-//! The [`Qa`] type represents an absolute position in a square
+//! The [`Pos`] type represents an absolute position in a square
 //! grid. The type itself receives the height and width of the grid as
 //! const generic parameter.
 //!
@@ -51,33 +51,33 @@
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use sqrid;
 //!
-//! type Qa = sqrid::Qa<6, 7>;
+//! type Pos = sqrid::Pos<6, 7>;
 //!
-//! let qa = Qa::new(3, 3)?;
+//! let pos = Pos::new(3, 3)?;
 //! # Ok(()) }
 //! ```
 //!
-//! We can only generate [`Qa`] instances that are inside the passed
+//! We can only generate [`Pos`] instances that are inside the passed
 //! dimensions.
 //!
-//! ## `Qr`: relative coordinates, direction, movement
+//! ## `Dir`: relative coordinates, direction, movement
 //!
-//! The [`Qr`] type represents a relative movement of one square. It
+//! The [`Dir`] type represents a relative movement of one square. It
 //! can only be one of the 8 cardinal and intercardinal directions:
-//! [`Qr::N`], [`Qr::NE`], [`Qr::E`], [`Qr::SE`], [`Qr::S`],
-//! [`Qr::SW`], [`Qr::W`], [`Qr::NW`].
+//! [`Dir::N`], [`Dir::NE`], [`Dir::E`], [`Dir::SE`], [`Dir::S`],
+//! [`Dir::SW`], [`Dir::W`], [`Dir::NW`].
 //!
-//! It's a building block for paths, iterating on a [`Qa`] neighbors,
+//! It's a building block for paths, iterating on a [`Pos`] neighbors,
 //! etc. It effectively represents the edges in a graph where the
-//! [`Qa`] type represents nodes.
+//! [`Pos`] type represents nodes.
 //!
-//! All functions that iterate on `Qr` values accept a boolean const
+//! All functions that iterate on `Dir` values accept a boolean const
 //! argument that specifies whether the intercardinal directions
 //! (`NE`, `SE`, `SW`, `NW`) should be considered.
 //!
-//! ## `Grid`: a `Qa`-indexed array
+//! ## `Grid`: a `Pos`-indexed array
 //!
-//! A [`Grid`] is a generic array that can be indexed by a [`Qa`].
+//! A [`Grid`] is a generic array that can be indexed by a [`Pos`].
 //!
 //! We can create the type from a suitable [`Sqrid`] type by using the
 //! [`grid_create`] macro. We can then interact with specific lines
@@ -89,7 +89,7 @@
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //! type Grid = sqrid::grid_create!(Sqrid, i32);
 //!
 //! // The grid create macro above is currently equivalent to:
@@ -110,8 +110,8 @@
 //! }
 //!
 //! // Iterate on (coordinate, member) tuples:
-//! for (qa, &i) in gridnums.iter_qa() {
-//!     println!("[{}] = {}", qa, i);
+//! for (pos, &i) in gridnums.iter_pos() {
+//!     println!("[{}] = {}", pos, i);
 //! }
 //!
 //! // And we can always use `as_ref` or `as_mut` to interact with the
@@ -120,7 +120,7 @@
 //! gridnums.as_mut().reverse();
 //! ```
 //!
-//! ## `Gridbool`: a bitmap-backed `Qa`-indexed grid of booleans
+//! ## `Gridbool`: a bitmap-backed `Pos`-indexed grid of booleans
 //!
 //! The [`Gridbool`] is a compact abstraction of a grid of booleans.
 //!
@@ -135,14 +135,14 @@
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //! type Gridbool = sqrid::gridbool_create!(Sqrid);
 //!
-//! // We can create a gridbool from a Qa iterator via `collect`:
-//! let mut gb = Qa::iter().filter(|qa| qa.is_corner()).collect::<Gridbool>();
+//! // We can create a gridbool from a Pos iterator via `collect`:
+//! let mut gb = Pos::iter().filter(|pos| pos.is_corner()).collect::<Gridbool>();
 //!
 //! // We can also set values from an iterator:
-//! gb.set_iter_t(Qa::iter().filter(|qa| qa.is_side()));
+//! gb.set_iter_t(Pos::iter().filter(|pos| pos.is_side()));
 //!
 //! // Iterate on the true/false values:
 //! for b in gb.iter() {
@@ -150,19 +150,19 @@
 //! }
 //!
 //! // Iterate on the true coordinates:
-//! for qa in gb.iter_t() {
-//!     assert!(qa.is_side());
+//! for pos in gb.iter_t() {
+//!     assert!(pos.is_side());
 //! }
 //!
 //! // Iterate on (coordinate, bool):
-//! for (qa, b) in gb.iter_qa() {
-//!     println!("[{}] = {}", qa, b);
+//! for (pos, b) in gb.iter_pos() {
+//!     println!("[{}] = {}", pos, b);
 //! }
 //! ```
 //!
 //! # `Sqrid`: entry point for algorithms
 //!
-//! The [`Qa`] type and some methods on the [`Qr`] type require const
+//! The [`Pos`] type and some methods on the [`Dir`] type require const
 //! generic arguments that usually don't change inside an application.
 //! Both [`Grid`] and [`Gridbool`] also require further arguments that
 //! can actually be derived from the width and height of the grid, but
@@ -176,7 +176,7 @@
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(4, 4, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //! type Grid = sqrid::grid_create!(Sqrid, i32);
 //! type Gridbool = sqrid::gridbool_create!(Sqrid);
 //! ```
@@ -186,20 +186,20 @@
 //! ## Breadth-first traversal
 //!
 //! The [`Sqrid::bf_iter`] function instantiates an iterator struct
-//! ([`BfIterator`]) that can be used to iterate coordinates in
+//! ([`bf::BfIterator`]) that can be used to iterate coordinates in
 //! breadth-first order, from a given origin, using a provided
-//! function to evaluate a given [`Qa`] position + [`Qr`] direction
-//! into the next `Qa` position.
+//! function to evaluate a given [`Pos`] position + [`Dir`] direction
+//! into the next `Pos` position.
 //!
 //! Example usage:
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //!
-//! for (qa, qr) in Sqrid::bf_iter(sqrid::qaqr_eval, &Qa::CENTER)
+//! for (pos, dir) in Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER)
 //!                 .flatten() {
-//!     println!("breadth-first qa {} from {}", qa, qr);
+//!     println!("breadth-first pos {} from {}", pos, dir);
 //! }
 //! ```
 //!
@@ -209,20 +209,20 @@
 //! goal function, and figures out the shortest path to a goal by
 //! using a breadth-first iteration.
 //!
-//! The function returns the [`Qa`] that fulfills the goal and a
-//! path in the form of a `Vec<Qr>`.
+//! The function returns the [`Pos`] that fulfills the goal and a
+//! path in the form of a `Vec<Dir>`.
 //!
 //! Example usage:
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //!
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
 //! if let Ok((goal, path)) = Sqrid::bfs_path(
-//!                               sqrid::qaqr_eval, &Qa::TOP_LEFT,
-//!                               |qa| qa == Qa::BOTTOM_RIGHT) {
+//!                               sqrid::mov_eval, &Pos::TOP_LEFT,
+//!                               |pos| pos == Pos::BOTTOM_RIGHT) {
 //!     println!("goal: {}, path: {:?}", goal, path);
 //! }
 //! ```
@@ -232,18 +232,18 @@
 //! [`Sqrid::astar_path`] takes a movement function, an origin and a
 //! destination, and figures out the shortest path by using A*.
 //!
-//! The function returns path in the form of a `Vec<Qr>`.
+//! The function returns path in the form of a `Vec<Dir>`.
 //!
 //! Example usage:
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //!
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
-//! if let Ok(path) = Sqrid::astar_path(sqrid::qaqr_eval, &Qa::TOP_LEFT,
-//!                                     &Qa::BOTTOM_RIGHT) {
+//! if let Ok(path) = Sqrid::astar_path(sqrid::mov_eval, &Pos::TOP_LEFT,
+//!                                     &Pos::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);
 //! }
 //! ```
@@ -255,15 +255,15 @@
 //! uniform-cost search, which is essentially a variation of
 //! [Dijkstra](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).
 //!
-//! The function returns path in the form of a `Vec<Qr>`.
+//! The function returns path in the form of a `Vec<Dir>`.
 //!
 //! Example usage:
 //!
 //! ```rust
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //!
-//! fn traverse(position: Qa, direction: sqrid::Qr) -> Option<(Qa, usize)> {
+//! fn traverse(position: Pos, direction: sqrid::Dir) -> Option<(Pos, usize)> {
 //!     let next_position = (position + direction).ok()?;
 //!     let cost = 1;
 //!     Some((next_position, cost))
@@ -271,8 +271,8 @@
 //!
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
-//! if let Ok(path) = Sqrid::ucs_path(traverse, &Qa::TOP_LEFT,
-//!                                   &Qa::BOTTOM_RIGHT) {
+//! if let Ok(path) = Sqrid::ucs_path(traverse, &Pos::TOP_LEFT,
+//!                                   &Pos::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);
 //! }
 //! ```

@@ -6,22 +6,22 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-fn qaqr_mutual() {
-    type Qa = sqrid::Qa<256, 257>;
-    for qa in Qa::iter() {
-        for qr in sqrid::Qr::iter::<true>() {
-            if let Some(qa2) = qa + qr {
-                let found = sqrid::Qr::iter::<true>()
-                    .filter(|qr| qa2 + *qr == Some(qa))
+fn mov_mutual() {
+    type Pos = sqrid::Pos<256, 257>;
+    for pos in Pos::iter() {
+        for dir in sqrid::Dir::iter::<true>() {
+            if let Ok(pos2) = pos + dir {
+                let found = sqrid::Dir::iter::<true>()
+                    .filter(|dir| pos2 + *dir == Ok(pos))
                     .next()
                     .is_some();
                 assert!(found);
             }
         }
-        for qr in sqrid::Qr::iter::<false>() {
-            if let Some(qa2) = qa + qr {
-                let found = sqrid::Qr::iter::<false>()
-                    .filter(|qr| qa2 + *qr == Some(qa))
+        for dir in sqrid::Dir::iter::<false>() {
+            if let Ok(pos2) = pos + dir {
+                let found = sqrid::Dir::iter::<false>()
+                    .filter(|dir| pos2 + *dir == Ok(pos))
                     .next()
                     .is_some();
                 assert!(found);
@@ -31,26 +31,26 @@ fn qaqr_mutual() {
 }
 
 fn grid_index() {
-    type Qa = sqrid::Qa<256, 257>;
+    type Pos = sqrid::Pos<256, 257>;
     type Grid = sqrid::Grid<usize, 256, 257, { 256 * 257 }>;
     let mut g = Grid::default();
-    for qa in Qa::iter() {
-        g[qa] = qa.to_usize();
+    for pos in Pos::iter() {
+        g[pos] = pos.to_usize();
     }
-    for qa in Qa::iter() {
-        assert_eq!(g[qa], qa.to_usize());
+    for pos in Pos::iter() {
+        assert_eq!(g[pos], pos.to_usize());
     }
 }
 
 type Astar = sqrid::sqrid_create!(30, 15, false);
-type Qa = sqrid::qa_create!(Astar);
+type Pos = sqrid::pos_create!(Astar);
 type Gridbool = sqrid::gridbool_create!(Astar);
 
-fn astar_data() -> Vec<(Qa, Qa, Gridbool)> {
+fn astar_data() -> Vec<(Pos, Pos, Gridbool)> {
     vec![
         (
-            Qa::new::<11, 13>(),
-            Qa::new::<21, 4>(),
+            Pos::new_static::<11, 13>(),
+            Pos::new_static::<21, 4>(),
             // Test 6:
             "##############################\
             ##.##....#.##.....##.###.....#\
@@ -72,8 +72,8 @@ fn astar_data() -> Vec<(Qa, Qa, Gridbool)> {
                 .collect::<Gridbool>(),
         ),
         (
-            Qa::new::<22, 11>(),
-            Qa::new::<25, 3>(),
+            Pos::new_static::<22, 11>(),
+            Pos::new_static::<25, 3>(),
             // Test 8:
             "##############################\
            #............................#\
@@ -97,10 +97,10 @@ fn astar_data() -> Vec<(Qa, Qa, Gridbool)> {
     ]
 }
 
-fn astar_search(pars: &[(Qa, Qa, Gridbool)]) {
+fn astar_search(pars: &[(Pos, Pos, Gridbool)]) {
     for par in pars {
         let _ = Astar::astar_path(
-            |qa, qr| sqrid::qaqr_eval(qa, qr).filter(|qa| !par.2.get(qa)),
+            |pos, dir| sqrid::mov_eval(pos, dir).filter(|pos| !par.2.get(pos)),
             &par.0,
             &par.1,
         );
@@ -108,7 +108,7 @@ fn astar_search(pars: &[(Qa, Qa, Gridbool)]) {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("qaqr_mutual", |b| b.iter(|| qaqr_mutual()));
+    c.bench_function("mov_mutual", |b| b.iter(|| mov_mutual()));
     c.bench_function("grid_index", |b| b.iter(|| grid_index()));
     let data = astar_data();
     c.bench_function("astar_search", |b| b.iter(|| astar_search(&data)));

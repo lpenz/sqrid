@@ -17,9 +17,9 @@
 //! there are multple destinations), and check out [`astar`](crate::astar) for a more efficient
 //! algorithm that can be used when costs are homogenous.
 //!
-//! The base of this module is the [`UcsIterator`], which yields [`Qa`] coordinates in cost
-//! order. That iterator is used by [`search_mapqaqr`] to build an unsorted `Qa`-indexed map of
-//! [`Qr`] directions, which can then transformed into a vector of directions by
+//! The base of this module is the [`UcsIterator`], which yields [`Pos`] coordinates in cost
+//! order. That iterator is used by [`search_mapmov`] to build an unsorted `Pos`-indexed map of
+//! [`Dir`] directions, which can then transformed into a vector of directions by
 //! [`crate::camefrom_into_path`]. The complete search process is wrapped by [`search_path`].
 //!
 //! All these functions can be called directly, but that's a bit inconvenient, as they require
@@ -34,9 +34,9 @@
 //!
 //! ```
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
-//! type Qa = sqrid::qa_create!(Sqrid);
+//! type Pos = sqrid::pos_create!(Sqrid);
 //!
-//! fn traverse(position: Qa, direction: sqrid::Qr) -> Option<(Qa, usize)> {
+//! fn traverse(position: Pos, direction: sqrid::Dir) -> Option<(Pos, usize)> {
 //!     let next_position = (position + direction).ok()?;
 //!     let cost = 1;
 //!     Some((next_position, cost))
@@ -44,8 +44,8 @@
 //!
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
-//! if let Ok(path) = Sqrid::ucs_path(traverse, &Qa::TOP_LEFT,
-//!                                   &Qa::BOTTOM_RIGHT) {
+//! if let Ok(path) = Sqrid::ucs_path(traverse, &Pos::TOP_LEFT,
+//!                                   &Pos::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);
 //! }
 //! ```
@@ -55,11 +55,11 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::camefrom_into_path;
+use super::Dir;
 use super::Error;
 use super::Grid;
-use super::MapQa;
-use super::Qa;
-use super::Qr;
+use super::MapPos;
+use super::Pos;
 use super::Sqrid;
 
 /// The type for the cost of a step inside a path
@@ -71,42 +71,42 @@ pub type Cost = usize;
 #[derive(Debug, Clone)]
 pub struct UcsIterator<
     F,
-    MapQaUsize,
+    MapPosUsize,
     const W: u16,
     const H: u16,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 > {
-    cost: MapQaUsize,
-    frontier: BinaryHeap<(Reverse<usize>, (Qa<W, H>, Qr))>,
+    cost: MapPosUsize,
+    frontier: BinaryHeap<(Reverse<usize>, (Pos<W, H>, Dir))>,
     go: F,
 }
 
 impl<
         F,
-        MapQaUsize,
+        MapPosUsize,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    > UcsIterator<F, MapPosUsize, W, H, D, WORDS, SIZE>
 {
     /// Create a new UCS iterator
     ///
     /// This is used internally to yield coordinates in cost order.
-    pub fn new(go: F, orig: &Qa<W, H>) -> UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    pub fn new(go: F, orig: &Pos<W, H>) -> UcsIterator<F, MapPosUsize, W, H, D, WORDS, SIZE>
     where
-        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-        MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
+        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+        MapPosUsize: MapPos<usize, W, H, WORDS, SIZE> + Default,
     {
         let mut it = UcsIterator {
-            cost: MapQaUsize::new(usize::MAX),
+            cost: MapPosUsize::new(usize::MAX),
             frontier: BinaryHeap::default(),
             go,
         };
-        it.frontier.push((Reverse(0), (*orig, Qr::default())));
+        it.frontier.push((Reverse(0), (*orig, Dir::default())));
         it.cost.set(*orig, 0);
         it
     }
@@ -114,32 +114,32 @@ impl<
 
 impl<
         F,
-        MapQaUsize,
+        MapPosUsize,
         const W: u16,
         const H: u16,
         const D: bool,
         const WORDS: usize,
         const SIZE: usize,
-    > Iterator for UcsIterator<F, MapQaUsize, W, H, D, WORDS, SIZE>
+    > Iterator for UcsIterator<F, MapPosUsize, W, H, D, WORDS, SIZE>
 where
-    F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE>,
+    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+    MapPosUsize: MapPos<usize, W, H, WORDS, SIZE>,
 {
-    type Item = (Qa<W, H>, Qr);
+    type Item = (Pos<W, H>, Dir);
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some((_, qaqr)) = self.frontier.pop() {
-            let qa = qaqr.0;
-            for qr in Qr::iter::<D>() {
-                if let Some((nextqa, costincr)) = (self.go)(qa, qr) {
-                    let newcost = self.cost.get(&qa) + costincr;
-                    if newcost < *self.cost.get(&nextqa) {
-                        self.cost.set(nextqa, newcost);
+        if let Some((_, mov)) = self.frontier.pop() {
+            let pos = mov.0;
+            for dir in Dir::iter::<D>() {
+                if let Some((next_pos, costincr)) = (self.go)(pos, dir) {
+                    let newcost = self.cost.get(&pos) + costincr;
+                    if newcost < *self.cost.get(&next_pos) {
+                        self.cost.set(next_pos, newcost);
                         let priority = Reverse(newcost);
-                        self.frontier.push((priority, (nextqa, -qr)));
+                        self.frontier.push((priority, (next_pos, -dir)));
                     }
                 }
             }
-            Some(qaqr)
+            Some(mov)
         } else {
             None
         }
@@ -148,13 +148,13 @@ where
 
 /* Generic interface **********************************************************/
 
-/// Make a UCS search, return the "came from" direction [`MapQa`]
+/// Make a UCS search, return the "came from" direction [`MapPos`]
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
-pub fn search_mapqaqr<
+/// Generic interface over types that implement [`MapPos`] for [`Dir`] and `usize`
+pub fn search_mapmov<
     F,
-    MapQaQr,
-    MapQaUsize,
+    MapPosDir,
+    MapPosUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -162,34 +162,34 @@ pub fn search_mapqaqr<
     const SIZE: usize,
 >(
     go: F,
-    orig: &Qa<W, H>,
-    dest: &Qa<W, H>,
-) -> Result<MapQaQr, Error>
+    orig: &Pos<W, H>,
+    dest: &Pos<W, H>,
+) -> Result<MapPosDir, Error>
 where
-    F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
+    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE> + Default,
+    MapPosUsize: MapPos<usize, W, H, WORDS, SIZE> + Default,
 {
-    let mut from = MapQaQr::default();
-    for (qa, qr) in UcsIterator::<F, MapQaUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
-        from.set(qa, Some(qr));
-        if qa == *dest {
+    let mut from = MapPosDir::default();
+    for (pos, dir) in UcsIterator::<F, MapPosUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
+        from.set(pos, Some(dir));
+        if pos == *dest {
             return Ok(from);
         }
     }
     Err(Error::DestinationUnreachable)
 }
 
-/// Makes a UCS search, returns the path as a `Vec<Qr>`
+/// Makes a UCS search, returns the path as a `Vec<Dir>`
 ///
-/// Generic interface over types that implement [`MapQa`] for [`Qr`] and `usize`
+/// Generic interface over types that implement [`MapPos`] for [`Dir`] and `usize`
 ///
-/// This is essentially [`search_mapqaqr`] followed by a call to
+/// This is essentially [`search_mapmov`] followed by a call to
 /// [`camefrom_into_path`](crate::camefrom_into_path).
 pub fn search_path<
     F,
-    MapQaQr,
-    MapQaUsize,
+    MapPosDir,
+    MapPosUsize,
     const W: u16,
     const H: u16,
     const D: bool,
@@ -197,21 +197,21 @@ pub fn search_path<
     const SIZE: usize,
 >(
     go: F,
-    orig: &Qa<W, H>,
-    dest: &Qa<W, H>,
-) -> Result<Vec<Qr>, Error>
+    orig: &Pos<W, H>,
+    dest: &Pos<W, H>,
+) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
-    MapQaQr: MapQa<Option<Qr>, W, H, WORDS, SIZE> + Default,
-    MapQaUsize: MapQa<usize, W, H, WORDS, SIZE> + Default,
+    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE> + Default,
+    MapPosUsize: MapPos<usize, W, H, WORDS, SIZE> + Default,
 {
-    let mapqaqr = search_mapqaqr::<F, MapQaQr, MapQaUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
-    camefrom_into_path(mapqaqr, orig, dest)
+    let mapmov = search_mapmov::<F, MapPosDir, MapPosUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
+    camefrom_into_path(mapmov, orig, dest)
 }
 
 /* Parameterized interface ****************************************************/
 
-/// Makes a UCS search using [`Grid`], returns the path as a `Vec<Qr>`
+/// Makes a UCS search using [`Grid`], returns the path as a `Vec<Dir>`
 pub fn search_path_grid<
     F,
     const W: u16,
@@ -221,19 +221,19 @@ pub fn search_path_grid<
     const SIZE: usize,
 >(
     go: F,
-    orig: &Qa<W, H>,
-    dest: &Qa<W, H>,
-) -> Result<Vec<Qr>, Error>
+    orig: &Pos<W, H>,
+    dest: &Pos<W, H>,
+) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
 {
-    search_path::<F, Grid<Option<Qr>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
+    search_path::<F, Grid<Option<Dir>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
         go, orig, dest,
     )
 }
 
 /// Makes a UCS search using the [`HashMap`](std::collections::HashMap) type,
-/// returns the path as a `Vec<Qr>`
+/// returns the path as a `Vec<Dir>`
 pub fn search_path_hash<
     F,
     const W: u16,
@@ -243,16 +243,16 @@ pub fn search_path_hash<
     const SIZE: usize,
 >(
     go: F,
-    orig: &Qa<W, H>,
-    dest: &Qa<W, H>,
-) -> Result<Vec<Qr>, Error>
+    orig: &Pos<W, H>,
+    dest: &Pos<W, H>,
+) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
 {
     search_path::<
         F,
-        (collections::HashMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
-        (collections::HashMap<Qa<W, H>, usize>, usize),
+        (collections::HashMap<Pos<W, H>, Option<Dir>>, Option<Dir>),
+        (collections::HashMap<Pos<W, H>, usize>, usize),
         W,
         H,
         D,
@@ -262,7 +262,7 @@ where
 }
 
 /// Makes a UCS search using the [`BTreeMap`](std::collections::BTreeMap) type,
-/// returns the path as a `Vec<Qr>`
+/// returns the path as a `Vec<Dir>`
 pub fn search_path_btree<
     F,
     const W: u16,
@@ -272,16 +272,16 @@ pub fn search_path_btree<
     const SIZE: usize,
 >(
     go: F,
-    orig: &Qa<W, H>,
-    dest: &Qa<W, H>,
-) -> Result<Vec<Qr>, Error>
+    orig: &Pos<W, H>,
+    dest: &Pos<W, H>,
+) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
 {
     search_path::<
         F,
-        (collections::BTreeMap<Qa<W, H>, Option<Qr>>, Option<Qr>),
-        (collections::BTreeMap<Qa<W, H>, usize>, usize),
+        (collections::BTreeMap<Pos<W, H>, Option<Dir>>, Option<Dir>),
+        (collections::BTreeMap<Pos<W, H>, usize>, usize),
         W,
         H,
         D,
@@ -297,27 +297,27 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 {
     /// Perform a uniform-cost search;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn ucs_path<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
     {
         Self::ucs_path_grid::<F>(go, orig, dest)
     }
 
     /// Perform a uniform-cost search using a [`Grid`] internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_grid<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn ucs_path_grid<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
     {
         search_path_grid::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
 
     /// Perform a uniform-cost search using a [`HashMap`](std::collections::HashMap) internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_hash<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn ucs_path_hash<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
     {
         search_path_hash::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }
@@ -325,9 +325,9 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     /// Perform a uniform-cost search using a [`BTreeMap`](std::collections::BTreeMap)
     /// internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_btree<F>(go: F, orig: &Qa<W, H>, dest: &Qa<W, H>) -> Result<Vec<Qr>, Error>
+    pub fn ucs_path_btree<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Qa<W, H>, Qr) -> Option<(Qa<W, H>, Cost)>,
+        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
     {
         search_path_btree::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
     }

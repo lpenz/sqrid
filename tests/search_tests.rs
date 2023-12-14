@@ -4,118 +4,118 @@
 
 use sqrid;
 use sqrid::ucs::Cost;
-use sqrid::Qr;
+use sqrid::Dir;
 
 use anyhow::anyhow;
 use anyhow::Result;
 
 type Sqrid = sqrid::sqrid_create!(30, 15, false);
-type Qa = sqrid::qa_create!(Sqrid);
-type GridQr = sqrid::grid_create!(Sqrid, Option<Qr>);
+type Pos = sqrid::pos_create!(Sqrid);
+type GridDir = sqrid::grid_create!(Sqrid, Option<Dir>);
 type Gridbool = sqrid::gridbool_create!(Sqrid);
 
-fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Qa, Qa) {
+fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Pos, Pos) {
     let mut walls = Gridbool::default();
-    let mut start = Qa::FIRST;
-    let mut end = Qa::LAST;
-    for y in 0..Qa::HEIGHT {
-        for x in 0..Qa::WIDTH {
+    let mut start = Pos::FIRST;
+    let mut end = Pos::LAST;
+    for y in 0..Pos::HEIGHT {
+        for x in 0..Pos::WIDTH {
             let c = wallstr[y as usize].as_bytes()[x as usize] as char;
-            let qa = Qa::tryfrom_tuple((x, y)).unwrap();
-            walls.set(qa, c == '#');
+            let pos = Pos::tryfrom_tuple((x, y)).unwrap();
+            walls.set(pos, c == '#');
             if c == 'T' {
-                start = qa;
+                start = pos;
             } else if c == 'C' {
-                end = qa;
+                end = pos;
             }
         }
     }
     (walls, start, end)
 }
 
-fn calc_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<Qa> + '_> {
-    Box::new(move |qa: Qa, qr: Qr| {
+fn calc_path(wall: &Gridbool) -> Box<impl Fn(Pos, Dir) -> Option<Pos> + '_> {
+    Box::new(move |pos: Pos, dir: Dir| {
         {
-            let newqa: Option<Qa> = (qa + qr).ok();
-            newqa
+            let newpos: Option<Pos> = (pos + dir).ok();
+            newpos
         }
-        .filter(|qa| !wall.get(qa))
+        .filter(|pos| !wall.get(pos))
     })
 }
 
-fn calc_ucs_path(wall: &Gridbool) -> Box<impl Fn(Qa, Qr) -> Option<(Qa, Cost)> + '_> {
-    Box::new(move |qa: Qa, qr: Qr| {
+fn calc_ucs_path(wall: &Gridbool) -> Box<impl Fn(Pos, Dir) -> Option<(Pos, Cost)> + '_> {
+    Box::new(move |pos: Pos, dir: Dir| {
         {
-            let newqa = (qa + qr).ok()?;
-            Some((newqa, 1))
+            let newpos = (pos + dir).ok()?;
+            Some((newpos, 1))
         }
-        .filter(|(qa, _)| !wall.get(qa))
+        .filter(|(pos, _)| !wall.get(pos))
     })
 }
 
-fn goal(end: &Qa) -> Box<impl Fn(Qa) -> bool + '_> {
-    Box::new(move |qa| qa == *end)
+fn goal(end: &Pos) -> Box<impl Fn(Pos) -> bool + '_> {
+    Box::new(move |pos| pos == *end)
 }
 
-fn test_path(wall: &Gridbool, orig: &Qa, dest: &Qa, path: &[Qr]) -> Result<()> {
-    let mut qa = *orig;
+fn test_path(wall: &Gridbool, orig: &Pos, dest: &Pos, path: &[Dir]) -> Result<()> {
+    let mut pos = *orig;
     for dir in path {
-        qa = (qa + dir)?;
-        assert!(!wall.get(qa), "hit wall");
+        pos = (pos + dir)?;
+        assert!(!wall.get(pos), "hit wall");
     }
-    assert_eq!(qa, *dest, "path not leading to dest");
+    assert_eq!(pos, *dest, "path not leading to dest");
     Ok(())
 }
 
-fn test_variant(distance: usize, wall: Gridbool, start: &Qa, end: &Qa) -> Result<()> {
+fn test_variant(distance: usize, wall: Gridbool, start: &Pos, end: &Pos) -> Result<()> {
     eprintln!("start {}, end {}", start, end);
-    let mut qa = *start;
+    let mut pos = *start;
     let mut i = distance;
-    while qa != *end {
-        eprintln!("from {} to {}: {}", qa, end, i);
+    while pos != *end {
+        eprintln!("from {} to {}: {}", pos, end, i);
         eprintln!("{}", wall);
         // BFS:
         //   with Grid:
-        let (_, path) = Sqrid::bfs_path(calc_path(&wall), &qa, goal(&end))?;
-        test_path(&wall, &qa, end, &path)?;
+        let (_, path) = Sqrid::bfs_path(calc_path(&wall), &pos, goal(&end))?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let (_, path) = Sqrid::bfs_path_hash(calc_path(&wall), &qa, goal(&end))?;
-        test_path(&wall, &qa, end, &path)?;
+        let (_, path) = Sqrid::bfs_path_hash(calc_path(&wall), &pos, goal(&end))?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let (_, path) = Sqrid::bfs_path_btree(calc_path(&wall), &qa, goal(&end))?;
-        test_path(&wall, &qa, end, &path)?;
+        let (_, path) = Sqrid::bfs_path_btree(calc_path(&wall), &pos, goal(&end))?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         // A*:
         //   with Grid:
-        let path = Sqrid::astar_path(calc_path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path)?;
+        let path = Sqrid::astar_path(calc_path(&wall), &pos, end)?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let path = Sqrid::astar_path_hash(calc_path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path)?;
+        let path = Sqrid::astar_path_hash(calc_path(&wall), &pos, end)?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let path = Sqrid::astar_path_btree(calc_path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path)?;
+        let path = Sqrid::astar_path_btree(calc_path(&wall), &pos, end)?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         // UCS:
         //   with Grid:
-        let path = Sqrid::ucs_path(calc_ucs_path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path)?;
+        let path = Sqrid::ucs_path(calc_ucs_path(&wall), &pos, end)?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         //   with HashMap:
-        let path = Sqrid::ucs_path_hash(calc_ucs_path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path)?;
+        let path = Sqrid::ucs_path_hash(calc_ucs_path(&wall), &pos, end)?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         //   with BTreeMap:
-        let path = Sqrid::ucs_path_btree(calc_ucs_path(&wall), &qa, end)?;
-        test_path(&wall, &qa, end, &path)?;
+        let path = Sqrid::ucs_path_btree(calc_ucs_path(&wall), &pos, end)?;
+        test_path(&wall, &pos, end, &path)?;
         assert_eq!(path.len(), i);
         // Try next coordinate:
         let first = path.first().ok_or(anyhow!("unexpected empty path"))?;
-        qa = (qa + first)?;
+        pos = (pos + first)?;
         i -= 1;
     }
     Ok(())
@@ -141,9 +141,9 @@ fn do_test(distance: usize, wallstr: &Vec<&str>) -> Result<()> {
 
 #[test]
 fn test_loop() -> Result<()> {
-    let mut gridqr = GridQr::repeat(Some(Qr::N));
-    gridqr[Qa::TOP_LEFT] = Some(Qr::S);
-    let path_result = Sqrid::camefrom_into_path(gridqr, &Qa::BOTTOM_RIGHT, &Qa::TOP_LEFT);
+    let mut griddir = GridDir::repeat(Some(Dir::N));
+    griddir[Pos::TOP_LEFT] = Some(Dir::S);
+    let path_result = Sqrid::camefrom_into_path(griddir, &Pos::BOTTOM_RIGHT, &Pos::TOP_LEFT);
     assert_eq!(path_result, Err(sqrid::Error::Loop));
     Ok(())
 }

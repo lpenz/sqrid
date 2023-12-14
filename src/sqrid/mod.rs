@@ -17,22 +17,23 @@ pub use self::base::*;
 pub mod error;
 pub use self::error::*;
 
-pub mod qa;
-pub use self::qa::*;
-pub mod qr;
-pub use self::qr::*;
-pub mod qaqr;
-pub use self::qaqr::*;
+pub mod pos;
+pub use self::pos::*;
+pub mod dir;
+pub use self::dir::*;
+pub mod mov;
+pub use self::mov::*;
 
 pub mod grid;
 pub use self::grid::*;
 pub mod gridbool;
 pub use self::gridbool::*;
 
-pub mod mapqa;
-pub use self::mapqa::*;
-pub mod setqa;
-pub use self::setqa::*;
+pub mod mappos;
+pub use self::mappos::*;
+pub mod setpos;
+pub use self::setpos::*;
+
 pub mod astar;
 pub mod bf;
 pub mod ucs;
