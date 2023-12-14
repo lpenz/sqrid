@@ -58,7 +58,7 @@ macro_rules! grid_create {
 ///
 /// We can use the [`grid_create`] macro to use a [`Qa`] as a source
 /// of these values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
 
 impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
