@@ -2,6 +2,9 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 use sqrid;
 
 use anyhow::Result;
@@ -164,5 +167,20 @@ fn test_scale() -> Result<()> {
             break;
         }
     }
+    Ok(())
+}
+
+#[test]
+fn test_traits() -> Result<()> {
+    let g0 = Gbool5::default();
+    let g1 = Gbool5::repeat(true);
+    assert!(g0 < g1);
+    assert!(g1 > g0);
+    assert!(g0 == g0);
+    assert!(g0 != g1);
+    assert!(g0 != g1);
+    let mut s = DefaultHasher::new();
+    g0.hash(&mut s);
+    s.finish();
     Ok(())
 }

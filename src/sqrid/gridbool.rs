@@ -55,7 +55,7 @@ macro_rules! gridbool_create {
 ///
 /// We can use the [`gridbool_create`] macro to use a [`Pos`] as a
 /// source of these values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u32; WORDS]);
 
 impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
