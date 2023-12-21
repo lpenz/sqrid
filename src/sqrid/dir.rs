@@ -66,6 +66,9 @@ impl Dir {
         Self::NW,
     ];
 
+    /// The 4 "major" cardinal directions.
+    pub const ALL4: [Self; 4] = [Self::N, Self::E, Self::S, Self::W];
+
     /// All corresponding tuples
     ///
     /// Used to convert a `Dir` value into a `(i8, i8)` tuple via indexing.
