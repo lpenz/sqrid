@@ -15,7 +15,7 @@ keywords = ["grid", "square", "arrays"]
 bench = false
 
 [dev-dependencies]
-anyhow = "1.0.65"
+anyhow = "1.0.82"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [[bench]]
