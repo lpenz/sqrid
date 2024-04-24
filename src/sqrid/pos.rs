@@ -72,10 +72,7 @@ use super::error::Error;
 ///   const POS : Pos = Pos::new_static::<3, 30>();
 ///   ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Pos<const WIDTH: u16, const HEIGHT: u16> {
-    x: u16,
-    y: u16,
-}
+pub struct Pos<const WIDTH: u16, const HEIGHT: u16>(pub (u16, u16));
 
 /// Helper macro to a [`Pos`] type from an [`super::base::Sqrid`].
 ///
@@ -103,22 +100,22 @@ impl<const W: u16, const H: u16> Pos<W, H> {
 
     /// Coordinates of the first element of the grid: `(0, 0)`.
     /// Also known as origin.
-    pub const FIRST: Pos<W, H> = Pos { x: 0, y: 0 };
+    pub const FIRST: Pos<W, H> = Pos((0, 0));
 
     /// Coordinates of the last element of the grid.
-    pub const LAST: Pos<W, H> = Pos { x: W - 1, y: H - 1 };
+    pub const LAST: Pos<W, H> = Pos((W - 1, H - 1));
 
     /// Center the (approximate) center coordinate.
-    pub const CENTER: Pos<W, H> = Pos { x: W / 2, y: H / 2 };
+    pub const CENTER: Pos<W, H> = Pos((W / 2, H / 2));
 
     /// Coordinates of the top-left coordinate.
-    pub const TOP_LEFT: Pos<W, H> = Pos { x: 0, y: 0 };
+    pub const TOP_LEFT: Pos<W, H> = Pos((0, 0));
     /// Coordinates of the top-right coordinate.
-    pub const TOP_RIGHT: Pos<W, H> = Pos { x: W - 1, y: 0 };
+    pub const TOP_RIGHT: Pos<W, H> = Pos((W - 1, 0));
     /// Coordinates of the bottom-left coordinate.
-    pub const BOTTOM_LEFT: Pos<W, H> = Pos { x: 0, y: H - 1 };
+    pub const BOTTOM_LEFT: Pos<W, H> = Pos((0, H - 1));
     /// Coordinates of the bottom-right coordinate.
-    pub const BOTTOM_RIGHT: Pos<W, H> = Pos { x: W - 1, y: H - 1 };
+    pub const BOTTOM_RIGHT: Pos<W, H> = Pos((W - 1, H - 1));
 
     /// Create a new [`Pos`] instance; returns error if a coordinate is
     /// out-of-bounds.
@@ -126,7 +123,7 @@ impl<const W: u16, const H: u16> Pos<W, H> {
         if x >= W || y >= H {
             Err(Error::OutOfBounds)
         } else {
-            Ok(Pos { x, y })
+            Ok(Pos((x, y)))
         }
     }
 
@@ -134,7 +131,7 @@ impl<const W: u16, const H: u16> Pos<W, H> {
     /// context; panics if a coordinate is out-of-bounds.
     pub const fn new_unwrap(x: u16, y: u16) -> Self {
         assert!(x < W && y < H);
-        Pos { x, y }
+        Pos((x, y))
     }
 
     /// Create a new [`Pos`] instance at compile time.
@@ -146,43 +143,49 @@ impl<const W: u16, const H: u16> Pos<W, H> {
     /// ```
     pub const fn new_static<const X: u16, const Y: u16>() -> Self {
         assert!(X < W && Y < H);
-        Self { x: X, y: Y }
+        Self((X, Y))
     }
 
     /// Return true if self is a corner of the grid.
     #[inline]
     pub fn is_corner(&self) -> bool {
-        (self.x == 0 || self.x == W - 1) && (self.y == 0 || self.y == H - 1)
+        (self.x() == 0 || self.x() == W - 1) && (self.y() == 0 || self.y() == H - 1)
     }
 
     /// Return true if self is on the side of the grid.
     #[inline]
     pub fn is_side(&self) -> bool {
-        self.x == 0 || self.x == W - 1 || self.y == 0 || self.y == H - 1
+        self.x() == 0 || self.x() == W - 1 || self.y() == 0 || self.y() == H - 1
     }
 
     /// Flip the coordinate vertically
     #[inline]
     pub fn flip_h(&self) -> Pos<W, H> {
-        Pos {
-            x: W - self.x - 1,
-            y: self.y,
-        }
+        Pos((W - self.x() - 1, self.y()))
     }
 
     /// Flip the coordinate horizontally
     #[inline]
     pub fn flip_v(&self) -> Pos<W, H> {
-        Pos {
-            x: self.x,
-            y: H - self.y - 1,
-        }
+        Pos((self.x(), H - self.y() - 1))
+    }
+
+    /// Returns the x coordinate
+    #[inline]
+    pub const fn x(&self) -> u16 {
+        self.0 .0
+    }
+
+    /// Returns the y coordinate
+    #[inline]
+    pub const fn y(&self) -> u16 {
+        self.0 .1
     }
 
     /// Return the corresponding `(u16, u16)` tuple.
     #[inline]
     pub fn tuple(&self) -> (u16, u16) {
-        (self.x, self.y)
+        self.0
     }
 
     /// Create a new `Pos` from the provided `(u16, u16)`, if
@@ -193,7 +196,7 @@ impl<const W: u16, const H: u16> Pos<W, H> {
         if xy.0 >= W || xy.1 >= H {
             Err(Error::OutOfBounds)
         } else {
-            Ok(Pos { x: xy.0, y: xy.1 })
+            Ok(Pos(*xy))
         }
     }
 
@@ -216,7 +219,7 @@ impl<const W: u16, const H: u16> Pos<W, H> {
         } else {
             let x = (i % W as usize) as u16;
             let y = (i / W as usize) as u16;
-            Ok(Pos { x, y })
+            Ok(Pos((x, y)))
         }
     }
 
@@ -248,7 +251,7 @@ impl<const W: u16, const H: u16> Pos<W, H> {
     /// Return a usize index corresponding to the `Pos`.
     #[inline]
     pub fn to_usize(&self) -> usize {
-        self.y as usize * W as usize + self.x as usize
+        self.y() as usize * W as usize + self.x() as usize
     }
 
     /// Return the next `Pos` in sequence (English read sequence), or
@@ -295,32 +298,32 @@ impl<const W: u16, const H: u16> Pos<W, H> {
 
     /// Return the manhattan distance between 2 `Pos`s of the same type
     pub fn manhattan(pos1: &Pos<W, H>, pos2: &Pos<W, H>) -> usize {
-        let dx = if pos1.x > pos2.x {
-            pos1.x as usize - pos2.x as usize
+        let dx = if pos1.x() > pos2.x() {
+            pos1.x() as usize - pos2.x() as usize
         } else {
-            pos2.x as usize - pos1.x as usize
+            pos2.x() as usize - pos1.x() as usize
         };
-        let dy = if pos1.y > pos2.y {
-            pos1.y as usize - pos2.y as usize
+        let dy = if pos1.y() > pos2.y() {
+            pos1.y() as usize - pos2.y() as usize
         } else {
-            pos2.y as usize - pos1.y as usize
+            pos2.y() as usize - pos1.y() as usize
         };
         dx + dy
     }
 
     /// Check that the `Pos` is inside the provided limits
     pub fn inside(&self, pos1: &Pos<W, H>, pos2: &Pos<W, H>) -> bool {
-        let (xmin, xmax) = if pos1.x < pos2.x {
-            (pos1.x, pos2.x)
+        let (xmin, xmax) = if pos1.x() < pos2.x() {
+            (pos1.x(), pos2.x())
         } else {
-            (pos2.x, pos1.x)
+            (pos2.x(), pos1.x())
         };
-        let (ymin, ymax) = if pos1.y < pos2.y {
-            (pos1.y, pos2.y)
+        let (ymin, ymax) = if pos1.y() < pos2.y() {
+            (pos1.y(), pos2.y())
         } else {
-            (pos2.y, pos1.y)
+            (pos2.y(), pos1.y())
         };
-        xmin <= self.x && self.x <= xmax && ymin <= self.y && self.y <= ymax
+        xmin <= self.x() && self.x() <= xmax && ymin <= self.y() && self.y() <= ymax
     }
 }
 
@@ -329,25 +332,19 @@ impl<const W: u16> Pos<W, W> {
     /// Rotate the square grid coordinate 90 degrees clockwise
     #[inline]
     pub fn rotate_cw(&self) -> Pos<W, W> {
-        Pos {
-            x: W - 1 - self.y,
-            y: self.x,
-        }
+        Pos((W - 1 - self.y(), self.x()))
     }
 
     /// Rotate the square grid coordinate 90 degrees counter-clockwise
     #[inline]
     pub fn rotate_cc(&self) -> Pos<W, W> {
-        Pos {
-            x: self.y,
-            y: W - 1 - self.x,
-        }
+        Pos((self.y(), W - 1 - self.x()))
     }
 }
 
 impl<const W: u16, const H: u16> fmt::Display for Pos<W, H> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({},{})", self.x, self.y)
+        write!(f, "({},{})", self.x(), self.y())
     }
 }
 
@@ -376,10 +373,7 @@ impl<const W: u16, const H: u16> convert::TryFrom<&(i32, i32)> for Pos<W, H> {
         if xy.0 < 0 || xy.1 < 0 || xy.0 >= W as i32 || xy.1 >= H as i32 {
             Err(Error::OutOfBounds)
         } else {
-            Ok(Pos {
-                x: xy.0 as u16,
-                y: xy.1 as u16,
-            })
+            Ok(Pos((xy.0 as u16, xy.1 as u16)))
         }
     }
 }
@@ -409,7 +403,7 @@ impl<const W: u16, const H: u16> From<Pos<W, H>> for (u16, u16) {
 impl<const W: u16, const H: u16> From<&Pos<W, H>> for (i32, i32) {
     #[inline]
     fn from(pos: &Pos<W, H>) -> Self {
-        (pos.x as i32, pos.y as i32)
+        (pos.x() as i32, pos.y() as i32)
     }
 }
 
@@ -489,11 +483,11 @@ impl<const W: u16, const H: u16> PosIter<W, H> {
         if self.xfirst {
             let x = (i % W as usize) as u16;
             let y = (i / W as usize) as u16;
-            Pos { x, y }
+            Pos((x, y))
         } else {
             let y = (i % H as usize) as u16;
             let x = (i / H as usize) as u16;
-            Pos { x, y }
+            Pos((x, y))
         }
     }
 }
@@ -615,10 +609,10 @@ impl<const W: u16, const H: u16> Iterator for PosIterInX<W, H> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
-            if i.y >= H {
+            if i.y() >= H {
                 None
             } else {
-                self.0 = Pos::tryfrom_tuple((i.x, i.y + 1)).ok();
+                self.0 = Pos::tryfrom_tuple((i.x(), i.y() + 1)).ok();
                 Some(i)
             }
         } else {
@@ -642,10 +636,10 @@ impl<const W: u16, const H: u16> Iterator for PosIterInY<W, H> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(i) = self.0.take() {
-            if i.x >= W {
+            if i.x() >= W {
                 None
             } else {
-                self.0 = Pos::tryfrom_tuple((i.x + 1, i.y)).ok();
+                self.0 = Pos::tryfrom_tuple((i.x() + 1, i.y())).ok();
                 Some(i)
             }
         } else {
