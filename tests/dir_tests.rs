@@ -4,6 +4,7 @@
 
 use sqrid;
 use sqrid::Dir;
+use sqrid::IncDecNum;
 
 use anyhow::Result;
 use std::convert::TryFrom;
@@ -190,5 +191,59 @@ fn test_addassign() -> Result<()> {
     assert_eq!(dir, Dir::SW);
     dir += Dir::SE;
     assert_eq!(dir, Dir::N);
+    Ok(())
+}
+
+fn do_test_add_dir<T>(origin: (T, T)) -> Result<()>
+where
+    T: Copy + IncDecNum + PartialEq + std::fmt::Debug,
+    (T, T): From<Dir>,
+{
+    for dir in Dir::iter::<true>() {
+        let pos: (T, T) = (origin + dir)?;
+        assert_eq!(pos, dir.into());
+        let pos: (T, T) = (&origin + dir)?;
+        assert_eq!(pos, dir.into());
+    }
+    Ok(())
+}
+
+#[test]
+fn test_add_dir() -> Result<()> {
+    do_test_add_dir::<isize>((0, 0))?;
+    do_test_add_dir::<i8>((0, 0))?;
+    do_test_add_dir::<i16>((0, 0))?;
+    do_test_add_dir::<i32>((0, 0))?;
+    do_test_add_dir::<i64>((0, 0))?;
+    do_test_add_dir::<i128>((0, 0))?;
+    Ok(())
+}
+
+fn do_test_cycle<T>(start: (T, T)) -> Result<()>
+where
+    T: Copy + IncDecNum + PartialEq + std::fmt::Debug,
+{
+    let mut pos = start;
+    for dir in Dir::iter::<true>() {
+        pos = (pos + dir)?;
+    }
+    assert_eq!(start, pos);
+    Ok(())
+}
+
+#[test]
+fn test_cycle() -> Result<()> {
+    do_test_cycle::<isize>((0, 2))?;
+    do_test_cycle::<i8>((0, 2))?;
+    do_test_cycle::<i16>((0, 2))?;
+    do_test_cycle::<i32>((0, 2))?;
+    do_test_cycle::<i64>((0, 2))?;
+    do_test_cycle::<i128>((0, 2))?;
+    do_test_cycle::<usize>((0, 2))?;
+    do_test_cycle::<u8>((0, 2))?;
+    do_test_cycle::<u16>((0, 2))?;
+    do_test_cycle::<u32>((0, 2))?;
+    do_test_cycle::<u64>((0, 2))?;
+    do_test_cycle::<u128>((0, 2))?;
     Ok(())
 }
