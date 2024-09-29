@@ -176,7 +176,7 @@ fn test_traits() -> Result<()> {
     assert!(g0 != g1);
     let mut s = DefaultHasher::new();
     g0.hash(&mut s);
-    s.finish();
+    let _ = s.finish();
     Ok(())
 }
 
