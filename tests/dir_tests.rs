@@ -9,16 +9,33 @@ use anyhow::Result;
 use std::convert::TryFrom;
 
 #[test]
-fn test_basic() -> Result<()> {
+fn test_eq_default() -> Result<()> {
     let dir0 = Dir::default();
     let dir1 = Dir::N;
     assert_eq!(dir0, dir1);
-    assert_eq!(<(i8, i8)>::from(dir1), (0, -1));
-    assert_eq!(<(i8, i8)>::from(&dir1), (0, -1));
-    assert_eq!(<(i32, i32)>::from(dir1), (0, -1));
-    assert_eq!(<(i32, i32)>::from(&dir1), (0, -1));
-    let dir2 = Dir::try_from((-1_i8, 0_i8));
-    assert_eq!(dir2, Ok(Dir::W));
+    Ok(())
+}
+
+#[test]
+fn test_conversions() -> Result<()> {
+    assert_eq!(<(isize, isize)>::from(Dir::N), (0, -1));
+    assert_eq!(<(i8, i8)>::from(Dir::N), (0, -1));
+    assert_eq!(<(i16, i16)>::from(Dir::N), (0, -1));
+    assert_eq!(<(i32, i32)>::from(Dir::N), (0, -1));
+    assert_eq!(<(i64, i64)>::from(Dir::N), (0, -1));
+    assert_eq!(<(i128, i128)>::from(Dir::N), (0, -1));
+    assert_eq!(Dir::try_from((-1_isize, 0_isize)), Ok(Dir::W));
+    assert_eq!(Dir::try_from((-1_i8, 0_i8)), Ok(Dir::W));
+    assert_eq!(Dir::try_from((-1_i16, 0_i16)), Ok(Dir::W));
+    assert_eq!(Dir::try_from((-1_i32, 0_i32)), Ok(Dir::W));
+    assert_eq!(Dir::try_from((-1_i64, 0_i64)), Ok(Dir::W));
+    assert_eq!(Dir::try_from((-1_i128, 0_i128)), Ok(Dir::W));
+    assert_eq!(Dir::try_from(&(-1_isize, 0_isize)), Ok(Dir::W));
+    assert_eq!(Dir::try_from(&(-1_i8, 0_i8)), Ok(Dir::W));
+    assert_eq!(Dir::try_from(&(-1_i16, 0_i16)), Ok(Dir::W));
+    assert_eq!(Dir::try_from(&(-1_i32, 0_i32)), Ok(Dir::W));
+    assert_eq!(Dir::try_from(&(-1_i64, 0_i64)), Ok(Dir::W));
+    assert_eq!(Dir::try_from(&(-1_i128, 0_i128)), Ok(Dir::W));
     Ok(())
 }
 
@@ -30,19 +47,32 @@ fn test_errors() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn test_conversion_coverage() -> Result<()> {
+    for dir in Dir::iter::<true>() {
+        assert_eq!(Dir::try_from(Into::<(i8, i8)>::into(dir))?, dir);
+        assert_eq!(Dir::try_from(Into::<(i16, i16)>::into(dir))?, dir);
+        assert_eq!(Dir::try_from(Into::<(i32, i32)>::into(dir))?, dir);
+        assert_eq!(Dir::try_from(Into::<(i64, i64)>::into(dir))?, dir);
+        assert_eq!(Dir::try_from(Into::<(i128, i128)>::into(dir))?, dir);
+    }
+    Ok(())
+}
+
 fn do_test_iter<const D: bool>() -> Result<()> {
     let iter = Dir::iter::<D>();
     println!("{:?}", iter);
     let div = if D { 1 } else { 2 };
     for (i, dir) in iter.enumerate() {
         println!(
-            "i {}, dir {}, from {}, from& {}",
+            "i {}, dir {}/{}/{}/{}",
             i,
             dir,
-            usize::from(dir),
-            usize::from(&dir)
+            dir.name_utf8_char(),
+            dir.name_ascii(),
+            dir.name_ascii_char(),
         );
-        assert_eq!(usize::from(dir) / div, i);
+        assert_eq!(dir as usize / div, i);
         assert_eq!(dir, Dir::from(dir));
         println!("{}", dir);
     }
@@ -53,7 +83,7 @@ fn do_test_iter<const D: bool>() -> Result<()> {
     let mut iter = Dir::iter::<D>();
     for i in 0..Dir::SIZE * 2 / div {
         if i < Dir::SIZE / div {
-            assert_eq!(usize::from(iter.next().unwrap()) / div, i);
+            assert_eq!(iter.next().unwrap() as usize / div, i);
         } else {
             assert_eq!(iter.next(), None);
         }
@@ -70,6 +100,7 @@ fn do_test_iter<const D: bool>() -> Result<()> {
         assert_eq!(iter.next(), Some(Dir::NW));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+        assert_eq!(iter.size_hint(), (8, Some(8)));
     } else {
         assert_eq!(iter.next(), Some(Dir::N));
         assert_eq!(iter.next(), Some(Dir::E));
@@ -77,6 +108,7 @@ fn do_test_iter<const D: bool>() -> Result<()> {
         assert_eq!(iter.next(), Some(Dir::W));
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+        assert_eq!(iter.size_hint(), (4, Some(4)));
     }
     Ok(())
 }
@@ -125,9 +157,6 @@ fn test_neg() -> Result<()> {
     assert_eq!(-Dir::SW, Dir::NE);
     assert_eq!(-Dir::W, Dir::E);
     assert_eq!(-Dir::NW, Dir::SE);
-    for dir in Dir::iter::<true>() {
-        assert_eq!(-(-&dir), dir);
-    }
     Ok(())
 }
 

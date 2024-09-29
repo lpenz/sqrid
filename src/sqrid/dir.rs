@@ -11,7 +11,6 @@
 //! This submodule has the [`Dir`] type and the associated
 //! functionality.
 
-use std::borrow::Borrow;
 use std::convert;
 use std::fmt;
 use std::ops;
@@ -55,7 +54,7 @@ impl Dir {
     /// All 8 possible values in enum order
     ///
     /// Used to convert a usize into a `Dir` value via indexing.
-    pub const ALL: [Self; 8] = [
+    pub const ALL8: [Self; 8] = [
         Self::N,
         Self::NE,
         Self::E,
@@ -68,36 +67,6 @@ impl Dir {
 
     /// The 4 "major" cardinal directions.
     pub const ALL4: [Self; 4] = [Self::N, Self::E, Self::S, Self::W];
-
-    /// All corresponding tuples
-    ///
-    /// Used to convert a `Dir` value into a `(i8, i8)` tuple via indexing.
-    pub const TUPLES: [(i8, i8); 8] = [
-        (0, -1),
-        (1, -1),
-        (1, 0),
-        (1, 1),
-        (0, 1),
-        (-1, 1),
-        (-1, 0),
-        (-1, -1),
-    ];
-
-    /// Inverse of ALL, shifted right
-    ///
-    /// An array used to convert a tuple into the inner value of
-    /// `Dir`.
-    const INVERSE: [Dir; 9] = [
-        Self::NW,
-        Self::N,
-        Self::NE,
-        Self::W,
-        Self::N, // Note: this is wrong but we need a value here
-        Self::E,
-        Self::SW,
-        Self::S,
-        Self::SE,
-    ];
 
     /// The "cardinal" names of all corresponding `Dir` values.
     ///
@@ -161,54 +130,6 @@ impl Dir {
         (*self as u8) % 2 == 1
     }
 
-    /// Return true if the `Dir` is vertical: N or S.
-    pub const fn is_vertical(&self) -> bool {
-        // We have to do this in a convoluted way to be able to be const:
-        (*self as u8) == (Dir::N as u8) || (*self as u8 == Dir::S as u8)
-    }
-
-    /// Return true if the `Dir` is horizontal: E or W.
-    pub const fn is_horizontal(&self) -> bool {
-        // We have to do this in a convoluted way to be able to be const:
-        (*self as u8) == (Dir::E as u8) || (*self as u8 == Dir::W as u8)
-    }
-
-    /// Return true if the `Dir` is a "positive" direction: E or S.
-    pub const fn is_positive(&self) -> bool {
-        // We have to do this in a convoluted way to be able to be const:
-        (*self as u8) == (Dir::E as u8) || (*self as u8 == Dir::S as u8)
-    }
-
-    /// Return true if the `Dir` is a "negative" direction: N or W.
-    pub const fn is_negative(&self) -> bool {
-        // We have to do this in a convoluted way to be able to be const:
-        (*self as u8) == (Dir::N as u8) || (*self as u8 == Dir::W as u8)
-    }
-
-    /// Return the corresponding `(i8, i8)` tuple.
-    #[inline]
-    pub fn tuple(&self) -> (i8, i8) {
-        Dir::TUPLES[self.to_usize()]
-    }
-
-    /// Create a new Dir from the provided `(i8, i8)`, if possible;
-    /// otherwise return an error.
-    #[inline]
-    pub fn tryfrom_tuple(xyref: impl Borrow<(i8, i8)>) -> Result<Dir, Error> {
-        let xy = xyref.borrow();
-        if xy.0 < -1 || xy.0 > 1 || xy.1 < -1 || xy.1 > 1 || (xy.0 == 0 && xy.1 == 0) {
-            Err(Error::InvalidDirection)
-        } else {
-            Ok(Dir::INVERSE[((xy.1 + 1) * 3 + xy.0 + 1) as usize])
-        }
-    }
-
-    /// Return a usize index corresponding to the `Dir`.
-    #[inline]
-    pub fn to_usize(&self) -> usize {
-        *self as usize
-    }
-
     /// Return the "cardinal" name of the `Dir`
     #[inline]
     pub const fn name_cardinal(&self) -> &'static str {
@@ -247,14 +168,14 @@ impl Dir {
 
     /// Flip the direction: N -> S, E -> W, etc.
     #[inline]
-    pub fn flip(&self) -> Dir {
-        Dir::ALL[(*self as usize + 4) % Self::SIZE]
+    pub const fn flip(&self) -> Dir {
+        Dir::ALL8[(*self as usize + 4) % Self::SIZE]
     }
 
     /// Rotate a Dir using the angle given by the `other` Dir argument
     #[inline]
-    pub fn rotate(&self, other: &Dir) -> Dir {
-        Dir::ALL[(*self as usize + *other as usize) % Self::SIZE]
+    pub const fn rotate(&self, other: &Dir) -> Dir {
+        Dir::ALL8[(*self as usize + *other as usize) % Self::SIZE]
     }
 
     /// Return the next `Dir` in clockwise order, or None if `self`
@@ -265,13 +186,15 @@ impl Dir {
     /// considered, the last `Dir` is [`Dir::NW`], otherwise it's
     /// [`Dir::S`].
     #[inline]
-    pub fn next<const D: bool>(self) -> Option<Self> {
-        if (D && self == Dir::NW) || (!D && self == Dir::W) {
+    pub const fn next<const D: bool>(&self) -> Option<Self> {
+        // PartialEq is no const, but this is:
+        let index = *self as usize;
+        if (D && index == 7) || (!D && index == 6) {
             None
         } else if D {
-            Some(Dir::ALL[(self as usize) + 1])
+            Some(Dir::ALL8[(*self as usize) + 1])
         } else {
-            Some(Dir::ALL[(self as usize) + 2])
+            Some(Dir::ALL8[(*self as usize) + 2])
         }
     }
 
@@ -295,13 +218,6 @@ impl ops::Neg for Dir {
     }
 }
 
-impl ops::Neg for &Dir {
-    type Output = Dir;
-    fn neg(self) -> Self::Output {
-        self.flip()
-    }
-}
-
 impl ops::Add for Dir {
     type Output = Dir;
     fn add(self, other: Self) -> Self {
@@ -317,63 +233,55 @@ impl ops::AddAssign for Dir {
 
 // TryFrom / Into tuple
 
-impl convert::TryFrom<&(i8, i8)> for Dir {
+macro_rules! tuple_conv_i_impl {
+    ($t:ty) => {
+        impl From<Dir> for ($t, $t) {
+            #[inline]
+            fn from(dir: Dir) -> Self {
+                match dir {
+                    Dir::N => (0, -1),
+                    Dir::NE => (1, -1),
+                    Dir::E => (1, 0),
+                    Dir::SE => (1, 1),
+                    Dir::S => (0, 1),
+                    Dir::SW => (-1, 1),
+                    Dir::W => (-1, 0),
+                    Dir::NW => (-1, -1),
+                }
+            }
+        }
+        impl convert::TryFrom<&($t, $t)> for Dir {
+            type Error = Error;
+            fn try_from(xy: &($t, $t)) -> Result<Self, Self::Error> {
+                match xy {
+                    (0, -1) => Ok(Dir::N),
+                    (1, -1) => Ok(Dir::NE),
+                    (1, 0) => Ok(Dir::E),
+                    (1, 1) => Ok(Dir::SE),
+                    (0, 1) => Ok(Dir::S),
+                    (-1, 1) => Ok(Dir::SW),
+                    (-1, 0) => Ok(Dir::W),
+                    (-1, -1) => Ok(Dir::NW),
+                    _ => Err(Error::InvalidDirection),
+                }
+            }
+        }
+    };
+}
+tuple_conv_i_impl!(isize);
+tuple_conv_i_impl!(i8);
+tuple_conv_i_impl!(i16);
+tuple_conv_i_impl!(i32);
+tuple_conv_i_impl!(i64);
+tuple_conv_i_impl!(i128);
+
+impl<T> convert::TryFrom<(T, T)> for Dir
+where
+    Dir: for<'a> std::convert::TryFrom<&'a (T, T), Error = Error>,
+{
     type Error = Error;
-    #[inline]
-    fn try_from(xy: &(i8, i8)) -> Result<Self, Self::Error> {
-        Dir::tryfrom_tuple(xy)
-    }
-}
-
-impl convert::TryFrom<(i8, i8)> for Dir {
-    type Error = Error;
-    #[inline]
-    fn try_from(xy: (i8, i8)) -> Result<Self, Self::Error> {
-        Dir::tryfrom_tuple(xy)
-    }
-}
-
-impl From<&Dir> for (i8, i8) {
-    #[inline]
-    fn from(dir: &Dir) -> Self {
-        dir.tuple()
-    }
-}
-
-impl From<Dir> for (i8, i8) {
-    #[inline]
-    fn from(dir: Dir) -> Self {
-        dir.tuple()
-    }
-}
-
-impl From<&Dir> for (i32, i32) {
-    #[inline]
-    fn from(dir: &Dir) -> Self {
-        let tuple = dir.tuple();
-        (tuple.0 as i32, tuple.1 as i32)
-    }
-}
-
-impl From<Dir> for (i32, i32) {
-    #[inline]
-    fn from(dir: Dir) -> Self {
-        let tuple = dir.tuple();
-        (tuple.0 as i32, tuple.1 as i32)
-    }
-}
-
-impl From<&Dir> for usize {
-    #[inline]
-    fn from(dir: &Dir) -> usize {
-        dir.to_usize()
-    }
-}
-
-impl From<Dir> for usize {
-    #[inline]
-    fn from(dir: Dir) -> usize {
-        dir.to_usize()
+    fn try_from(xy: (T, T)) -> Result<Self, Self::Error> {
+        Dir::try_from(&xy)
     }
 }
 

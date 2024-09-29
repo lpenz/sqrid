@@ -28,7 +28,7 @@ where
     U: Borrow<Dir>,
 {
     let pos_tuple = <(i32, i32)>::from(pos.borrow());
-    let dir_tuple = <(i32, i32)>::from(dir.borrow());
+    let dir_tuple = <(i32, i32)>::from(*dir.borrow());
     Pos::<W, H>::try_from((pos_tuple.0 + dir_tuple.0, pos_tuple.1 + dir_tuple.1))
 }
 
