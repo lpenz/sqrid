@@ -21,8 +21,8 @@ pub mod pos;
 pub use self::pos::*;
 pub mod dir;
 pub use self::dir::*;
-pub mod mov;
-pub use self::mov::*;
+pub mod posdir;
+pub use self::posdir::*;
 
 pub mod grid;
 pub use self::grid::*;
