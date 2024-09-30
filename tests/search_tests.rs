@@ -60,7 +60,7 @@ fn goal(end: &Pos) -> Box<impl Fn(Pos) -> bool + '_> {
 fn test_path(wall: &Gridbool, orig: &Pos, dest: &Pos, path: &[Dir]) -> Result<()> {
     let mut pos = *orig;
     for dir in path {
-        pos = (pos + dir)?;
+        pos = (pos + *dir)?;
         assert!(!wall.get(pos), "hit wall");
     }
     assert_eq!(pos, *dest, "path not leading to dest");
@@ -115,7 +115,7 @@ fn test_variant(distance: usize, wall: Gridbool, start: &Pos, end: &Pos) -> Resu
         assert_eq!(path.len(), i);
         // Try next coordinate:
         let first = path.first().ok_or(anyhow!("unexpected empty path"))?;
-        pos = (pos + first)?;
+        pos = (pos + *first)?;
         i -= 1;
     }
     Ok(())

@@ -29,7 +29,7 @@ pub struct Sqrid<const W: u16, const H: u16, const D: bool, const WORDS: usize, 
 /// type Sqrid = sqrid::sqrid_create!(4, 4, false);
 /// type Pos = sqrid::pos_create!(Sqrid);
 ///
-/// for (pos, dir) in Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER)
+/// for (pos, dir) in Sqrid::bf_iter(sqrid::pos_dir_add_ok, &Pos::CENTER)
 ///                 .flatten() {
 ///     println!("breadth-first pos {} from {}", pos, dir);
 /// }

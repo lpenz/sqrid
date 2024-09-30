@@ -5,9 +5,8 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 
-//! Interaction between `Pos` and `Dir`
+//! Interaction between [`Pos`] and [`Dir`]
 
-use std::borrow::Borrow;
 use std::cmp::Ordering::{Equal, Greater, Less};
 use std::convert::TryFrom;
 use std::ops;
@@ -16,50 +15,35 @@ use super::dir::Dir;
 use super::error::Error;
 use super::pos::Pos;
 
-/// Combine the provided `pos` ([`Pos`]) position with the `dir` ([`Dir`])
-/// direction and returns `Ok(Pos)` if the resulting position is
-/// inside the grid, `Error` if it's not.
-///
-/// This function is used to implement `Pos` + `Dir`.
-#[inline]
-pub fn mov_resolve<T, U, const W: u16, const H: u16>(pos: T, dir: U) -> Result<Pos<W, H>, Error>
-where
-    T: Borrow<Pos<W, H>>,
-    U: Borrow<Dir>,
-{
-    let pos_tuple = <(i32, i32)>::from(pos.borrow());
-    let dir_tuple = <(i32, i32)>::from(*dir.borrow());
-    Pos::<W, H>::try_from((pos_tuple.0 + dir_tuple.0, pos_tuple.1 + dir_tuple.1))
-}
-
-/// Combine the provided `pos` ([`Pos`]) position with the `dir` ([`Dir`])
-/// direction and returns `Some(Pos)` if the resulting position is
-/// inside the grid, `None` if it's not.
-///
-/// This can be used as argument to various algorithms.
-#[inline]
-pub fn mov_eval<T, U, const W: u16, const H: u16>(pos: T, dir: U) -> Option<Pos<W, H>>
-where
-    T: Borrow<Pos<W, H>>,
-    U: Borrow<Dir>,
-{
-    mov_resolve(pos, dir).ok()
-}
-
 impl<const W: u16, const H: u16> ops::Add<Dir> for Pos<W, H> {
     type Output = Result<Self, Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
-        mov_resolve(self, rhs)
+        Pos::try_from((self.0 + rhs)?)
     }
 }
 
-impl<const W: u16, const H: u16> ops::Add<&Dir> for Pos<W, H> {
-    type Output = Result<Self, Error>;
+impl<const W: u16, const H: u16> ops::Add<Dir> for &Pos<W, H> {
+    type Output = Result<Pos<W, H>, Error>;
     #[inline]
-    fn add(self, rhs: &Dir) -> Self::Output {
-        mov_resolve(self, rhs)
+    fn add(self, rhs: Dir) -> Self::Output {
+        Pos::try_from((self.0 + rhs)?)
     }
+}
+
+/// Function that adds a pos and a dir, for usage where a function is
+/// more ergonomic.
+pub fn pos_dir_add<const W: u16, const H: u16>(
+    pos: Pos<W, H>,
+    dir: Dir,
+) -> Result<Pos<W, H>, Error> {
+    pos + dir
+}
+
+/// Function that adds a pos and a dir, for usage where a function
+/// that returns an `Option<Pos>` is more ergonomic.
+pub fn pos_dir_add_ok<const W: u16, const H: u16>(pos: Pos<W, H>, dir: Dir) -> Option<Pos<W, H>> {
+    (pos + dir).ok()
 }
 
 /// From a given `src`, returns the direction of the provided `dst`

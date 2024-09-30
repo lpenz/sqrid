@@ -197,7 +197,7 @@
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
 //! type Pos = sqrid::pos_create!(Sqrid);
 //!
-//! for (pos, dir) in Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER)
+//! for (pos, dir) in Sqrid::bf_iter(sqrid::pos_dir_add_ok, &Pos::CENTER)
 //!                 .flatten() {
 //!     println!("breadth-first pos {} from {}", pos, dir);
 //! }
@@ -221,7 +221,7 @@
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
 //! if let Ok((goal, path)) = Sqrid::bfs_path(
-//!                               sqrid::mov_eval, &Pos::TOP_LEFT,
+//!                               sqrid::pos_dir_add_ok, &Pos::TOP_LEFT,
 //!                               |pos| pos == Pos::BOTTOM_RIGHT) {
 //!     println!("goal: {}, path: {:?}", goal, path);
 //! }
@@ -242,7 +242,7 @@
 //!
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
-//! if let Ok(path) = Sqrid::astar_path(sqrid::mov_eval, &Pos::TOP_LEFT,
+//! if let Ok(path) = Sqrid::astar_path(sqrid::pos_dir_add_ok, &Pos::TOP_LEFT,
 //!                                     &Pos::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);
 //! }

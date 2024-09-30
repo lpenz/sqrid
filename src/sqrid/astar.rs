@@ -37,7 +37,7 @@
 //! type Pos = sqrid::pos_create!(Sqrid);
 //!
 //! // Generate the vector with the path from bottom-right to top-left:
-//! if let Ok(path) = Sqrid::astar_path(sqrid::mov_eval, &Pos::TOP_LEFT,
+//! if let Ok(path) = Sqrid::astar_path(sqrid::pos_dir_add_ok, &Pos::TOP_LEFT,
 //!                                     &Pos::BOTTOM_RIGHT) {
 //!     println!("path: {:?}", path);
 //! }

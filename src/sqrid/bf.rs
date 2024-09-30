@@ -30,7 +30,7 @@
 //! type Pos = sqrid::pos_create!(Sqrid);
 //!
 //! for (distance, vecPosDir) in
-//!         Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER).enumerate() {
+//!         Sqrid::bf_iter(sqrid::pos_dir_add_ok, &Pos::CENTER).enumerate() {
 //!     println!("breadth-first at distance {}: {:?}",
 //!              distance, vecPosDir);
 //!     for (pos, dir) in vecPosDir {
@@ -39,7 +39,7 @@
 //! }
 //!
 //! // We can also iterate on the coordinates directly using `flatten`:
-//! for (pos, dir) in Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER)
+//! for (pos, dir) in Sqrid::bf_iter(sqrid::pos_dir_add_ok, &Pos::CENTER)
 //!                 .flatten() {
 //!     println!("breadth-first pos {} from dir {}", pos, dir);
 //! }
@@ -70,7 +70,7 @@
 //! // Generate the grid of "came from" directions from bottom-right to
 //! // top-left:
 //! if let Ok((goal, path)) = Sqrid::bfs_path(
-//!                               sqrid::mov_eval, &Pos::TOP_LEFT,
+//!                               sqrid::pos_dir_add_ok, &Pos::TOP_LEFT,
 //!                               |pos| pos == Pos::BOTTOM_RIGHT) {
 //!     println!("goal: {}, path: {:?}", goal, path);
 //! }
