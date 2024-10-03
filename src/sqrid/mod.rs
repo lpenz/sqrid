@@ -17,6 +17,9 @@ pub use self::base::*;
 pub mod error;
 pub use self::error::*;
 
+pub mod postrait;
+pub use self::postrait::*;
+
 pub mod pos;
 pub use self::pos::*;
 pub mod dir;
