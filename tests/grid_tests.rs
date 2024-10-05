@@ -6,6 +6,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 use sqrid;
+use sqrid::postrait::PosT;
 
 use anyhow::anyhow;
 use anyhow::Result;

@@ -21,6 +21,7 @@ use super::dir::Dir;
 use super::error::Error;
 use super::grid::Grid;
 use super::pos::Pos;
+use super::postrait::PosT;
 use super::Sqrid;
 
 /* MapPos */
@@ -103,7 +104,7 @@ pub fn camefrom_into_path<
 where
     MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE>,
 {
-    let distance = Pos::manhattan(orig, dest);
+    let distance = orig.manhattan(dest);
     let mut ret = collections::VecDeque::<Dir>::with_capacity(2 * distance);
     let mut pos = *dest;
     if map.get(&pos).is_none() {

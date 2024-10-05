@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid;
+use sqrid::postrait::PosT;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashSet;

@@ -18,6 +18,7 @@ use std::ops;
 
 use super::grid;
 use super::pos::Pos;
+use super::postrait::PosT;
 
 /// Assert const generic expressions inside `impl` blocks
 macro_rules! impl_assert {

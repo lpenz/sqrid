@@ -137,6 +137,7 @@
 //! type Sqrid = sqrid::sqrid_create!(3, 3, false);
 //! type Pos = sqrid::pos_create!(Sqrid);
 //! type Gridbool = sqrid::gridbool_create!(Sqrid);
+//! use sqrid::postrait::PosT;
 //!
 //! // We can create a gridbool from a Pos iterator via `collect`:
 //! let mut gb = Pos::iter().filter(|pos| pos.is_corner()).collect::<Gridbool>();
