@@ -10,8 +10,6 @@
 //! This submodule has the [`Gridbool`] type and the associated
 //! functionality.
 
-use std::borrow::Borrow;
-use std::convert::TryFrom;
 use std::fmt;
 use std::iter;
 use std::ops;
@@ -40,7 +38,7 @@ macro_rules! impl_assert {
 #[macro_export]
 macro_rules! gridbool_create {
     ($sqrid: ty) => {
-        $crate::Gridbool<{ <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT },
+        $crate::Gridbool<$crate::pos_create!($sqrid),
         { (((<$sqrid>::WIDTH as usize) * (<$sqrid>::HEIGHT as usize) + 31) / 32) }>
     };
 }
@@ -57,17 +55,17 @@ macro_rules! gridbool_create {
 /// We can use the [`gridbool_create`] macro to use a [`Pos`] as a
 /// source of these values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Gridbool<const WIDTH: u16, const HEIGHT: u16, const WORDS: usize>([u32; WORDS]);
+pub struct Gridbool<P: PosT, const WORDS: usize>([u32; WORDS], std::marker::PhantomData<P>);
 
-impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
+impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
     // Create the _ASSERTS constant to check W * H == SIZE
     // We have to instantiate it in all low-level constructors to
     // actually perform the check.
     impl_assert!(_ASSERTS;
                  // WORDS is big enough to hold all bits:
-                 W as usize * H as usize <= WORDS * 32 &&
+                 P::WIDTH * P::HEIGHT <= WORDS * 32 &&
                  // WORDS is not bigger than necessary:
-                 W as usize * H as usize >= WORDS * 32 - 32);
+                 P::WIDTH * P::HEIGHT >= WORDS * 32 - 32);
     // Used in creation:
     const WORD_FALSE: u32 = 0;
     const WORD_TRUE: u32 = 0xFFFFFFFF;
@@ -89,12 +87,11 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
         } else {
             Self::WORD_FALSE
         };
-        Gridbool([v; WORDS])
+        Gridbool([v; WORDS], std::marker::PhantomData)
     }
 
     #[inline]
-    fn byte_bit(i0: impl Into<usize>) -> (usize, u32) {
-        let i = i0.into();
+    fn byte_bit(i: usize) -> (usize, u32) {
         let byte = i / 32;
         let bit = 0x80000000 >> (i % 32);
         (byte, bit)
@@ -102,21 +99,33 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
 
     /// Set the provided [`Pos`] position to `true`.
     #[inline]
-    pub fn set_t(&mut self, posref: impl Borrow<Pos<W, H>>) {
-        let (byte, bit) = Self::byte_bit(posref.borrow());
+    pub fn set_t(&mut self, posref: &P)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        let (byte, bit) = Self::byte_bit(posref.to_usize());
         self.0[byte] |= bit;
     }
 
     /// Set the provided [`Pos`] position to `false`.
     #[inline]
-    pub fn set_f(&mut self, posref: impl Borrow<Pos<W, H>>) {
-        let (byte, bit) = Self::byte_bit(posref.borrow());
+    pub fn set_f(&mut self, posref: &P)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        let (byte, bit) = Self::byte_bit(posref.to_usize());
         self.0[byte] &= !bit;
     }
 
     /// Set the provided [`Pos`] position to `value`.
     #[inline]
-    pub fn set(&mut self, posref: impl Borrow<Pos<W, H>>, value: bool) {
+    pub fn set(&mut self, posref: &P, value: bool)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
         if value {
             self.set_t(posref)
         } else {
@@ -126,8 +135,12 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
 
     /// Return the value at position [`Pos`].
     #[inline]
-    pub fn get(&self, posref: impl Borrow<Pos<W, H>>) -> bool {
-        let (byte, bit) = Self::byte_bit(posref.borrow());
+    pub fn get(&self, posref: &P) -> bool
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        let (byte, bit) = Self::byte_bit(posref.to_usize());
         self.0[byte] & bit != 0
     }
 
@@ -152,7 +165,7 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
     /// Iterate over all `true`/`false` values in the `Gridbool`.
     #[inline]
     pub fn iter(&self) -> impl iter::Iterator<Item = bool> + '_ {
-        (0..(W as usize * H as usize)).map(move |i| {
+        (0..(P::WIDTH * P::HEIGHT)).map(move |i| {
             let (byte, bit) = Self::byte_bit(i);
             self.0[byte] & bit != 0
         })
@@ -160,73 +173,112 @@ impl<const W: u16, const H: u16, const WORDS: usize> Gridbool<W, H, WORDS> {
 
     /// Iterate over all coordinates and corresponding `true`/`false` values.
     #[inline]
-    pub fn iter_pos(&self) -> impl iter::Iterator<Item = (Pos<W, H>, bool)> + '_ {
-        Pos::<W, H>::iter().map(move |pos| (pos, self[pos]))
+    pub fn iter_pos(&self) -> impl iter::Iterator<Item = (P, bool)> + '_
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+        P: Copy,
+    {
+        P::iter().map(move |pos| (pos, self[pos]))
     }
 
     /// Iterate over all `true` coordinates the `Gridbool`.
     #[inline]
-    pub fn iter_t(&self) -> impl Iterator<Item = Pos<W, H>> + '_ {
-        Pos::<W, H>::iter().filter(move |pos| self[pos])
+    pub fn iter_t(&self) -> impl Iterator<Item = P> + '_
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+    {
+        P::iter().filter(move |pos| self[pos])
     }
 
     /// Iterate over all `false` coordinates the `Gridbool`.
     #[inline]
-    pub fn iter_f(&self) -> impl Iterator<Item = Pos<W, H>> + '_ {
-        Pos::<W, H>::iter().filter(move |pos| !self[pos])
+    pub fn iter_f(&self) -> impl Iterator<Item = P> + '_
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+    {
+        P::iter().filter(move |pos| !self[pos])
     }
 
     /// Take a [`Pos`] iterator and set all corresponding values to `true`.
     #[inline]
-    pub fn set_iter_t<APOS>(&mut self, positer: impl Iterator<Item = APOS>)
+    pub fn set_iter_t(&mut self, positer: impl Iterator<Item = P>)
     where
-        APOS: Borrow<Pos<W, H>>,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
     {
         for pos in positer {
-            self.set_t(pos);
+            self.set_t(&pos);
         }
     }
 
     /// Take a [`Pos`] iterator and set all corresponding values to `false`.
     #[inline]
-    pub fn set_iter_f<APOS>(&mut self, positer: impl Iterator<Item = APOS>)
+    pub fn set_iter_f(&mut self, positer: impl Iterator<Item = P>)
     where
-        APOS: Borrow<Pos<W, H>>,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
     {
         for pos in positer {
-            self.set_f(pos);
+            self.set_f(&pos);
         }
     }
 
     /// Flip all elements horizontally.
-    pub fn flip_h(&mut self) {
-        for y in 0..H {
-            for x in 0..W / 2 {
-                let pos1 = Pos::<W, H>::try_from((x, y)).unwrap();
+    pub fn flip_h(&mut self)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+        P::Xtype: std::ops::Sub<Output = P::Xtype>,
+        P::Ytype: Copy,
+    {
+        for y in P::iter_y() {
+            for x in 0..P::width() / 2 {
+                let Ok(x) = x.try_into() else { panic!() };
+                let pos1 = P::new(x, y).unwrap();
                 let pos2 = pos1.flip_h();
-                let tmp = self.get(pos1);
-                self.set(pos1, self.get(pos2));
-                self.set(pos2, tmp);
+                let tmp = self.get(&pos1);
+                self.set(&pos1, self.get(&pos2));
+                self.set(&pos2, tmp);
             }
         }
     }
 
     /// Flip all elements vertically.
-    pub fn flip_v(&mut self) {
-        for y in 0..H / 2 {
-            for x in 0..W {
-                let pos1 = Pos::<W, H>::try_from((x, y)).unwrap();
+    pub fn flip_v(&mut self)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+        P::Ytype: std::ops::Sub<Output = P::Ytype>,
+        P::Ytype: Copy,
+    {
+        for y in 0..P::height() / 2 {
+            let Ok(y) = y.try_into() else { panic!() };
+            for x in P::iter_x() {
+                let pos1 = P::new(x, y).unwrap();
                 let pos2 = pos1.flip_v();
-                let tmp = self.get(pos1);
-                self.set(pos1, self.get(pos2));
-                self.set(pos2, tmp);
+                let tmp = self.get(&pos1);
+                self.set(&pos1, self.get(&pos2));
+                self.set(&pos2, tmp);
             }
         }
     }
 }
 
 // Rotations are only available for "square" gridbools
-impl<const W: u16, const WORDS: usize> Gridbool<W, W, WORDS> {
+impl<const W: u16, const WORDS: usize> Gridbool<Pos<W, W>, WORDS> {
     /// Rotate all elements 90 degrees clockwise
     pub fn rotate_cw(&mut self) {
         for y in 0..W / 2 {
@@ -236,15 +288,15 @@ impl<const W: u16, const WORDS: usize> Gridbool<W, W, WORDS> {
                 let pos2 = pos1.rotate_cw();
                 let pos3 = pos2.rotate_cw();
                 let values = [
-                    self.get(pos0),
-                    self.get(pos1),
-                    self.get(pos2),
-                    self.get(pos3),
+                    self.get(&pos0),
+                    self.get(&pos1),
+                    self.get(&pos2),
+                    self.get(&pos3),
                 ];
-                self.set(pos0, values[3]);
-                self.set(pos1, values[0]);
-                self.set(pos2, values[1]);
-                self.set(pos3, values[2]);
+                self.set(&pos0, values[3]);
+                self.set(&pos1, values[0]);
+                self.set(&pos2, values[1]);
+                self.set(&pos3, values[2]);
             }
         }
     }
@@ -257,21 +309,21 @@ impl<const W: u16, const WORDS: usize> Gridbool<W, W, WORDS> {
                 let pos2 = pos1.rotate_cw();
                 let pos3 = pos2.rotate_cw();
                 let values = [
-                    self.get(pos0),
-                    self.get(pos1),
-                    self.get(pos2),
-                    self.get(pos3),
+                    self.get(&pos0),
+                    self.get(&pos1),
+                    self.get(&pos2),
+                    self.get(&pos3),
                 ];
-                self.set(pos0, values[1]);
-                self.set(pos1, values[2]);
-                self.set(pos2, values[3]);
-                self.set(pos3, values[0]);
+                self.set(&pos0, values[1]);
+                self.set(&pos1, values[2]);
+                self.set(&pos2, values[3]);
+                self.set(&pos3, values[0]);
             }
         }
     }
 }
 
-impl<const W: u16, const H: u16, const WORDS: usize> Default for Gridbool<W, H, WORDS> {
+impl<P: PosT, const WORDS: usize> Default for Gridbool<P, WORDS> {
     fn default() -> Self {
         Self::ALL_FALSE
     }
@@ -279,14 +331,14 @@ impl<const W: u16, const H: u16, const WORDS: usize> Default for Gridbool<W, H, 
 
 // Indexing
 
-impl<APOS, const W: u16, const H: u16, const WORDS: usize> ops::Index<APOS>
-    for Gridbool<W, H, WORDS>
+impl<P: PosT, const WORDS: usize> ops::Index<&P> for Gridbool<P, WORDS>
 where
-    APOS: Borrow<Pos<W, H>>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     type Output = bool;
     #[inline]
-    fn index(&self, pos: APOS) -> &Self::Output {
+    fn index(&self, pos: &P) -> &Self::Output {
         // Trick to be able to return reference to boolean as required
         // by trait:
         if self.get(pos) {
@@ -297,37 +349,59 @@ where
     }
 }
 
+impl<P: PosT, const WORDS: usize> ops::Index<P> for Gridbool<P, WORDS>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+{
+    type Output = bool;
+    #[inline]
+    fn index(&self, pos: P) -> &Self::Output {
+        // Trick to be able to return reference to boolean as required
+        // by trait:
+        if self.get(&pos) {
+            &Self::TRUE
+        } else {
+            &Self::FALSE
+        }
+    }
+}
+
 // from_iter
 
-impl<APOS, const W: u16, const H: u16, const WORDS: usize> iter::FromIterator<APOS>
-    for Gridbool<W, H, WORDS>
+impl<P: PosT, const WORDS: usize> iter::FromIterator<P> for Gridbool<P, WORDS>
 where
-    APOS: Borrow<Pos<W, H>>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
-        I: iter::IntoIterator<Item = APOS>,
+        I: iter::IntoIterator<Item = P>,
     {
-        let mut gb = Gridbool::<W, H, WORDS>::ALL_FALSE;
+        let mut gb = Gridbool::<P, WORDS>::ALL_FALSE;
         gb.set_iter_t(iter.into_iter());
         gb
     }
 }
 
-impl<const W: u16, const H: u16, const WORDS: usize> iter::FromIterator<bool>
-    for Gridbool<W, H, WORDS>
+impl<P: PosT, const WORDS: usize> iter::FromIterator<bool> for Gridbool<P, WORDS>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P::Xtype: TryFrom<usize>,
+    P::Ytype: TryFrom<usize>,
 {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
         I: iter::IntoIterator<Item = bool>,
     {
-        let mut gb = Gridbool::<W, H, WORDS>::ALL_FALSE;
+        let mut gb = Gridbool::<P, WORDS>::ALL_FALSE;
         let mut it = iter.into_iter();
-        for pos in Pos::<W, H>::iter() {
+        for pos in P::iter() {
             if let Some(value) = it.next() {
-                gb.set(pos, value);
+                gb.set(&pos, value);
             } else {
                 panic!("iterator too short for gridbool type");
             }
@@ -339,12 +413,12 @@ impl<const W: u16, const H: u16, const WORDS: usize> iter::FromIterator<bool>
 
 // display
 
-impl<const W: u16, const H: u16, const WORDS: usize> fmt::Display for Gridbool<W, H, WORDS> {
+impl<P: PosT, const WORDS: usize> fmt::Display for Gridbool<P, WORDS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         grid::display_fmt_helper(
             f,
-            W,
-            H,
+            P::WIDTH,
+            P::HEIGHT,
             self.iter().map(|b| (if b { "#" } else { "." }).to_string()),
         )
     }

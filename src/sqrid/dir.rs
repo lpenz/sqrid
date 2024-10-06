@@ -5,11 +5,8 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 
-//! Square grid relative coordinates (movement) and associated
-//! functionality
-//!
-//! This submodule has the [`Dir`] type and the associated
-//! functionality.
+//! Direction data structure [`Dir`] that represents movement, and
+//! related functionality.
 
 use std::convert;
 use std::fmt;
@@ -17,15 +14,13 @@ use std::ops;
 
 use super::error::Error;
 
-/// Square grid "relative" coordinates
+/// Direction type.
 ///
 /// This type represents a relative movement of one square.
 ///
 /// It's a building block for paths, iterating on a [`super::Pos`] neighbors,
 /// etc. It effectively represents the edges in a graph, while the
 /// `Pos` type represents nodes.
-///
-/// Internally, 0 reprents N, 1 is NE and so forth until 7.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub enum Dir {
     /// North, or up
@@ -72,20 +67,6 @@ impl Dir {
     ///
     /// Used to convert a `Dir` value into a &'static str via indexing.
     pub const NAMES_CARDINAL: [&'static str; 8] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-
-    /// The "direction" names of all corresponding `Dir` values.
-    ///
-    /// Can be used to convert a `Dir` value into a &'static str via indexing.
-    pub const NAMES_DIRECTION: [&'static str; 8] = [
-        "UP",
-        "UP-RIGHT",
-        "RIGHT",
-        "DOWN-RIGHT",
-        "DOWN",
-        "DOWN-LEFT",
-        "LEFT",
-        "UP-LEFT",
-    ];
 
     /// The UTF-8 symbol corresponding to `Dir` values.
     ///
@@ -134,12 +115,6 @@ impl Dir {
     #[inline]
     pub const fn name_cardinal(&self) -> &'static str {
         Self::NAMES_CARDINAL[*self as usize]
-    }
-
-    /// Return the "direction" name of the `Dir`
-    #[inline]
-    pub const fn name_direction(&self) -> &'static str {
-        Self::NAMES_DIRECTION[*self as usize]
     }
 
     /// Return the UTF-8 arrow corresponding to the `Dir`

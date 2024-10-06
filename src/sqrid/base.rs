@@ -25,7 +25,7 @@ pub struct Sqrid<const W: u16, const H: u16, const D: bool, const WORDS: usize, 
 ///
 /// Example usage:
 ///
-/// ```
+/// ```rust
 /// type Sqrid = sqrid::sqrid_create!(4, 4, false);
 /// type Pos = sqrid::pos_create!(Sqrid);
 ///

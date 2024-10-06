@@ -47,11 +47,10 @@
 //!
 //! # Breadth-first search
 //!
-//! Breadth-first search takes a movement function, an origin and a destination
-//! function. It traverses the grid in breadth-first order, using
-//! [`BfIterator`], until the destination function returns true. It returns the
-//! shortest path from origin to the selected destination, along with the [`Pos`]
-//! coordinates of the destination itself.
+//! Breadth-first search takes a movement function, an origin and a destination function. It
+//! traverses the grid in breadth-first order, using [`BfIterator`], until the destination
+//! function returns true. It returns the shortest path from origin to the selected destination,
+//! along with the [`super::pos::Pos`] coordinates of the destination itself.
 //!
 //! As usual, there is both a [`search_path`] function that takes all
 //! generic parameters explicitly, and a more convenient set of
@@ -85,7 +84,7 @@ use super::Error;
 use super::Grid;
 use super::Gridbool;
 use super::MapPos;
-use super::Pos;
+use super::PosT;
 use super::SetPos;
 use super::Sqrid;
 
@@ -93,36 +92,23 @@ use super::Sqrid;
 
 /// Breadth-first iterator
 #[derive(Debug, Clone)]
-pub struct BfIterator<
-    GoFn,
-    MySetPos,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
-> {
+pub struct BfIterator<GoFn, MySetPos, P: PosT, const D: bool, const WORDS: usize, const SIZE: usize>
+{
     visited: MySetPos,
-    nextfront: Vec<(Pos<W, H>, Dir)>,
+    nextfront: Vec<(P, Dir)>,
     go: GoFn,
 }
 
-impl<
-        GoFn,
-        MySetPos,
-        const W: u16,
-        const H: u16,
-        const D: bool,
-        const WORDS: usize,
-        const SIZE: usize,
-    > BfIterator<GoFn, MySetPos, W, H, D, WORDS, SIZE>
+impl<GoFn, MySetPos, P: PosT, const D: bool, const WORDS: usize, const SIZE: usize>
+    BfIterator<GoFn, MySetPos, P, D, WORDS, SIZE>
 where
-    MySetPos: SetPos<W, H, WORDS, SIZE> + Default,
+    MySetPos: SetPos<P, WORDS, SIZE> + Default,
+    P: Copy,
 {
     /// Create new breadth-first iterator
-    pub fn new(go: GoFn, orig: &Pos<W, H>) -> BfIterator<GoFn, MySetPos, W, H, D, WORDS, SIZE>
+    pub fn new(go: GoFn, orig: &P) -> BfIterator<GoFn, MySetPos, P, D, WORDS, SIZE>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+        GoFn: Fn(P, Dir) -> Option<P>,
     {
         let mut bfs = BfIterator {
             visited: MySetPos::default(),
@@ -135,20 +121,14 @@ where
     }
 }
 
-impl<
-        GoFn,
-        MySetPos,
-        const W: u16,
-        const H: u16,
-        const D: bool,
-        const WORDS: usize,
-        const SIZE: usize,
-    > Iterator for BfIterator<GoFn, MySetPos, W, H, D, WORDS, SIZE>
+impl<GoFn, MySetPos, P: PosT, const D: bool, const WORDS: usize, const SIZE: usize> Iterator
+    for BfIterator<GoFn, MySetPos, P, D, WORDS, SIZE>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    MySetPos: SetPos<W, H, WORDS, SIZE>,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    MySetPos: SetPos<P, WORDS, SIZE>,
+    P: Copy,
 {
-    type Item = Vec<(Pos<W, H>, Dir)>;
+    type Item = Vec<(P, Dir)>;
     fn next(&mut self) -> Option<Self::Item> {
         let front = mem::take(&mut self.nextfront);
         if front.is_empty() {
@@ -161,10 +141,10 @@ where
                         continue;
                     }
                     self.nextfront.push((next_pos, -dir));
-                    self.visited.insert(&next_pos);
+                    self.visited.insert(next_pos);
                 }
             }
-            self.visited.insert(&pos);
+            self.visited.insert(pos);
         }
         Some(front)
     }
@@ -175,21 +155,15 @@ where
 /// Create new breadth-first iterator
 ///
 /// Generic interface over types that implement [`MapPos`] for [`Dir`] and `usize`
-pub fn bf_iter<
-    GoFn,
-    MySetPos,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn bf_iter<GoFn, MySetPos, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
-) -> BfIterator<GoFn, MySetPos, W, H, D, WORDS, SIZE>
+    orig: &P,
+) -> BfIterator<GoFn, MySetPos, P, D, WORDS, SIZE>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    MySetPos: SetPos<W, H, WORDS, SIZE> + Default,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    MySetPos: SetPos<P, WORDS, SIZE> + Default,
+    P: PosT,
+    P: Copy,
 {
     BfIterator::new(go, orig)
 }
@@ -202,24 +176,25 @@ pub fn search_mapmov<
     FoundFn,
     MapPosDir,
     MySetPos,
-    const W: u16,
-    const H: u16,
+    P,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 >(
     go: GoFn,
-    orig: &Pos<W, H>,
+    orig: &P,
     found: FoundFn,
-) -> Result<(Pos<W, H>, MapPosDir), Error>
+) -> Result<(P, MapPosDir), Error>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    FoundFn: Fn(Pos<W, H>) -> bool,
-    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE> + Default,
-    MySetPos: SetPos<W, H, WORDS, SIZE> + Default,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    FoundFn: Fn(P) -> bool,
+    MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
+    MySetPos: SetPos<P, WORDS, SIZE> + Default,
+    P: PosT,
+    P: Copy,
 {
     let mut from = MapPosDir::default();
-    for (pos, dir) in bf_iter::<GoFn, MySetPos, W, H, D, WORDS, SIZE>(go, orig).flatten() {
+    for (pos, dir) in bf_iter::<GoFn, MySetPos, P, D, WORDS, SIZE>(go, orig).flatten() {
         from.set(pos, Some(dir));
         if found(pos) {
             return Ok((pos, from));
@@ -239,24 +214,29 @@ pub fn search_path<
     FoundFn,
     MapPosDir,
     MySetPos,
-    const W: u16,
-    const H: u16,
+    P,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 >(
     go: GoFn,
-    orig: &Pos<W, H>,
+    orig: &P,
     found: FoundFn,
-) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+) -> Result<(P, Vec<Dir>), Error>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    FoundFn: Fn(Pos<W, H>) -> bool,
-    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE> + Default,
-    MySetPos: SetPos<W, H, WORDS, SIZE> + Default,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    FoundFn: Fn(P) -> bool,
+    MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
+    MySetPos: SetPos<P, WORDS, SIZE> + Default,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: PartialEq,
+    P: Copy,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
 {
     let (dest, mapmov) =
-        search_mapmov::<GoFn, FoundFn, MapPosDir, MySetPos, W, H, D, WORDS, SIZE>(go, orig, found)?;
+        search_mapmov::<GoFn, FoundFn, MapPosDir, MySetPos, P, D, WORDS, SIZE>(go, orig, found)?;
     Ok((dest, camefrom_into_path(mapmov, orig, &dest)?))
 }
 
@@ -265,121 +245,101 @@ where
 /* bf_iter parameterized: */
 
 /// Create new breadth-first iterator using [`Grid`] internally
-pub fn bf_iter_grid<
-    GoFn,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn bf_iter_grid<GoFn, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
-) -> BfIterator<GoFn, Gridbool<W, H, WORDS>, W, H, D, WORDS, SIZE>
+    orig: &P,
+) -> BfIterator<GoFn, Gridbool<P, WORDS>, P, D, WORDS, SIZE>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: Copy,
 {
-    bf_iter::<GoFn, Gridbool<W, H, WORDS>, W, H, D, WORDS, SIZE>(go, orig)
+    bf_iter::<GoFn, Gridbool<P, WORDS>, P, D, WORDS, SIZE>(go, orig)
 }
 
 /// Create new breadth-first iterator using the
 /// [`HashSet`](std::collections::HashSet)] type internally
-pub fn bf_iter_hash<
-    GoFn,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn bf_iter_hash<GoFn, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
-) -> BfIterator<GoFn, collections::HashSet<Pos<W, H>>, W, H, D, WORDS, SIZE>
+    orig: &P,
+) -> BfIterator<GoFn, collections::HashSet<P>, P, D, WORDS, SIZE>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: PosT,
+    P: Eq + std::hash::Hash,
+    P: Copy,
 {
-    bf_iter::<GoFn, collections::HashSet<Pos<W, H>>, W, H, D, WORDS, SIZE>(go, orig)
+    bf_iter::<GoFn, collections::HashSet<P>, P, D, WORDS, SIZE>(go, orig)
 }
 
 /// Create new breadth-first iterator using the
 /// [`BTreeSet`](std::collections::BTreeSet) type internally
-pub fn bf_iter_btree<
-    GoFn,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn bf_iter_btree<GoFn, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
-) -> BfIterator<GoFn, collections::BTreeSet<Pos<W, H>>, W, H, D, WORDS, SIZE>
+    orig: &P,
+) -> BfIterator<GoFn, collections::BTreeSet<P>, P, D, WORDS, SIZE>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: Ord,
+    P: Copy,
 {
-    bf_iter::<GoFn, collections::BTreeSet<Pos<W, H>>, W, H, D, WORDS, SIZE>(go, orig)
+    bf_iter::<GoFn, collections::BTreeSet<P>, P, D, WORDS, SIZE>(go, orig)
 }
 
 /* search_path parameterized: */
 
 /// Makes an BF search using [`Grid`], returns the path as a `Vec<Dir>`
-pub fn search_path_grid<
-    GoFn,
-    FoundFn,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn search_path_grid<GoFn, FoundFn, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
+    orig: &P,
     found: FoundFn,
-) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+) -> Result<(P, Vec<Dir>), Error>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    FoundFn: Fn(Pos<W, H>) -> bool,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    FoundFn: Fn(P) -> bool,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: PartialEq,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Copy,
 {
-    search_path::<
-        GoFn,
-        FoundFn,
-        Grid<Option<Dir>, W, H, SIZE>,
-        Gridbool<W, H, WORDS>,
-        W,
-        H,
-        D,
-        WORDS,
-        SIZE,
-    >(go, orig, found)
+    search_path::<GoFn, FoundFn, Grid<Option<Dir>, P, SIZE>, Gridbool<P, WORDS>, P, D, WORDS, SIZE>(
+        go, orig, found,
+    )
 }
 
 /// Makes an BF search using the
 /// [`HashMap`](std::collections::HashMap)/[`HashSet`](std::collections::HashSet)
 /// types; returns the path as a `Vec<Dir>`
-pub fn search_path_hash<
-    GoFn,
-    FoundFn,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn search_path_hash<GoFn, FoundFn, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
+    orig: &P,
     found: FoundFn,
-) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+) -> Result<(P, Vec<Dir>), Error>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    FoundFn: Fn(Pos<W, H>) -> bool,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    FoundFn: Fn(P) -> bool,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Eq + std::hash::Hash,
+    P: Copy,
 {
     search_path::<
         GoFn,
         FoundFn,
-        (collections::HashMap<Pos<W, H>, Option<Dir>>, Option<Dir>),
-        collections::HashSet<Pos<W, H>>,
-        W,
-        H,
+        (collections::HashMap<P, Option<Dir>>, Option<Dir>),
+        collections::HashSet<P>,
+        P,
         D,
         WORDS,
         SIZE,
@@ -389,30 +349,27 @@ where
 /// Makes an BF search using the
 /// [`BTreeMap`](std::collections::BTreeMap)/[`BTreeSet`](std::collections::BTreeSet)
 /// type; returns the path as a `Vec<Dir>`
-pub fn search_path_btree<
-    GoFn,
-    FoundFn,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn search_path_btree<GoFn, FoundFn, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: GoFn,
-    orig: &Pos<W, H>,
+    orig: &P,
     found: FoundFn,
-) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+) -> Result<(P, Vec<Dir>), Error>
 where
-    GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-    FoundFn: Fn(Pos<W, H>) -> bool,
+    GoFn: Fn(P, Dir) -> Option<P>,
+    FoundFn: Fn(P) -> bool,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Ord,
+    P: Copy,
 {
     search_path::<
         GoFn,
         FoundFn,
-        (collections::BTreeMap<Pos<W, H>, Option<Dir>>, Option<Dir>),
-        collections::BTreeSet<Pos<W, H>>,
-        W,
-        H,
+        (collections::BTreeMap<P, Option<Dir>>, Option<Dir>),
+        collections::BTreeSet<P>,
+        P,
         D,
         WORDS,
         SIZE,
@@ -428,52 +385,70 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 {
     /// Create new breadth-first iterator;
     /// see [`bf`](crate::bf)
-    pub fn bf_iter<GoFn>(
+    pub fn bf_iter<P, GoFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
-    ) -> BfIterator<GoFn, Gridbool<W, H, WORDS>, W, H, D, WORDS, SIZE>
+        orig: &P,
+    ) -> BfIterator<GoFn, Gridbool<P, WORDS>, P, D, WORDS, SIZE>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: Copy,
     {
         Self::bf_iter_grid(go, orig)
     }
 
     /// Create new breadth-first iterator using [`Grid`]/[`Gridbool`] internally;
     /// see [`bf`](crate::bf)
-    pub fn bf_iter_grid<GoFn>(
+    pub fn bf_iter_grid<P, GoFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
-    ) -> BfIterator<GoFn, Gridbool<W, H, WORDS>, W, H, D, WORDS, SIZE>
+        orig: &P,
+    ) -> BfIterator<GoFn, Gridbool<P, WORDS>, P, D, WORDS, SIZE>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: Copy,
     {
-        bf_iter_grid::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
+        bf_iter_grid::<GoFn, P, D, WORDS, SIZE>(go, orig)
     }
 
     /// Create new breadth-first iterator using the
     /// [`HashMap`](std::collections::HashMap)]/[`HashSet`](std::collections::HashSet)]
     /// types internally; see [`bf`](crate::bf)
-    pub fn bf_iter_hash<GoFn>(
+    pub fn bf_iter_hash<P, GoFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
-    ) -> BfIterator<GoFn, collections::HashSet<Pos<W, H>>, W, H, D, WORDS, SIZE>
+        orig: &P,
+    ) -> BfIterator<GoFn, collections::HashSet<P>, P, D, WORDS, SIZE>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: Eq + std::hash::Hash,
+        P: Copy,
     {
-        bf_iter_hash::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
+        bf_iter_hash::<GoFn, P, D, WORDS, SIZE>(go, orig)
     }
 
     /// Create new breadth-first iterator using the
     /// [`BTreeMap`](std::collections::BTreeMap)/[`BTreeSet`](std::collections::BTreeSet)
     /// types internally; see [`bf`](crate::bf)
-    pub fn bf_iter_btree<GoFn>(
+    pub fn bf_iter_btree<P, GoFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
-    ) -> BfIterator<GoFn, collections::BTreeSet<Pos<W, H>>, W, H, D, WORDS, SIZE>
+        orig: &P,
+    ) -> BfIterator<GoFn, collections::BTreeSet<P>, P, D, WORDS, SIZE>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: Ord,
+        P: Copy,
     {
-        bf_iter_btree::<GoFn, W, H, D, WORDS, SIZE>(go, orig)
+        bf_iter_btree::<GoFn, P, D, WORDS, SIZE>(go, orig)
     }
 }
 
@@ -484,59 +459,83 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 {
     /// Perform a breadth-first search;
     /// see [`bf`](crate::bf)
-    pub fn bfs_path<GoFn, FoundFn>(
+    pub fn bfs_path<P, GoFn, FoundFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
+        orig: &P,
         found: FoundFn,
-    ) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+    ) -> Result<(P, Vec<Dir>), Error>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-        FoundFn: Fn(Pos<W, H>) -> bool,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        FoundFn: Fn(P) -> bool,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: PartialEq,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Copy,
     {
-        Self::bfs_path_grid::<GoFn, FoundFn>(go, orig, found)
+        Self::bfs_path_grid::<P, GoFn, FoundFn>(go, orig, found)
     }
 
     /// Perform a breadth-first search using a [`Grid`] internally;
     /// see [`bf`](crate::bf)
-    pub fn bfs_path_grid<GoFn, FoundFn>(
+    pub fn bfs_path_grid<P, GoFn, FoundFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
+        orig: &P,
         found: FoundFn,
-    ) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+    ) -> Result<(P, Vec<Dir>), Error>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-        FoundFn: Fn(Pos<W, H>) -> bool,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        FoundFn: Fn(P) -> bool,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: PartialEq,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Copy,
     {
-        search_path_grid::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
+        search_path_grid::<GoFn, FoundFn, P, D, WORDS, SIZE>(go, orig, found)
     }
 
     /// Perform a breadth-first search using the
     /// [`HashMap`](std::collections::HashMap)/[`HashSet`](std::collections::HashSet)
     /// types internally; see [`bf`](crate::bf)
-    pub fn bfs_path_hash<GoFn, FoundFn>(
+    pub fn bfs_path_hash<P, GoFn, FoundFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
+        orig: &P,
         found: FoundFn,
-    ) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+    ) -> Result<(P, Vec<Dir>), Error>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-        FoundFn: Fn(Pos<W, H>) -> bool,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        FoundFn: Fn(P) -> bool,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Eq + std::hash::Hash,
+        P: Copy,
     {
-        search_path_hash::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
+        search_path_hash::<GoFn, FoundFn, P, D, WORDS, SIZE>(go, orig, found)
     }
 
     /// Perform a breadth-first search using the
     /// [`HashMap`](std::collections::HashMap)/[`HashSet`](std::collections::HashSet)
     /// types internally; see [`bf`](crate::bf)
-    pub fn bfs_path_btree<GoFn, FoundFn>(
+    pub fn bfs_path_btree<P, GoFn, FoundFn>(
         go: GoFn,
-        orig: &Pos<W, H>,
+        orig: &P,
         found: FoundFn,
-    ) -> Result<(Pos<W, H>, Vec<Dir>), Error>
+    ) -> Result<(P, Vec<Dir>), Error>
     where
-        GoFn: Fn(Pos<W, H>, Dir) -> Option<Pos<W, H>>,
-        FoundFn: Fn(Pos<W, H>) -> bool,
+        GoFn: Fn(P, Dir) -> Option<P>,
+        FoundFn: Fn(P) -> bool,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Ord,
+        P: Copy,
     {
-        search_path_btree::<GoFn, FoundFn, W, H, D, WORDS, SIZE>(go, orig, found)
+        search_path_btree::<GoFn, FoundFn, P, D, WORDS, SIZE>(go, orig, found)
     }
 }

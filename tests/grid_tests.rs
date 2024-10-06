@@ -13,7 +13,7 @@ use anyhow::Result;
 use std::convert::TryFrom;
 
 type Pos = sqrid::Pos<5, 3>;
-type Grid = sqrid::Grid<i32, 5, 3, 15>;
+type Grid = sqrid::Grid<i32, Pos, 15>;
 type _PosScale = sqrid::Pos<0xffff, 0xffff>;
 type _GridScale = sqrid::grid_create!(_PosScale, i32);
 

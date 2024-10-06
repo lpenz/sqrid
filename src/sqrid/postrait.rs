@@ -19,10 +19,14 @@ pub trait PosT {
     const XMIN: Self::Xtype;
     /// Zero with the appropriate type
     const YMIN: Self::Ytype;
-    /// Width
+    /// Width - 1
     const XMAX: Self::Xtype;
-    /// Height
+    /// Height - 1
     const YMAX: Self::Ytype;
+    /// Width
+    const WIDTH: usize;
+    /// Height
+    const HEIGHT: usize;
 
     /// Create a new Pos with the given parameters
     ///
@@ -269,6 +273,30 @@ pub trait PosT {
     {
         let i = self.to_usize() + 1;
         Self::tryfrom_usize(i).ok()
+    }
+
+    /// Returns an iterator over valid X values
+    fn iter_x() -> impl Iterator<Item = Self::Xtype>
+    where
+        Self::Xtype: TryFrom<usize>,
+    {
+        (0..Self::WIDTH).map(|x| {
+            // SAFE by construction
+            let Ok(x) = x.try_into() else { panic!() };
+            x
+        })
+    }
+
+    /// Returns an iterator over valid Y values
+    fn iter_y() -> impl Iterator<Item = Self::Ytype>
+    where
+        Self::Ytype: TryFrom<usize>,
+    {
+        (0..Self::HEIGHT).map(|y| {
+            // SAFE by construction
+            let Ok(y) = y.try_into() else { panic!() };
+            y
+        })
     }
 
     /// Return an iterator that returns all positions within the grid
@@ -632,15 +660,17 @@ where
 
 /* Implementations for standard unsigned tuples */
 
-macro_rules! postrait_impl {
+macro_rules! postrait_integer_impl {
     ($xtype:ty, $ytype:ty) => {
         impl PosT for ($xtype, $ytype) {
             type Xtype = $xtype;
             type Ytype = $ytype;
-            const XMIN: Self::Xtype = 0;
-            const YMIN: Self::Ytype = 0;
+            const XMIN: Self::Xtype = <$xtype>::MIN;
+            const YMIN: Self::Ytype = <$ytype>::MIN;
             const XMAX: Self::Xtype = <$xtype>::MAX;
             const YMAX: Self::Ytype = <$ytype>::MAX;
+            const WIDTH: usize = { <$xtype>::MAX as isize - <$xtype>::MIN as isize } as usize;
+            const HEIGHT: usize = { <$ytype>::MAX as isize - <$ytype>::MIN as isize } as usize;
             fn tryfrom_tuple(xy: ($xtype, $ytype)) -> Result<Self, Error> {
                 Ok(xy)
             }
@@ -660,8 +690,12 @@ macro_rules! postrait_impl {
     };
 }
 
-postrait_impl!(u8, u8);
-postrait_impl!(u16, u16);
-postrait_impl!(u32, u32);
-postrait_impl!(u64, u64);
-postrait_impl!(u128, u128);
+postrait_integer_impl!(u8, u8);
+postrait_integer_impl!(u16, u16);
+postrait_integer_impl!(u32, u32);
+postrait_integer_impl!(u64, u64);
+postrait_integer_impl!(u128, u128);
+
+postrait_integer_impl!(i8, i8);
+postrait_integer_impl!(i16, i16);
+postrait_integer_impl!(i32, i32);

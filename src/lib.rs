@@ -93,8 +93,8 @@
 //! type Grid = sqrid::grid_create!(Sqrid, i32);
 //!
 //! // The grid create macro above is currently equivalent to:
-//! type Grid2 = sqrid::Grid<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
-//!                               { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
+//! type Grid2 = sqrid::Grid<i32, Pos,
+//!                          { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
 //!
 //! // We can create grids from iterators via `collect`:
 //! let mut gridnums = (0..9).collect::<Grid>();

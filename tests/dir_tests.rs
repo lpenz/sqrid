@@ -125,11 +125,11 @@ fn test_iter() -> Result<()> {
 fn test_names() -> Result<()> {
     let mut iter = Dir::iter::<true>();
     assert_eq!(iter.next().map(|dir| dir.name_cardinal()), Some("N"));
+    assert_eq!(iter.next().map(|dir| dir.name_cardinal()), Some("NE"));
     assert_eq!(
-        iter.next().map(|dir| dir.name_direction()),
-        Some("UP-RIGHT")
+        iter.next().map(|dir| dir.name_utf8_char()),
+        Some('\u{2192}')
     );
-    assert_eq!(iter.next().map(|dir| dir.name_direction()), Some("RIGHT"));
     assert_eq!(iter.next().map(|dir| dir.name_cardinal()), Some("SE"));
     assert_eq!(iter.next().map(|dir| dir.name_utf8()), Some("\u{2193}"));
     Ok(())

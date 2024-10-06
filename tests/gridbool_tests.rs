@@ -14,10 +14,10 @@ type Pos1 = sqrid::Pos<4, 8>;
 type Gbool1 = sqrid::gridbool_create!(Pos1);
 
 type Pos2 = sqrid::Pos<11, 3>;
-type Gbool2 = sqrid::Gridbool<11, 3, 2>;
+type Gbool2 = sqrid::Gridbool<Pos2, 2>;
 
 type Pos5 = sqrid::Pos<5, 5>;
-type Gbool5 = sqrid::Gridbool<5, 5, 1>;
+type Gbool5 = sqrid::Gridbool<Pos5, 1>;
 
 type PosScale = sqrid::Pos<2000, 2000>;
 type GridboolScale = sqrid::gridbool_create!(PosScale);
@@ -28,18 +28,18 @@ type _GridboolMax = sqrid::gridbool_create!(_PosMax);
 #[test]
 fn test_getset() -> Result<()> {
     let mut gb1 = Gbool1::default();
-    assert_eq!(gb1.get(Pos1::TOP_LEFT), false);
-    gb1.set(Pos1::TOP_LEFT, true);
-    assert_eq!(gb1.get(Pos1::TOP_LEFT), true);
+    assert_eq!(gb1.get(&Pos1::TOP_LEFT), false);
+    gb1.set(&Pos1::TOP_LEFT, true);
+    assert_eq!(gb1.get(&Pos1::TOP_LEFT), true);
     assert_eq!(gb1.as_inner()[0], 0x80000000);
-    assert_eq!(gb1.get(Pos1::BOTTOM_RIGHT), false);
-    gb1.set(Pos1::BOTTOM_RIGHT, true);
-    gb1.set(Pos1::TOP_LEFT, false);
-    assert_eq!(gb1.get(Pos1::TOP_LEFT), false);
-    assert_eq!(gb1.get(Pos1::BOTTOM_RIGHT), true);
+    assert_eq!(gb1.get(&Pos1::BOTTOM_RIGHT), false);
+    gb1.set(&Pos1::BOTTOM_RIGHT, true);
+    gb1.set(&Pos1::TOP_LEFT, false);
+    assert_eq!(gb1.get(&Pos1::TOP_LEFT), false);
+    assert_eq!(gb1.get(&Pos1::BOTTOM_RIGHT), true);
     assert_eq!(gb1.as_inner()[0], 0x00000001);
     let mut gb2 = Gbool2::default();
-    gb2.set(Pos2::BOTTOM_RIGHT, true);
+    gb2.set(&Pos2::BOTTOM_RIGHT, true);
     assert_eq!(gb2.as_inner()[0], 0x00000000);
     assert_eq!(gb2.as_inner()[1], 0x80000000);
     println!("{:?}", gb2);
@@ -73,7 +73,7 @@ fn test_iter1() -> Result<()> {
         Pos1::BOTTOM_LEFT,
         Pos1::BOTTOM_RIGHT,
     ];
-    gb1.set_iter_t(v.iter());
+    gb1.set_iter_t(v.iter().copied());
     for pos in &v {
         assert!(gb1[pos]);
     }
@@ -87,7 +87,7 @@ fn test_iter1() -> Result<()> {
     for (pos, value) in Pos1::iter().zip(gb1.iter()) {
         assert_eq!(v.contains(&pos), value);
     }
-    gb1.set_iter_f(v.iter());
+    gb1.set_iter_f(v.iter().copied());
     assert_eq!(gb1, Gbool1::ALL_FALSE);
     Ok(())
 }
@@ -98,14 +98,14 @@ fn test_flip_h() -> Result<()> {
     // Set all fourth quadrant:
     for pos in Pos5::iter() {
         let t = pos.tuple();
-        gb.set(pos, t.0 < 2 && t.1 > 2);
+        gb.set(&pos, t.0 < 2 && t.1 > 2);
     }
     let mut gb2 = *&gb;
     // Flip horizontally, check that the third quadrant is set:
     gb2.flip_h();
     for pos in Pos5::iter() {
         let t = pos.tuple();
-        assert_eq!(gb2.get(pos), t.0 > 2 && t.1 > 2);
+        assert_eq!(gb2.get(&pos), t.0 > 2 && t.1 > 2);
     }
     // Flip again, check we are back at starting position:
     gb2.flip_h();
@@ -119,14 +119,14 @@ fn test_flip_v() -> Result<()> {
     // Set all first quadrant:
     for pos in Pos5::iter() {
         let t = pos.tuple();
-        gb.set(pos, t.0 < 2 && t.1 < 2);
+        gb.set(&pos, t.0 < 2 && t.1 < 2);
     }
     let mut gb2 = *&gb;
     // Flip vertically, check that the fourth quadrant is set:
     gb2.flip_v();
     for pos in Pos5::iter() {
         let t = pos.tuple();
-        assert_eq!(gb2.get(pos), t.0 < 2 && t.1 > 2);
+        assert_eq!(gb2.get(&pos), t.0 < 2 && t.1 > 2);
     }
     // Flip again, check we are back at starting position:
     gb2.flip_v();
@@ -140,14 +140,14 @@ fn test_rotate() -> Result<()> {
     // Set all first quadrant:
     for pos in Pos5::iter() {
         let t = pos.tuple();
-        gb.set(pos, t.0 < 2 && t.1 < 2);
+        gb.set(&pos, t.0 < 2 && t.1 < 2);
     }
     let mut gb2 = *&gb;
     // Rotate, check second quadrant is set:
     gb2.rotate_cw();
     for pos in Pos5::iter() {
         let t = pos.tuple();
-        assert_eq!(gb2.get(pos), t.0 > 2 && t.1 < 2);
+        assert_eq!(gb2.get(&pos), t.0 > 2 && t.1 < 2);
     }
     // Rotate in the other direction, check we are back to starting
     // point:
@@ -160,7 +160,7 @@ fn test_rotate() -> Result<()> {
 fn test_scale() -> Result<()> {
     let mut gb = Box::new(GridboolScale::default());
     for pos in PosScale::iter() {
-        gb.set_t(pos);
+        gb.set_t(&pos);
     }
     for value in gb.iter() {
         // Dummy operation, we are really just testing gb.iter

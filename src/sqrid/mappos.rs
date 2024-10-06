@@ -5,7 +5,7 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 
-//! Module that abstracts maps with [`Pos`] indexes
+//! Module that abstracts maps with [`super::pos::Pos`] indexes
 //!
 //! The [`MapPos`] trait is used to parameterize the search algorithms,
 //! allowing us to use [`Grid`], [`std::collections::HashMap`] or
@@ -20,64 +20,69 @@ use std::collections;
 use super::dir::Dir;
 use super::error::Error;
 use super::grid::Grid;
-use super::pos::Pos;
 use super::postrait::PosT;
 use super::Sqrid;
 
 /* MapPos */
 
-/// Trait that abstracts maps with [`Pos`] indexes
+/// Trait that abstracts maps with [`super::pos::Pos`] indexes
 ///
 /// The generic parameters allow us to support implementing [`Grid`].
-pub trait MapPos<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize> {
+pub trait MapPos<Item, P: PosT, const WORDS: usize, const SIZE: usize> {
     /// Create a new `MapPos` with the provided value for all items
     fn new(item: Item) -> Self;
-    /// Get the item corresponding to the provided [`Pos`]
-    fn get(&self, pos: &Pos<W, H>) -> &Item;
-    /// Set the item corresponding to the provided [`Pos`]
-    fn set(&mut self, pos: Pos<W, H>, item: Item);
+    /// Get the item corresponding to the provided [`super::pos::Pos`]
+    fn get(&self, pos: &P) -> &Item;
+    /// Set the item corresponding to the provided [`super::pos::Pos`]
+    fn set(&mut self, pos: P, item: Item);
 }
 
-impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapPos<Item, W, H, WORDS, SIZE> for Grid<Item, W, H, SIZE>
+impl<Item, P: PosT, const WORDS: usize, const SIZE: usize> MapPos<Item, P, WORDS, SIZE>
+    for Grid<Item, P, SIZE>
 where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
     Item: Copy,
 {
     fn new(item: Item) -> Self {
-        Grid::<Item, W, H, SIZE>::repeat(item)
+        Grid::<Item, P, SIZE>::repeat(item)
     }
-    fn get(&self, pos: &Pos<W, H>) -> &Item {
-        &self[pos]
+    fn get(&self, pos: &P) -> &Item {
+        self.get(pos)
     }
-    fn set(&mut self, pos: Pos<W, H>, item: Item) {
+    fn set(&mut self, pos: P, item: Item) {
         self[pos] = item;
     }
 }
 
-impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapPos<Item, W, H, WORDS, SIZE> for (collections::HashMap<Pos<W, H>, Item>, Item)
+impl<Item, P: PosT, const WORDS: usize, const SIZE: usize> MapPos<Item, P, WORDS, SIZE>
+    for (collections::HashMap<P, Item>, Item)
+where
+    P: Eq + std::hash::Hash,
 {
     fn new(item: Item) -> Self {
         (Default::default(), item)
     }
-    fn get(&self, pos: &Pos<W, H>) -> &Item {
+    fn get(&self, pos: &P) -> &Item {
         self.0.get(pos).unwrap_or(&self.1)
     }
-    fn set(&mut self, pos: Pos<W, H>, item: Item) {
+    fn set(&mut self, pos: P, item: Item) {
         self.0.insert(pos, item);
     }
 }
 
-impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
-    MapPos<Item, W, H, WORDS, SIZE> for (collections::BTreeMap<Pos<W, H>, Item>, Item)
+impl<Item, P: PosT, const WORDS: usize, const SIZE: usize> MapPos<Item, P, WORDS, SIZE>
+    for (collections::BTreeMap<P, Item>, Item)
+where
+    P: Ord,
 {
     fn new(item: Item) -> Self {
         (Default::default(), item)
     }
-    fn get(&self, pos: &Pos<W, H>) -> &Item {
+    fn get(&self, pos: &P) -> &Item {
         self.0.get(pos).unwrap_or(&self.1)
     }
-    fn set(&mut self, pos: Pos<W, H>, item: Item) {
+    fn set(&mut self, pos: P, item: Item) {
         self.0.insert(pos, item);
     }
 }
@@ -90,19 +95,19 @@ impl<Item, const W: u16, const H: u16, const WORDS: usize, const SIZE: usize>
 /// directions leads out of the grid, [`Error::Loop`]
 /// if a cycle is found or [`Error::DestinationUnreachable`] if `dest`
 /// is not in the provided map.
-pub fn camefrom_into_path<
-    MapPosDir,
-    const W: u16,
-    const H: u16,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn camefrom_into_path<MapPosDir, P, const WORDS: usize, const SIZE: usize>(
     map: MapPosDir,
-    orig: &Pos<W, H>,
-    dest: &Pos<W, H>,
+    orig: &P,
+    dest: &P,
 ) -> Result<Vec<Dir>, Error>
 where
-    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE>,
+    P: PosT,
+    P: Copy,
+    P: PartialEq,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE>,
 {
     let distance = orig.manhattan(dest);
     let mut ret = collections::VecDeque::<Dir>::with_capacity(2 * distance);
@@ -111,7 +116,7 @@ where
         return Err(Error::DestinationUnreachable);
     }
     // Maximum iterations is the number of coordinates
-    let mut maxiter = W as usize * H as usize + 1;
+    let mut maxiter = P::WIDTH * P::HEIGHT + 1;
     while &pos != orig {
         let dir = map.get(&pos).ok_or(Error::InvalidMovement)?;
         ret.push_front(-dir);
@@ -131,14 +136,20 @@ where
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
     Sqrid<W, H, D, WORDS, SIZE>
 {
-    /// TODO
-    pub fn camefrom_into_path<MapPosDir>(
+    /// See [`camefrom_into_path`]
+    pub fn camefrom_into_path<P, MapPosDir>(
         map: MapPosDir,
-        orig: &Pos<W, H>,
-        dest: &Pos<W, H>,
+        orig: &P,
+        dest: &P,
     ) -> Result<Vec<Dir>, Error>
     where
-        MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE>,
+        P: PosT,
+        P: Copy,
+        P: PartialEq,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE>,
     {
         super::camefrom_into_path(map, orig, dest)
     }

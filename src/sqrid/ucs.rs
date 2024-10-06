@@ -17,10 +17,11 @@
 //! there are multple destinations), and check out [`astar`](crate::astar) for a more efficient
 //! algorithm that can be used when costs are homogenous.
 //!
-//! The base of this module is the [`UcsIterator`], which yields [`Pos`] coordinates in cost
-//! order. That iterator is used by [`search_mapmov`] to build an unsorted `Pos`-indexed map of
-//! [`Dir`] directions, which can then transformed into a vector of directions by
-//! [`crate::camefrom_into_path`]. The complete search process is wrapped by [`search_path`].
+//! The base of this module is the [`UcsIterator`], which yields [`super::pos::Pos`] coordinates
+//! in cost order. That iterator is used by [`search_mapmov`] to build an unsorted
+//! `super::pos::Pos`-indexed map of [`Dir`] directions, which can then transformed into a
+//! vector of directions by [`crate::camefrom_into_path`]. The complete search process is
+//! wrapped by [`search_path`].
 //!
 //! All these functions can be called directly, but that's a bit inconvenient, as they require
 //! several generic parameters. An easier alternative is provided by the wrappers plugged into
@@ -55,11 +56,11 @@ use std::collections;
 use std::collections::BinaryHeap;
 
 use super::camefrom_into_path;
+use super::postrait::PosT;
 use super::Dir;
 use super::Error;
 use super::Grid;
 use super::MapPos;
-use super::Pos;
 use super::Sqrid;
 
 /// The type for the cost of a step inside a path
@@ -72,34 +73,30 @@ pub type Cost = usize;
 pub struct UcsIterator<
     F,
     MapPosUsize,
-    const W: u16,
-    const H: u16,
+    P: PosT,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 > {
     cost: MapPosUsize,
-    frontier: BinaryHeap<(Reverse<usize>, (Pos<W, H>, Dir))>,
+    frontier: BinaryHeap<(Reverse<usize>, (P, Dir))>,
     go: F,
 }
 
-impl<
-        F,
-        MapPosUsize,
-        const W: u16,
-        const H: u16,
-        const D: bool,
-        const WORDS: usize,
-        const SIZE: usize,
-    > UcsIterator<F, MapPosUsize, W, H, D, WORDS, SIZE>
+impl<F, MapPosUsize, P: PosT, const D: bool, const WORDS: usize, const SIZE: usize>
+    UcsIterator<F, MapPosUsize, P, D, WORDS, SIZE>
 {
     /// Create a new UCS iterator
     ///
     /// This is used internally to yield coordinates in cost order.
-    pub fn new(go: F, orig: &Pos<W, H>) -> UcsIterator<F, MapPosUsize, W, H, D, WORDS, SIZE>
+    pub fn new(go: F, orig: &P) -> UcsIterator<F, MapPosUsize, P, D, WORDS, SIZE>
     where
-        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
-        MapPosUsize: MapPos<usize, W, H, WORDS, SIZE> + Default,
+        F: Fn(P, Dir) -> Option<(P, Cost)>,
+        MapPosUsize: MapPos<usize, P, WORDS, SIZE> + Default,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: Ord,
+        P: Copy,
     {
         let mut it = UcsIterator {
             cost: MapPosUsize::new(usize::MAX),
@@ -112,20 +109,17 @@ impl<
     }
 }
 
-impl<
-        F,
-        MapPosUsize,
-        const W: u16,
-        const H: u16,
-        const D: bool,
-        const WORDS: usize,
-        const SIZE: usize,
-    > Iterator for UcsIterator<F, MapPosUsize, W, H, D, WORDS, SIZE>
+impl<F, MapPosUsize, P: PosT, const D: bool, const WORDS: usize, const SIZE: usize> Iterator
+    for UcsIterator<F, MapPosUsize, P, D, WORDS, SIZE>
 where
-    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
-    MapPosUsize: MapPos<usize, W, H, WORDS, SIZE>,
+    F: Fn(P, Dir) -> Option<(P, Cost)>,
+    MapPosUsize: MapPos<usize, P, WORDS, SIZE>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: Ord,
+    P: Copy,
 {
-    type Item = (Pos<W, H>, Dir);
+    type Item = (P, Dir);
     fn next(&mut self) -> Option<Self::Item> {
         if let Some((_, mov)) = self.frontier.pop() {
             let pos = mov.0;
@@ -155,23 +149,27 @@ pub fn search_mapmov<
     F,
     MapPosDir,
     MapPosUsize,
-    const W: u16,
-    const H: u16,
+    P,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 >(
     go: F,
-    orig: &Pos<W, H>,
-    dest: &Pos<W, H>,
+    orig: &P,
+    dest: &P,
 ) -> Result<MapPosDir, Error>
 where
-    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
-    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE> + Default,
-    MapPosUsize: MapPos<usize, W, H, WORDS, SIZE> + Default,
+    F: Fn(P, Dir) -> Option<(P, Cost)>,
+    MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
+    MapPosUsize: MapPos<usize, P, WORDS, SIZE> + Default,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: PosT,
+    P: Ord,
+    P: Copy,
 {
     let mut from = MapPosDir::default();
-    for (pos, dir) in UcsIterator::<F, MapPosUsize, W, H, D, WORDS, SIZE>::new(go, orig) {
+    for (pos, dir) in UcsIterator::<F, MapPosUsize, P, D, WORDS, SIZE>::new(go, orig) {
         from.set(pos, Some(dir));
         if pos == *dest {
             return Ok(from);
@@ -190,71 +188,74 @@ pub fn search_path<
     F,
     MapPosDir,
     MapPosUsize,
-    const W: u16,
-    const H: u16,
+    P,
     const D: bool,
     const WORDS: usize,
     const SIZE: usize,
 >(
     go: F,
-    orig: &Pos<W, H>,
-    dest: &Pos<W, H>,
+    orig: &P,
+    dest: &P,
 ) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
-    MapPosDir: MapPos<Option<Dir>, W, H, WORDS, SIZE> + Default,
-    MapPosUsize: MapPos<usize, W, H, WORDS, SIZE> + Default,
+    F: Fn(P, Dir) -> Option<(P, Cost)>,
+    MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
+    MapPosUsize: MapPos<usize, P, WORDS, SIZE> + Default,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Ord,
+    P: Copy,
 {
-    let mapmov = search_mapmov::<F, MapPosDir, MapPosUsize, W, H, D, WORDS, SIZE>(go, orig, dest)?;
+    let mapmov = search_mapmov::<F, MapPosDir, MapPosUsize, P, D, WORDS, SIZE>(go, orig, dest)?;
     camefrom_into_path(mapmov, orig, dest)
 }
 
 /* Parameterized interface ****************************************************/
 
 /// Makes a UCS search using [`Grid`], returns the path as a `Vec<Dir>`
-pub fn search_path_grid<
-    F,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn search_path_grid<F, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: F,
-    orig: &Pos<W, H>,
-    dest: &Pos<W, H>,
+    orig: &P,
+    dest: &P,
 ) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+    F: Fn(P, Dir) -> Option<(P, Cost)>,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Ord,
+    P: Copy,
 {
-    search_path::<F, Grid<Option<Dir>, W, H, SIZE>, Grid<usize, W, H, SIZE>, W, H, D, WORDS, SIZE>(
+    search_path::<F, Grid<Option<Dir>, P, SIZE>, Grid<usize, P, SIZE>, P, D, WORDS, SIZE>(
         go, orig, dest,
     )
 }
 
 /// Makes a UCS search using the [`HashMap`](std::collections::HashMap) type,
 /// returns the path as a `Vec<Dir>`
-pub fn search_path_hash<
-    F,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn search_path_hash<F, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: F,
-    orig: &Pos<W, H>,
-    dest: &Pos<W, H>,
+    orig: &P,
+    dest: &P,
 ) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+    F: Fn(P, Dir) -> Option<(P, Cost)>,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Eq + std::hash::Hash,
+    P: Ord,
+    P: Copy,
 {
     search_path::<
         F,
-        (collections::HashMap<Pos<W, H>, Option<Dir>>, Option<Dir>),
-        (collections::HashMap<Pos<W, H>, usize>, usize),
-        W,
-        H,
+        (collections::HashMap<P, Option<Dir>>, Option<Dir>),
+        (collections::HashMap<P, usize>, usize),
+        P,
         D,
         WORDS,
         SIZE,
@@ -263,27 +264,25 @@ where
 
 /// Makes a UCS search using the [`BTreeMap`](std::collections::BTreeMap) type,
 /// returns the path as a `Vec<Dir>`
-pub fn search_path_btree<
-    F,
-    const W: u16,
-    const H: u16,
-    const D: bool,
-    const WORDS: usize,
-    const SIZE: usize,
->(
+pub fn search_path_btree<F, P, const D: bool, const WORDS: usize, const SIZE: usize>(
     go: F,
-    orig: &Pos<W, H>,
-    dest: &Pos<W, H>,
+    orig: &P,
+    dest: &P,
 ) -> Result<Vec<Dir>, Error>
 where
-    F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+    F: Fn(P, Dir) -> Option<(P, Cost)>,
+    P: PosT,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: std::ops::Add<Dir, Output = Result<P, Error>>,
+    P: Ord,
+    P: Copy,
 {
     search_path::<
         F,
-        (collections::BTreeMap<Pos<W, H>, Option<Dir>>, Option<Dir>),
-        (collections::BTreeMap<Pos<W, H>, usize>, usize),
-        W,
-        H,
+        (collections::BTreeMap<P, Option<Dir>>, Option<Dir>),
+        (collections::BTreeMap<P, usize>, usize),
+        P,
         D,
         WORDS,
         SIZE,
@@ -297,38 +296,63 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
 {
     /// Perform a uniform-cost search;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
+    pub fn ucs_path<F, P>(go: F, orig: &P, dest: &P) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+        F: Fn(P, Dir) -> Option<(P, Cost)>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Ord,
+        P: Copy,
     {
-        Self::ucs_path_grid::<F>(go, orig, dest)
+        Self::ucs_path_grid::<F, P>(go, orig, dest)
     }
 
     /// Perform a uniform-cost search using a [`Grid`] internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_grid<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
+    pub fn ucs_path_grid<F, P>(go: F, orig: &P, dest: &P) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+        F: Fn(P, Dir) -> Option<(P, Cost)>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Ord,
+        P: Copy,
     {
-        search_path_grid::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_grid::<F, P, D, WORDS, SIZE>(go, orig, dest)
     }
 
     /// Perform a uniform-cost search using a [`HashMap`](std::collections::HashMap) internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_hash<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
+    pub fn ucs_path_hash<F, P>(go: F, orig: &P, dest: &P) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+        F: Fn(P, Dir) -> Option<(P, Cost)>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Eq + std::hash::Hash,
+        P: Ord,
+        P: Copy,
     {
-        search_path_hash::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_hash::<F, P, D, WORDS, SIZE>(go, orig, dest)
     }
 
     /// Perform a uniform-cost search using a [`BTreeMap`](std::collections::BTreeMap)
     /// internally;
     /// see [`ucs`](crate::ucs).
-    pub fn ucs_path_btree<F>(go: F, orig: &Pos<W, H>, dest: &Pos<W, H>) -> Result<Vec<Dir>, Error>
+    pub fn ucs_path_btree<F, P>(go: F, orig: &P, dest: &P) -> Result<Vec<Dir>, Error>
     where
-        F: Fn(Pos<W, H>, Dir) -> Option<(Pos<W, H>, Cost)>,
+        F: Fn(P, Dir) -> Option<(P, Cost)>,
+        P: PosT,
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P: std::ops::Add<Dir, Output = Result<P, Error>>,
+        P: Ord,
+        P: Copy,
     {
-        search_path_btree::<F, W, H, D, WORDS, SIZE>(go, orig, dest)
+        search_path_btree::<F, P, D, WORDS, SIZE>(go, orig, dest)
     }
 }

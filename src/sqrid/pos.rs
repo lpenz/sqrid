@@ -284,6 +284,8 @@ impl<const W: u16, const H: u16> PosT for Pos<W, H> {
     const YMIN: Self::Ytype = 0;
     const XMAX: Self::Xtype = W - 1;
     const YMAX: Self::Ytype = H - 1;
+    const WIDTH: usize = W as usize;
+    const HEIGHT: usize = H as usize;
     fn tryfrom_tuple(xy: (u16, u16)) -> Result<Self, Error> {
         if xy.0 >= W || xy.1 >= H {
             Err(Error::OutOfBounds)

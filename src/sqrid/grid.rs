@@ -10,9 +10,7 @@
 //! This submodule has the [`Grid`] type and the associated
 //! functionality.
 
-use std::borrow::Borrow;
 use std::convert;
-use std::convert::TryFrom;
 use std::fmt;
 use std::iter;
 use std::ops;
@@ -34,14 +32,14 @@ macro_rules! impl_assert {
 /// [`super::base::Sqrid`] type. This macros makes the process easier.
 ///
 /// Example usage:
-/// ```
+/// ```rust
 /// type Sqrid = sqrid::sqrid_create!(3, 3, false);
 /// type Grid = sqrid::grid_create!(Sqrid, i32);
 /// ```
 #[macro_export]
 macro_rules! grid_create {
     ($sqrid: ty, $member: ty) => {
-        $crate::Grid<$member, { <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT },
+        $crate::Grid<$member, $crate::pos_create!($sqrid),
                      { (<$sqrid>::WIDTH as usize * <$sqrid>::HEIGHT as usize) }>
     };
 }
@@ -60,13 +58,13 @@ macro_rules! grid_create {
 /// We can use the [`grid_create`] macro to use a [`Pos`] as a source
 /// of these values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Grid<T, const WIDTH: u16, const HEIGHT: u16, const SIZE: usize>([T; SIZE]);
+pub struct Grid<T, P: PosT, const SIZE: usize>([T; SIZE], std::marker::PhantomData<P>);
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
+impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     // Create the _ASSERTS constant to check W * H == SIZE
     // We have to instantiate it in all low-level constructors to
     // actually perform the check.
-    impl_assert!(_ASSERTS; W as usize * H as usize == SIZE);
+    impl_assert!(_ASSERTS; P::WIDTH * P::HEIGHT == SIZE);
 
     /// Number of elements in the grid.
     pub const SIZE: usize = SIZE;
@@ -80,8 +78,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     where
         T: Copy,
     {
-        let _ = Self::_ASSERTS;
-        Grid([item; SIZE])
+        Grid([item; SIZE], std::marker::PhantomData)
     }
 
     /// "Dismantle" a Grid into the inner array; consumes self.
@@ -104,9 +101,14 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
 
     /// Return a specific grid line as a reference to a slice
     #[inline]
-    pub fn line(&self, lineno: u16) -> &[T] {
-        let start = lineno as usize * W as usize;
-        let end = start + W as usize;
+    pub fn line(&self, lineno: P::Ytype) -> &[T]
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        let width: usize = P::width();
+        let start = lineno.into() * width;
+        let end = start + width;
         &self.0[start..end]
     }
 
@@ -114,9 +116,14 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     ///
     /// Allows quick assignment operations on whole lines.
     #[inline]
-    pub fn line_mut(&mut self, lineno: u16) -> &mut [T] {
-        let start = lineno as usize * W as usize;
-        let end = start + W as usize;
+    pub fn line_mut(&mut self, lineno: P::Ytype) -> &mut [T]
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        let width: usize = P::width();
+        let start = lineno.into() * width;
+        let end = start + width;
         &mut self.0[start..end]
     }
 
@@ -125,8 +132,12 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     /// We use get_unchecked internally, because we guarantee the
     /// validity of the Pos index on construction.
     #[inline]
-    pub fn get(&self, pos: impl Borrow<Pos<W, H>>) -> &T {
-        unsafe { self.0.get_unchecked(pos.borrow().to_usize()) }
+    pub fn get(&self, pos: &P) -> &T
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        unsafe { self.0.get_unchecked(pos.to_usize()) }
     }
 
     /// Get a mut reference to an element of the grid.
@@ -134,8 +145,12 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     /// We use get_unchecked internally, because we guarantee the
     /// validity of the Pos index on construction.
     #[inline]
-    pub fn get_mut(&mut self, pos: impl Borrow<Pos<W, H>>) -> &mut T {
-        unsafe { self.0.get_unchecked_mut(pos.borrow().to_usize()) }
+    pub fn get_mut(&mut self, pos: &P) -> &mut T
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+    {
+        unsafe { self.0.get_unchecked_mut(pos.to_usize()) }
     }
 
     /// Returns an iterator over the grid values
@@ -152,15 +167,31 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
 
     /// Returns an iterator over the grid coordinates and values
     #[inline]
-    pub fn iter_pos(&self) -> impl iter::Iterator<Item = (Pos<W, H>, &'_ T)> {
-        Pos::<W, H>::iter().map(move |pos| (pos, &self[pos]))
+    pub fn iter_pos(&self) -> impl iter::Iterator<Item = (P, &'_ T)>
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+        P: Copy,
+    {
+        P::iter().map(move |pos| (pos, &self[pos]))
     }
 
     /// Flip all elements horizontally.
-    pub fn flip_h(&mut self) {
-        for y in 0..H {
-            for x in 0..W / 2 {
-                let pos1 = Pos::<W, H>::try_from((x, y)).unwrap();
+    pub fn flip_h(&mut self)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+        P::Xtype: std::ops::Sub<Output = P::Xtype>,
+        P::Ytype: Copy,
+    {
+        for y in P::iter_y() {
+            for x in 0..P::width() / 2 {
+                let Ok(x) = x.try_into() else { panic!() };
+                let pos1 = P::new(x, y).unwrap();
                 let pos2 = pos1.flip_h();
                 self.0.swap(pos1.to_usize(), pos2.to_usize());
             }
@@ -168,10 +199,19 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
     }
 
     /// Flip all elements vertically.
-    pub fn flip_v(&mut self) {
-        for y in 0..H / 2 {
-            for x in 0..W {
-                let pos1 = Pos::<W, H>::try_from((x, y)).unwrap();
+    pub fn flip_v(&mut self)
+    where
+        P::Xtype: Into<usize>,
+        P::Ytype: Into<usize>,
+        P::Xtype: TryFrom<usize>,
+        P::Ytype: TryFrom<usize>,
+        P::Ytype: std::ops::Sub<Output = P::Ytype>,
+        P::Ytype: Copy,
+    {
+        for y in 0..P::height() / 2 {
+            let Ok(y) = y.try_into() else { panic!() };
+            for x in P::iter_x() {
+                let pos1 = P::new(x, y).unwrap();
                 let pos2 = pos1.flip_v();
                 self.0.swap(pos1.to_usize(), pos2.to_usize());
             }
@@ -180,12 +220,14 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> Grid<T, W, H, SIZE> {
 }
 
 // Rotations are only available for "square" grids
-impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
+impl<T, const W: u16, const SIZE: usize> Grid<T, Pos<W, W>, SIZE> {
     /// Rotate all elements 90 degrees clockwise
     pub fn rotate_cw(&mut self) {
-        for y in 0..W / 2 {
-            for x in y..W - 1 - y {
-                let pos1 = Pos::<W, W>::try_from((x, y)).unwrap();
+        for y in 0..Pos::<W, W>::height() / 2 {
+            for x in y..Pos::<W, W>::height() - 1 - y {
+                let Ok(y) = y.try_into() else { panic!() };
+                let Ok(x) = x.try_into() else { panic!() };
+                let pos1 = Pos::<W, W>::new(x, y).unwrap();
                 let pos2 = pos1.rotate_cw();
                 let pos3 = pos2.rotate_cw();
                 let pos4 = pos3.rotate_cw();
@@ -197,9 +239,11 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
     }
     /// Rotate all elements 90 degrees counterclockwise
     pub fn rotate_cc(&mut self) {
-        for y in 0..W / 2 {
-            for x in y..W - 1 - y {
-                let pos1 = Pos::<W, W>::try_from((x, y)).unwrap();
+        for y in 0..Pos::<W, W>::height() / 2 {
+            for x in y..Pos::<W, W>::height() - 1 - y {
+                let Ok(y) = y.try_into() else { panic!() };
+                let Ok(x) = x.try_into() else { panic!() };
+                let pos1 = Pos::<W, W>::new(x, y).unwrap();
                 let pos2 = pos1.rotate_cw();
                 let pos3 = pos2.rotate_cw();
                 let pos4 = pos3.rotate_cw();
@@ -213,16 +257,18 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, W, W, SIZE> {
 
 // Default
 
-impl<T: Default, const W: u16, const H: u16, const SIZE: usize> Default for Grid<T, W, H, SIZE> {
+impl<T: Default, P: PosT, const SIZE: usize> Default for Grid<T, P, SIZE> {
     fn default() -> Self {
-        Self(std::array::from_fn(|_| T::default()))
+        Self(
+            std::array::from_fn(|_| (T::default())),
+            std::marker::PhantomData,
+        )
     }
 }
 
 // Neg
 
-impl<T: Default + Copy, const W: u16, const H: u16, const SIZE: usize> ops::Neg
-    for Grid<T, W, H, SIZE>
+impl<T: Default + Copy, P: PosT, const SIZE: usize> ops::Neg for Grid<T, P, SIZE>
 where
     T: ops::Neg<Output = T>,
 {
@@ -234,67 +280,93 @@ where
 
 // TryFrom
 
-impl<T: Default, const W: u16, const H: u16, const SIZE: usize> TryFrom<Vec<Vec<T>>>
-    for Grid<T, W, H, SIZE>
+impl<T: Default, P: PosT, const SIZE: usize> TryFrom<Vec<Vec<T>>> for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P::Xtype: TryFrom<usize>,
+    P::Ytype: TryFrom<usize>,
 {
     type Error = Error;
     #[inline]
     fn try_from(mut vec: Vec<Vec<T>>) -> Result<Self, Self::Error> {
-        if vec.len() > H as usize || vec.iter().any(|v| v.len() > W as usize) {
+        if vec.len() > P::height() || vec.iter().any(|v| v.len() > P::width()) {
             return Err(Error::OutOfBounds);
         }
-        Ok(Self(std::array::from_fn(|i| {
-            let pos = Pos::<W, H>::try_from(i).unwrap();
-            let t = pos.tuple();
-            let t = (t.0 as usize, t.1 as usize);
-            if t.1 < vec.len() && t.0 < vec[t.1].len() {
-                std::mem::take(&mut vec[t.1][t.0])
-            } else {
-                T::default()
-            }
-        })))
+        Ok(Self(
+            std::array::from_fn(|i| {
+                let pos = P::tryfrom_usize(i).unwrap();
+                let t = pos.tuple();
+                let t = (t.0.into(), t.1.into());
+                if t.1 < vec.len() && t.0 < vec[t.1].len() {
+                    std::mem::take(&mut vec[t.1][t.0])
+                } else {
+                    T::default()
+                }
+            }),
+            std::marker::PhantomData,
+        ))
     }
 }
 
 // Indexing
 
-impl<T, APOS, const W: u16, const H: u16, const SIZE: usize> ops::Index<APOS>
-    for Grid<T, W, H, SIZE>
+impl<T, P: PosT, const SIZE: usize> ops::Index<P> for Grid<T, P, SIZE>
 where
-    APOS: Borrow<Pos<W, H>>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     type Output = T;
     #[inline]
-    fn index(&self, pos: APOS) -> &Self::Output {
+    fn index(&self, pos: P) -> &Self::Output {
+        self.get(&pos)
+    }
+}
+
+impl<T, P: PosT, const SIZE: usize> ops::Index<&P> for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+{
+    type Output = T;
+    #[inline]
+    fn index(&self, pos: &P) -> &Self::Output {
         self.get(pos)
     }
 }
 
-impl<T, APOS, const W: u16, const H: u16, const SIZE: usize> ops::IndexMut<APOS>
-    for Grid<T, W, H, SIZE>
+impl<T, P: PosT, const SIZE: usize> ops::IndexMut<P> for Grid<T, P, SIZE>
 where
-    APOS: Borrow<Pos<W, H>>,
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     #[inline]
-    fn index_mut(&mut self, pos: APOS) -> &mut T {
+    fn index_mut(&mut self, pos: P) -> &mut T {
+        self.get_mut(&pos)
+    }
+}
+
+impl<T, P: PosT, const SIZE: usize> ops::IndexMut<&P> for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+{
+    #[inline]
+    fn index_mut(&mut self, pos: &P) -> &mut T {
         self.get_mut(pos)
     }
 }
 
 // as_ref, as_mut
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsRef<[T; SIZE]>
-    for Grid<T, W, H, SIZE>
-{
+impl<T, P: PosT, const SIZE: usize> convert::AsRef<[T; SIZE]> for Grid<T, P, SIZE> {
     #[inline]
     fn as_ref(&self) -> &[T; SIZE] {
         self.as_array()
     }
 }
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsMut<[T; SIZE]>
-    for Grid<T, W, H, SIZE>
-{
+impl<T, P: PosT, const SIZE: usize> convert::AsMut<[T; SIZE]> for Grid<T, P, SIZE> {
     #[inline]
     fn as_mut(&mut self) -> &mut [T; SIZE] {
         self.as_array_mut()
@@ -303,9 +375,7 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> convert::AsMut<[T; SIZE]>
 
 // into_iter
 
-impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
-    for &'a Grid<T, W, H, SIZE>
-{
+impl<'a, T, P: PosT, const SIZE: usize> IntoIterator for &'a Grid<T, P, SIZE> {
     type Item = &'a T;
     type IntoIter = std::slice::Iter<'a, T>;
     #[inline]
@@ -314,9 +384,7 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     }
 }
 
-impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
-    for &'a mut Grid<T, W, H, SIZE>
-{
+impl<'a, T, P: PosT, const SIZE: usize> IntoIterator for &'a mut Grid<T, P, SIZE> {
     type Item = &'a mut T;
     type IntoIter = std::slice::IterMut<'a, T>;
     #[inline]
@@ -325,7 +393,7 @@ impl<'a, T, const W: u16, const H: u16, const SIZE: usize> IntoIterator
     }
 }
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for Grid<T, W, H, SIZE> {
+impl<T, P: PosT, const SIZE: usize> IntoIterator for Grid<T, P, SIZE> {
     type Item = T;
     type IntoIter = std::array::IntoIter<T, SIZE>;
     #[inline]
@@ -340,8 +408,8 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> IntoIterator for Grid<T, 
 ///
 /// Assumes we are getting exactly all grid elements; it panics
 /// otherwise.
-impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
-    iter::FromIterator<&'a T> for Grid<T, W, H, SIZE>
+impl<'a, T: 'a + Copy + Default, P: PosT, const SIZE: usize> iter::FromIterator<&'a T>
+    for Grid<T, P, SIZE>
 {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
@@ -352,7 +420,7 @@ impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
         let mut it = iter.into_iter();
         for item in &mut g.0[..] {
             if let Some(fromiter) = it.next() {
-                *item = *fromiter.borrow();
+                *item = *fromiter;
             } else {
                 panic!("iterator too short for grid type");
             }
@@ -366,9 +434,7 @@ impl<'a, T: 'a + Copy + Default, const W: u16, const H: u16, const SIZE: usize>
 ///
 /// Assumes we are getting exactly all grid elements; it panics
 /// otherwise.
-impl<T: Default, const W: u16, const H: u16, const SIZE: usize> iter::FromIterator<T>
-    for Grid<T, W, H, SIZE>
-{
+impl<T: Default, P: PosT, const SIZE: usize> iter::FromIterator<T> for Grid<T, P, SIZE> {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
@@ -390,13 +456,15 @@ impl<T: Default, const W: u16, const H: u16, const SIZE: usize> iter::FromIterat
 
 // Extend
 
-impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Pos<W, H>, T)>
-    for Grid<T, W, H, SIZE>
+impl<T, P: PosT, const SIZE: usize> iter::Extend<(P, T)> for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
-        I: iter::IntoIterator<Item = (Pos<W, H>, T)>,
+        I: iter::IntoIterator<Item = (P, T)>,
     {
         for (pos, member) in iter.into_iter() {
             self[pos] = member;
@@ -404,13 +472,15 @@ impl<T, const W: u16, const H: u16, const SIZE: usize> iter::Extend<(Pos<W, H>, 
     }
 }
 
-impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
-    iter::Extend<(Pos<W, H>, &'a T)> for Grid<T, W, H, SIZE>
+impl<'a, T: 'a + Copy, P: PosT, const SIZE: usize> iter::Extend<(P, &'a T)> for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
-        I: iter::IntoIterator<Item = (Pos<W, H>, &'a T)>,
+        I: iter::IntoIterator<Item = (P, &'a T)>,
     {
         for (pos, member) in iter.into_iter() {
             self[pos] = *member;
@@ -418,16 +488,19 @@ impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
     }
 }
 
-impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
-    iter::Extend<&'a (Pos<W, H>, T)> for Grid<T, W, H, SIZE>
+impl<'a, T: 'a + Copy, P: PosT, const SIZE: usize> iter::Extend<&'a (P, T)> for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
+    P: Copy,
 {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
-        I: iter::IntoIterator<Item = &'a (Pos<W, H>, T)>,
+        I: iter::IntoIterator<Item = &'a (P, T)>,
     {
         for (pos, member) in iter.into_iter() {
-            self[pos] = *member;
+            self[*pos] = *member;
         }
     }
 }
@@ -439,8 +512,8 @@ impl<'a, T: 'a + Copy, const W: u16, const H: u16, const SIZE: usize>
 /// Used in Display implementation of Grid and Gridbool.
 pub fn display_fmt_helper(
     f: &mut fmt::Formatter<'_>,
-    w: u16,
-    h: u16,
+    w: usize,
+    h: usize,
     mut it: impl Iterator<Item = String>,
 ) -> fmt::Result {
     // Max digits for column numbers:
@@ -497,10 +570,17 @@ pub fn display_fmt_helper(
 /// to print an ascii-like grid.
 /// It does that in one pass, and uses the padding parameter as the
 /// size to reserve for each member.
-impl<T: fmt::Display, const W: u16, const H: u16, const SIZE: usize> fmt::Display
-    for Grid<T, W, H, SIZE>
+impl<T: fmt::Display, P: PosT, const SIZE: usize> fmt::Display for Grid<T, P, SIZE>
+where
+    P::Xtype: Into<usize>,
+    P::Ytype: Into<usize>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        display_fmt_helper(f, W, H, self.iter().map(|v| format!("{}", v)))
+        display_fmt_helper(
+            f,
+            P::width(),
+            P::height(),
+            self.iter().map(|v| format!("{}", v)),
+        )
     }
 }

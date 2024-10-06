@@ -23,7 +23,7 @@ fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Pos, Pos) {
         for x in 0..Pos::WIDTH {
             let c = wallstr[y as usize].as_bytes()[x as usize] as char;
             let pos = Pos::tryfrom_tuple((x, y)).unwrap();
-            walls.set(pos, c == '#');
+            walls.set(&pos, c == '#');
             if c == 'T' {
                 start = pos;
             } else if c == 'C' {
@@ -62,7 +62,7 @@ fn test_path(wall: &Gridbool, orig: &Pos, dest: &Pos, path: &[Dir]) -> Result<()
     let mut pos = *orig;
     for dir in path {
         pos = (pos + *dir)?;
-        assert!(!wall.get(pos), "hit wall");
+        assert!(!wall.get(&pos), "hit wall");
     }
     assert_eq!(pos, *dest, "path not leading to dest");
     Ok(())
