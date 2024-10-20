@@ -93,8 +93,6 @@ impl<F, MapPosUsize, P: PosT, const D: bool, const WORDS: usize, const SIZE: usi
     where
         F: Fn(P, Dir) -> Option<(P, Cost)>,
         MapPosUsize: MapPos<usize, P, WORDS, SIZE> + Default,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: Ord,
         P: Copy,
     {
@@ -114,8 +112,6 @@ impl<F, MapPosUsize, P: PosT, const D: bool, const WORDS: usize, const SIZE: usi
 where
     F: Fn(P, Dir) -> Option<(P, Cost)>,
     MapPosUsize: MapPos<usize, P, WORDS, SIZE>,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: Ord,
     P: Copy,
 {
@@ -162,8 +158,6 @@ where
     F: Fn(P, Dir) -> Option<(P, Cost)>,
     MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
     MapPosUsize: MapPos<usize, P, WORDS, SIZE> + Default,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: PosT,
     P: Ord,
     P: Copy,
@@ -202,8 +196,6 @@ where
     MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
     MapPosUsize: MapPos<usize, P, WORDS, SIZE> + Default,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Ord,
     P: Copy,
@@ -223,8 +215,6 @@ pub fn search_path_grid<F, P, const D: bool, const WORDS: usize, const SIZE: usi
 where
     F: Fn(P, Dir) -> Option<(P, Cost)>,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Ord,
     P: Copy,
@@ -244,8 +234,6 @@ pub fn search_path_hash<F, P, const D: bool, const WORDS: usize, const SIZE: usi
 where
     F: Fn(P, Dir) -> Option<(P, Cost)>,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Eq + std::hash::Hash,
     P: Ord,
@@ -272,8 +260,6 @@ pub fn search_path_btree<F, P, const D: bool, const WORDS: usize, const SIZE: us
 where
     F: Fn(P, Dir) -> Option<(P, Cost)>,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Ord,
     P: Copy,
@@ -300,8 +286,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         F: Fn(P, Dir) -> Option<(P, Cost)>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Ord,
         P: Copy,
@@ -315,8 +299,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         F: Fn(P, Dir) -> Option<(P, Cost)>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Ord,
         P: Copy,
@@ -330,8 +312,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         F: Fn(P, Dir) -> Option<(P, Cost)>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Eq + std::hash::Hash,
         P: Ord,
@@ -347,8 +327,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         F: Fn(P, Dir) -> Option<(P, Cost)>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Ord,
         P: Copy,

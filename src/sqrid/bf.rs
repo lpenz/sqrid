@@ -229,8 +229,6 @@ where
     MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE> + Default,
     MySetPos: SetPos<P, WORDS, SIZE> + Default,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: PartialEq,
     P: Copy,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
@@ -252,8 +250,6 @@ pub fn bf_iter_grid<GoFn, P, const D: bool, const WORDS: usize, const SIZE: usiz
 where
     GoFn: Fn(P, Dir) -> Option<P>,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: Copy,
 {
     bf_iter::<GoFn, Gridbool<P, WORDS>, P, D, WORDS, SIZE>(go, orig)
@@ -267,8 +263,6 @@ pub fn bf_iter_hash<GoFn, P, const D: bool, const WORDS: usize, const SIZE: usiz
 ) -> BfIterator<GoFn, collections::HashSet<P>, P, D, WORDS, SIZE>
 where
     GoFn: Fn(P, Dir) -> Option<P>,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: PosT,
     P: Eq + std::hash::Hash,
     P: Copy,
@@ -285,8 +279,6 @@ pub fn bf_iter_btree<GoFn, P, const D: bool, const WORDS: usize, const SIZE: usi
 where
     GoFn: Fn(P, Dir) -> Option<P>,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: Ord,
     P: Copy,
 {
@@ -305,8 +297,6 @@ where
     GoFn: Fn(P, Dir) -> Option<P>,
     FoundFn: Fn(P) -> bool,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: PartialEq,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Copy,
@@ -328,8 +318,6 @@ where
     GoFn: Fn(P, Dir) -> Option<P>,
     FoundFn: Fn(P) -> bool,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Eq + std::hash::Hash,
     P: Copy,
@@ -358,8 +346,6 @@ where
     GoFn: Fn(P, Dir) -> Option<P>,
     FoundFn: Fn(P) -> bool,
     P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
     P: Ord,
     P: Copy,
@@ -392,8 +378,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         GoFn: Fn(P, Dir) -> Option<P>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: Copy,
     {
         Self::bf_iter_grid(go, orig)
@@ -408,8 +392,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         GoFn: Fn(P, Dir) -> Option<P>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: Copy,
     {
         bf_iter_grid::<GoFn, P, D, WORDS, SIZE>(go, orig)
@@ -425,8 +407,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         GoFn: Fn(P, Dir) -> Option<P>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: Eq + std::hash::Hash,
         P: Copy,
     {
@@ -443,8 +423,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
     where
         GoFn: Fn(P, Dir) -> Option<P>,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: Ord,
         P: Copy,
     {
@@ -468,8 +446,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(P, Dir) -> Option<P>,
         FoundFn: Fn(P) -> bool,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: PartialEq,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Copy,
@@ -488,8 +464,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(P, Dir) -> Option<P>,
         FoundFn: Fn(P) -> bool,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: PartialEq,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Copy,
@@ -509,8 +483,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(P, Dir) -> Option<P>,
         FoundFn: Fn(P) -> bool,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Eq + std::hash::Hash,
         P: Copy,
@@ -530,8 +502,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         GoFn: Fn(P, Dir) -> Option<P>,
         FoundFn: Fn(P) -> bool,
         P: PosT,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
         P: Ord,
         P: Copy,

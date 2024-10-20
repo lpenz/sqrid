@@ -5,15 +5,16 @@
 //! Position as a trait
 
 use super::error::Error;
+use super::num::Num;
 
 /// Position trait
 pub trait PosT {
     // User parameters:
 
     /// The type of the X coordinate
-    type Xtype;
+    type Xtype: Num;
     /// The type of the Y coordinate
-    type Ytype;
+    type Ytype: Num;
 
     /// Zero with the appropriate type
     const XMIN: Self::Xtype;
@@ -94,15 +95,11 @@ pub trait PosT {
     #[inline]
     fn tryfrom_pos<P: PosT>(pos: P) -> Result<Self, Error>
     where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        Self::Xtype: TryFrom<usize>,
-        Self::Ytype: TryFrom<usize>,
         Self: std::marker::Sized,
     {
         let t = pos.tuple();
-        let x: usize = t.0.into();
-        let y: usize = t.1.into();
+        let x = t.0.to_usize();
+        let y = t.1.to_usize();
         let x = x.try_into().map_err(|_| Error::OutOfBounds)?;
         let y = y.try_into().map_err(|_| Error::OutOfBounds)?;
         Self::new(x, y)
@@ -110,31 +107,21 @@ pub trait PosT {
 
     /// Return the width (x) supported by the position type
     #[inline]
-    fn width() -> usize
-    where
-        Self::Xtype: Into<usize>,
-    {
-        let w: usize = Self::XMAX.into();
+    fn width() -> usize {
+        let w: usize = Self::XMAX.to_usize();
         w + 1
     }
 
     /// Return the height (y) supported by the position type
     #[inline]
-    fn height() -> usize
-    where
-        Self::Ytype: Into<usize>,
-    {
-        let h: usize = Self::YMAX.into();
+    fn height() -> usize {
+        let h: usize = Self::YMAX.to_usize();
         h + 1
     }
 
     /// Return the total dimension supported by the position type
     #[inline]
-    fn dimensions() -> usize
-    where
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
-    {
+    fn dimensions() -> usize {
         Self::width() * Self::height()
     }
 
@@ -158,22 +145,14 @@ pub trait PosT {
 
     /// Return true if self is a corner of the grid.
     #[inline]
-    fn is_corner(&self) -> bool
-    where
-        Self::Xtype: Eq,
-        Self::Ytype: Eq,
-    {
+    fn is_corner(&self) -> bool {
         (self.x() == Self::XMIN || self.x() == Self::XMAX)
             && (self.y() == Self::YMIN || self.y() == Self::YMAX)
     }
 
     /// Return true if self is on the side of the grid.
     #[inline]
-    fn is_side(&self) -> bool
-    where
-        Self::Xtype: Eq,
-        Self::Ytype: Eq,
-    {
+    fn is_side(&self) -> bool {
         self.x() == Self::XMIN
             || self.x() == Self::XMAX
             || self.y() == Self::YMIN
@@ -185,7 +164,6 @@ pub trait PosT {
     fn flip_h(&self) -> Self
     where
         Self: std::marker::Sized,
-        Self::Xtype: std::ops::Sub<Output = Self::Xtype>,
     {
         Self::new(Self::XMAX - self.x(), self.y()).unwrap()
     }
@@ -195,32 +173,23 @@ pub trait PosT {
     fn flip_v(&self) -> Self
     where
         Self: std::marker::Sized,
-        Self::Ytype: std::ops::Sub<Output = Self::Ytype>,
     {
         Self::new(self.x(), Self::YMAX - self.y()).unwrap()
     }
 
     /// Return the manhattan distance
-    fn manhattan(&self, pos: &Self) -> usize
-    where
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
-    {
-        let x1u: usize = self.x().into();
-        let x2u: usize = pos.x().into();
-        let y1u: usize = self.y().into();
-        let y2u: usize = pos.y().into();
+    fn manhattan(&self, pos: &Self) -> usize {
+        let x1u: usize = self.x().to_usize();
+        let x2u: usize = pos.x().to_usize();
+        let y1u: usize = self.y().to_usize();
+        let y2u: usize = pos.y().to_usize();
         let dx = if x1u > x2u { x1u - x2u } else { x2u - x1u };
         let dy = if y1u > y2u { y1u - y2u } else { y2u - y1u };
         dx + dy
     }
 
     /// Check that the position is inside the provided limits
-    fn inside(&self, pos1: &Self, pos2: &Self) -> bool
-    where
-        Self::Xtype: PartialOrd,
-        Self::Ytype: PartialOrd,
-    {
+    fn inside(&self, pos1: &Self, pos2: &Self) -> bool {
         let (xmin, xmax) = if pos1.x() < pos2.x() {
             (pos1.x(), pos2.x())
         } else {
@@ -236,12 +205,8 @@ pub trait PosT {
 
     /// Return a usize index corresponding to the position.
     #[inline]
-    fn to_usize(&self) -> usize
-    where
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
-    {
-        self.y().into() * (Self::XMAX.into() + 1) + self.x().into()
+    fn to_usize(&self) -> usize {
+        self.y().to_usize() * (Self::XMAX.to_usize() + 1) + self.x().to_usize()
     }
 
     /// Create a new position from the provided `usize`, if possible;
@@ -250,11 +215,8 @@ pub trait PosT {
     fn tryfrom_usize(i: usize) -> Result<Self, Error>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Into<usize>,
-        Self::Xtype: TryFrom<usize>,
-        Self::Ytype: TryFrom<usize>,
     {
-        let width = Self::XMAX.into() + 1;
+        let width = Self::XMAX.to_usize() + 1;
         let x = (i % width).try_into().map_err(|_| Error::OutOfBounds)?;
         let y = (i / width).try_into().map_err(|_| Error::OutOfBounds)?;
         Self::new(x, y)
@@ -266,20 +228,13 @@ pub trait PosT {
     fn next(&self) -> Option<Self>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
-        Self::Xtype: TryFrom<usize>,
-        Self::Ytype: TryFrom<usize>,
     {
         let i = self.to_usize() + 1;
         Self::tryfrom_usize(i).ok()
     }
 
     /// Returns an iterator over valid X values
-    fn iter_x() -> impl Iterator<Item = Self::Xtype>
-    where
-        Self::Xtype: TryFrom<usize>,
-    {
+    fn iter_x() -> impl Iterator<Item = Self::Xtype> {
         (0..Self::WIDTH).map(|x| {
             // SAFE by construction
             let Ok(x) = x.try_into() else { panic!() };
@@ -288,10 +243,7 @@ pub trait PosT {
     }
 
     /// Returns an iterator over valid Y values
-    fn iter_y() -> impl Iterator<Item = Self::Ytype>
-    where
-        Self::Ytype: TryFrom<usize>,
-    {
+    fn iter_y() -> impl Iterator<Item = Self::Ytype> {
         (0..Self::HEIGHT).map(|y| {
             // SAFE by construction
             let Ok(y) = y.try_into() else { panic!() };
@@ -304,8 +256,6 @@ pub trait PosT {
     fn iter() -> PosTIter<Self>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
     {
         PosTIter::<Self>::new_horizontal()
     }
@@ -315,8 +265,6 @@ pub trait PosT {
     fn iter_horizontal() -> PosTIter<Self>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
     {
         PosTIter::<Self>::new_horizontal()
     }
@@ -326,8 +274,6 @@ pub trait PosT {
     fn iter_vertical() -> PosTIter<Self>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
     {
         PosTIter::<Self>::new_vertical()
     }
@@ -337,12 +283,6 @@ pub trait PosT {
     fn iter_range(topleft: Self, botright: Self) -> PosTIterRange<Self>
     where
         Self: std::marker::Sized + Copy,
-        Self::Xtype: Into<usize>,
-        Self::Ytype: Into<usize>,
-        Self::Xtype: TryFrom<usize>,
-        Self::Ytype: TryFrom<usize>,
-        Self::Xtype: PartialOrd,
-        Self::Ytype: PartialOrd,
     {
         PosTIterRange::<Self>::new(topleft, botright)
     }
@@ -351,9 +291,6 @@ pub trait PosT {
     fn iter_in_x(x: Self::Xtype) -> Option<PosTIterInX<Self>>
     where
         Self: std::marker::Sized,
-        Self::Ytype: Default,
-        Self::Ytype: Into<usize>,
-        Self::Ytype: TryFrom<usize>,
     {
         Self::new(x, Default::default())
             .map(|p| PosTIterInX::<Self>(Some(p)))
@@ -364,9 +301,6 @@ pub trait PosT {
     fn iter_in_y(y: Self::Ytype) -> Option<PosTIterInY<Self>>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Default,
-        Self::Xtype: Into<usize>,
-        Self::Xtype: TryFrom<usize>,
     {
         Self::new(Default::default(), y)
             .map(|p| PosTIterInY::<Self>(Some(p)))
@@ -377,8 +311,6 @@ pub trait PosT {
     fn tlbr_of(mut iter: impl Iterator<Item = Self>) -> Result<(Self, Self), Error>
     where
         Self: std::marker::Sized,
-        Self::Xtype: Copy + PartialOrd,
-        Self::Ytype: Copy + PartialOrd,
     {
         if let Some(firstpos) = iter.next() {
             let (tl_tuple, br_tuple) =
@@ -420,11 +352,7 @@ pub struct PosTIter<P> {
 
 impl<P: PosT> PosTIter<P> {
     /// Creates a position iterator structure for horizontal traversal.
-    pub fn new_horizontal() -> Self
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn new_horizontal() -> Self {
         PosTIter {
             cur: 0,
             end: P::dimensions(),
@@ -434,11 +362,7 @@ impl<P: PosT> PosTIter<P> {
     }
 
     /// Creates a Pos iterator structure for vertical traversal.
-    pub fn new_vertical() -> Self
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn new_vertical() -> Self {
         PosTIter {
             cur: 0,
             end: P::dimensions(),
@@ -447,14 +371,7 @@ impl<P: PosT> PosTIter<P> {
         }
     }
 
-    fn pos(&self, i: usize) -> P
-    where
-        P: std::marker::Sized,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-    {
+    fn pos(&self, i: usize) -> P {
         let width = P::width();
         let height = P::height();
         if self.xfirst {
@@ -473,23 +390,13 @@ impl<P: PosT> PosTIter<P> {
     }
 }
 
-impl<P: PosT> Default for PosTIter<P>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<P: PosT> Default for PosTIter<P> {
     fn default() -> Self {
         Self::new_horizontal()
     }
 }
 
-impl<P: PosT> Iterator for PosTIter<P>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-    P::Xtype: TryFrom<usize>,
-    P::Ytype: TryFrom<usize>,
-{
+impl<P: PosT> Iterator for PosTIter<P> {
     type Item = P;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -508,13 +415,7 @@ where
     }
 }
 
-impl<P: PosT> DoubleEndedIterator for PosTIter<P>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-    P::Xtype: TryFrom<usize>,
-    P::Ytype: TryFrom<usize>,
-{
+impl<P: PosT> DoubleEndedIterator for PosTIter<P> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.end == self.cur {
@@ -539,16 +440,10 @@ pub struct PosTIterRange<P: PosT> {
     value: Option<P>,
 }
 
-impl<P> PosTIterRange<P>
-where
-    P: PosT,
-{
+impl<P: PosT + Copy> PosTIterRange<P> {
     /// Create a new [`PosTIterRange`] for the given top-left and
     /// bottom-right corners (inclusive).
-    pub fn new(topleft: P, botright: P) -> Self
-    where
-        P: Copy,
-    {
+    pub fn new(topleft: P, botright: P) -> Self {
         PosTIterRange {
             topleft,
             botright,
@@ -557,16 +452,7 @@ where
     }
 }
 
-impl<P> Iterator for PosTIterRange<P>
-where
-    P: PosT,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-    P::Xtype: TryFrom<usize>,
-    P::Ytype: TryFrom<usize>,
-    P::Xtype: PartialOrd,
-    P::Ytype: PartialOrd,
-{
+impl<P: PosT> Iterator for PosTIterRange<P> {
     type Item = P;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.value.take() {
@@ -575,7 +461,7 @@ where
                 if p.x() < self.topleft.x() {
                     pos = P::new(self.topleft.x(), p.y()).ok();
                 } else if p.x() > self.botright.x() {
-                    let y: usize = p.y().into() + 1;
+                    let y: usize = p.y().to_usize() + 1;
                     pos = P::new(self.topleft.x(), y.try_into().ok()?).ok();
                 }
             }
@@ -586,10 +472,10 @@ where
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let xmin: usize = self.topleft.x().into();
-        let xmax: usize = self.botright.x().into();
-        let ymin: usize = self.topleft.x().into();
-        let ymax: usize = self.botright.y().into();
+        let xmin: usize = self.topleft.x().to_usize();
+        let xmax: usize = self.botright.x().to_usize();
+        let ymin: usize = self.topleft.x().to_usize();
+        let ymax: usize = self.botright.y().to_usize();
         let xrange = xmax - xmin + 1;
         let yrange = ymax - ymin + 1;
         let size = xrange * yrange;
@@ -605,15 +491,11 @@ where
 #[derive(Debug, Clone, Copy)]
 pub struct PosTIterInX<P: PosT>(Option<P>);
 
-impl<P: PosT> Iterator for PosTIterInX<P>
-where
-    P::Ytype: Into<usize>,
-    P::Ytype: TryFrom<usize>,
-{
+impl<P: PosT> Iterator for PosTIterInX<P> {
     type Item = P;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.0.take() {
-            let mut y: usize = pos0.y().into();
+            let mut y: usize = pos0.y().to_usize();
             y += 1;
             let y = y.try_into().ok()?;
             self.0 = P::new(pos0.x(), y).ok();
@@ -634,16 +516,12 @@ where
 #[derive(Debug, Clone, Copy)]
 pub struct PosTIterInY<P: PosT>(Option<P>);
 
-impl<P: PosT> Iterator for PosTIterInY<P>
-where
-    P::Xtype: Into<usize>,
-    P::Xtype: TryFrom<usize>,
-{
+impl<P: PosT> Iterator for PosTIterInY<P> {
     type Item = P;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.0.take() {
-            let mut x: usize = pos0.x().into();
+            let mut x: usize = pos0.x().to_usize();
             x += 1;
             let x = x.try_into().ok()?;
             self.0 = P::new(x, pos0.y()).ok();

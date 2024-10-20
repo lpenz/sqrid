@@ -99,33 +99,21 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
 
     /// Set the provided [`Pos`] position to `true`.
     #[inline]
-    pub fn set_t(&mut self, posref: &P)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn set_t(&mut self, posref: &P) {
         let (byte, bit) = Self::byte_bit(posref.to_usize());
         self.0[byte] |= bit;
     }
 
     /// Set the provided [`Pos`] position to `false`.
     #[inline]
-    pub fn set_f(&mut self, posref: &P)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn set_f(&mut self, posref: &P) {
         let (byte, bit) = Self::byte_bit(posref.to_usize());
         self.0[byte] &= !bit;
     }
 
     /// Set the provided [`Pos`] position to `value`.
     #[inline]
-    pub fn set(&mut self, posref: &P, value: bool)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn set(&mut self, posref: &P, value: bool) {
         if value {
             self.set_t(posref)
         } else {
@@ -135,11 +123,7 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
 
     /// Return the value at position [`Pos`].
     #[inline]
-    pub fn get(&self, posref: &P) -> bool
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn get(&self, posref: &P) -> bool {
         let (byte, bit) = Self::byte_bit(posref.to_usize());
         self.0[byte] & bit != 0
     }
@@ -175,46 +159,26 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
     #[inline]
     pub fn iter_pos(&self) -> impl iter::Iterator<Item = (P, bool)> + '_
     where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
         P: Copy,
     {
-        P::iter().map(move |pos| (pos, self[pos]))
+        P::iter().map(move |pos| (pos, { self[pos] }))
     }
 
     /// Iterate over all `true` coordinates the `Gridbool`.
     #[inline]
-    pub fn iter_t(&self) -> impl Iterator<Item = P> + '_
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-    {
+    pub fn iter_t(&self) -> impl Iterator<Item = P> + '_ {
         P::iter().filter(move |pos| self[pos])
     }
 
     /// Iterate over all `false` coordinates the `Gridbool`.
     #[inline]
-    pub fn iter_f(&self) -> impl Iterator<Item = P> + '_
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-    {
+    pub fn iter_f(&self) -> impl Iterator<Item = P> + '_ {
         P::iter().filter(move |pos| !self[pos])
     }
 
     /// Take a [`Pos`] iterator and set all corresponding values to `true`.
     #[inline]
-    pub fn set_iter_t(&mut self, positer: impl Iterator<Item = P>)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn set_iter_t(&mut self, positer: impl Iterator<Item = P>) {
         for pos in positer {
             self.set_t(&pos);
         }
@@ -222,26 +186,14 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
 
     /// Take a [`Pos`] iterator and set all corresponding values to `false`.
     #[inline]
-    pub fn set_iter_f(&mut self, positer: impl Iterator<Item = P>)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn set_iter_f(&mut self, positer: impl Iterator<Item = P>) {
         for pos in positer {
             self.set_f(&pos);
         }
     }
 
     /// Flip all elements horizontally.
-    pub fn flip_h(&mut self)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-        P::Xtype: std::ops::Sub<Output = P::Xtype>,
-        P::Ytype: Copy,
-    {
+    pub fn flip_h(&mut self) {
         for y in P::iter_y() {
             for x in 0..P::width() / 2 {
                 let Ok(x) = x.try_into() else { panic!() };
@@ -255,15 +207,7 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
     }
 
     /// Flip all elements vertically.
-    pub fn flip_v(&mut self)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-        P::Ytype: std::ops::Sub<Output = P::Ytype>,
-        P::Ytype: Copy,
-    {
+    pub fn flip_v(&mut self) {
         for y in 0..P::height() / 2 {
             let Ok(y) = y.try_into() else { panic!() };
             for x in P::iter_x() {
@@ -331,11 +275,7 @@ impl<P: PosT, const WORDS: usize> Default for Gridbool<P, WORDS> {
 
 // Indexing
 
-impl<P: PosT, const WORDS: usize> ops::Index<&P> for Gridbool<P, WORDS>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<P: PosT, const WORDS: usize> ops::Index<&P> for Gridbool<P, WORDS> {
     type Output = bool;
     #[inline]
     fn index(&self, pos: &P) -> &Self::Output {
@@ -349,11 +289,7 @@ where
     }
 }
 
-impl<P: PosT, const WORDS: usize> ops::Index<P> for Gridbool<P, WORDS>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<P: PosT, const WORDS: usize> ops::Index<P> for Gridbool<P, WORDS> {
     type Output = bool;
     #[inline]
     fn index(&self, pos: P) -> &Self::Output {
@@ -369,11 +305,7 @@ where
 
 // from_iter
 
-impl<P: PosT, const WORDS: usize> iter::FromIterator<P> for Gridbool<P, WORDS>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<P: PosT, const WORDS: usize> iter::FromIterator<P> for Gridbool<P, WORDS> {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
@@ -385,13 +317,7 @@ where
     }
 }
 
-impl<P: PosT, const WORDS: usize> iter::FromIterator<bool> for Gridbool<P, WORDS>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-    P::Xtype: TryFrom<usize>,
-    P::Ytype: TryFrom<usize>,
-{
+impl<P: PosT, const WORDS: usize> iter::FromIterator<bool> for Gridbool<P, WORDS> {
     #[inline]
     fn from_iter<I>(iter: I) -> Self
     where

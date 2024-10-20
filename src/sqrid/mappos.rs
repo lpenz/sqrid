@@ -40,8 +40,6 @@ pub trait MapPos<Item, P: PosT, const WORDS: usize, const SIZE: usize> {
 impl<Item, P: PosT, const WORDS: usize, const SIZE: usize> MapPos<Item, P, WORDS, SIZE>
     for Grid<Item, P, SIZE>
 where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     Item: Copy,
 {
     fn new(item: Item) -> Self {
@@ -105,8 +103,6 @@ where
     P: Copy,
     P: PartialEq,
     P: std::ops::Add<Dir, Output = Result<P, Error>>,
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE>,
 {
     let distance = orig.manhattan(dest);
@@ -147,8 +143,6 @@ impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: 
         P: Copy,
         P: PartialEq,
         P: std::ops::Add<Dir, Output = Result<P, Error>>,
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
         MapPosDir: MapPos<Option<Dir>, P, WORDS, SIZE>,
     {
         super::camefrom_into_path(map, orig, dest)

@@ -32,11 +32,7 @@ pub trait SetPos<P: PosT, const WORDS: usize, const SIZE: usize> {
     }
 }
 
-impl<P: PosT, const WORDS: usize, const SIZE: usize> SetPos<P, WORDS, SIZE> for Gridbool<P, WORDS>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<P: PosT, const WORDS: usize, const SIZE: usize> SetPos<P, WORDS, SIZE> for Gridbool<P, WORDS> {
     fn contains(&self, pos: &P) -> bool {
         self.get(pos)
     }
@@ -51,8 +47,6 @@ where
 impl<P: PosT, const WORDS: usize, const SIZE: usize> SetPos<P, WORDS, SIZE>
     for collections::HashSet<P>
 where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: Eq + std::hash::Hash,
 {
     fn contains(&self, pos: &P) -> bool {
@@ -69,8 +63,6 @@ where
 impl<P: PosT, const WORDS: usize, const SIZE: usize> SetPos<P, WORDS, SIZE>
     for collections::BTreeSet<P>
 where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: Ord,
 {
     fn contains(&self, pos: &P) -> bool {

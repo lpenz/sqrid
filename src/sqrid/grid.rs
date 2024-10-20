@@ -16,6 +16,7 @@ use std::iter;
 use std::ops;
 
 use super::error::Error;
+use super::num::Num;
 use super::pos::Pos;
 use super::postrait::PosT;
 
@@ -101,13 +102,9 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
 
     /// Return a specific grid line as a reference to a slice
     #[inline]
-    pub fn line(&self, lineno: P::Ytype) -> &[T]
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn line(&self, lineno: P::Ytype) -> &[T] {
         let width: usize = P::width();
-        let start = lineno.into() * width;
+        let start = lineno.to_usize() * width;
         let end = start + width;
         &self.0[start..end]
     }
@@ -116,13 +113,9 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     ///
     /// Allows quick assignment operations on whole lines.
     #[inline]
-    pub fn line_mut(&mut self, lineno: P::Ytype) -> &mut [T]
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn line_mut(&mut self, lineno: P::Ytype) -> &mut [T] {
         let width: usize = P::width();
-        let start = lineno.into() * width;
+        let start = lineno.to_usize() * width;
         let end = start + width;
         &mut self.0[start..end]
     }
@@ -132,11 +125,7 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     /// We use get_unchecked internally, because we guarantee the
     /// validity of the Pos index on construction.
     #[inline]
-    pub fn get(&self, pos: &P) -> &T
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn get(&self, pos: &P) -> &T {
         unsafe { self.0.get_unchecked(pos.to_usize()) }
     }
 
@@ -145,11 +134,7 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     /// We use get_unchecked internally, because we guarantee the
     /// validity of the Pos index on construction.
     #[inline]
-    pub fn get_mut(&mut self, pos: &P) -> &mut T
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-    {
+    pub fn get_mut(&mut self, pos: &P) -> &mut T {
         unsafe { self.0.get_unchecked_mut(pos.to_usize()) }
     }
 
@@ -169,25 +154,13 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     #[inline]
     pub fn iter_pos(&self) -> impl iter::Iterator<Item = (P, &'_ T)>
     where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
         P: Copy,
     {
         P::iter().map(move |pos| (pos, &self[pos]))
     }
 
     /// Flip all elements horizontally.
-    pub fn flip_h(&mut self)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-        P::Xtype: std::ops::Sub<Output = P::Xtype>,
-        P::Ytype: Copy,
-    {
+    pub fn flip_h(&mut self) {
         for y in P::iter_y() {
             for x in 0..P::width() / 2 {
                 let Ok(x) = x.try_into() else { panic!() };
@@ -199,15 +172,7 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     }
 
     /// Flip all elements vertically.
-    pub fn flip_v(&mut self)
-    where
-        P::Xtype: Into<usize>,
-        P::Ytype: Into<usize>,
-        P::Xtype: TryFrom<usize>,
-        P::Ytype: TryFrom<usize>,
-        P::Ytype: std::ops::Sub<Output = P::Ytype>,
-        P::Ytype: Copy,
-    {
+    pub fn flip_v(&mut self) {
         for y in 0..P::height() / 2 {
             let Ok(y) = y.try_into() else { panic!() };
             for x in P::iter_x() {
@@ -280,13 +245,7 @@ where
 
 // TryFrom
 
-impl<T: Default, P: PosT, const SIZE: usize> TryFrom<Vec<Vec<T>>> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-    P::Xtype: TryFrom<usize>,
-    P::Ytype: TryFrom<usize>,
-{
+impl<T: Default, P: PosT, const SIZE: usize> TryFrom<Vec<Vec<T>>> for Grid<T, P, SIZE> {
     type Error = Error;
     #[inline]
     fn try_from(mut vec: Vec<Vec<T>>) -> Result<Self, Self::Error> {
@@ -297,8 +256,8 @@ where
             std::array::from_fn(|i| {
                 let pos = P::tryfrom_usize(i).unwrap();
                 let t = pos.tuple();
-                let t = (t.0.into(), t.1.into());
-                if t.1 < vec.len() && t.0 < vec[t.1].len() {
+                let t = (t.0.to_usize(), t.1.to_usize());
+                if t.1 < vec.len() && t.0 < vec[t.1.to_usize()].len() {
                     std::mem::take(&mut vec[t.1][t.0])
                 } else {
                     T::default()
@@ -311,11 +270,7 @@ where
 
 // Indexing
 
-impl<T, P: PosT, const SIZE: usize> ops::Index<P> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<T, P: PosT, const SIZE: usize> ops::Index<P> for Grid<T, P, SIZE> {
     type Output = T;
     #[inline]
     fn index(&self, pos: P) -> &Self::Output {
@@ -323,11 +278,7 @@ where
     }
 }
 
-impl<T, P: PosT, const SIZE: usize> ops::Index<&P> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<T, P: PosT, const SIZE: usize> ops::Index<&P> for Grid<T, P, SIZE> {
     type Output = T;
     #[inline]
     fn index(&self, pos: &P) -> &Self::Output {
@@ -335,22 +286,14 @@ where
     }
 }
 
-impl<T, P: PosT, const SIZE: usize> ops::IndexMut<P> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<T, P: PosT, const SIZE: usize> ops::IndexMut<P> for Grid<T, P, SIZE> {
     #[inline]
     fn index_mut(&mut self, pos: P) -> &mut T {
         self.get_mut(&pos)
     }
 }
 
-impl<T, P: PosT, const SIZE: usize> ops::IndexMut<&P> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<T, P: PosT, const SIZE: usize> ops::IndexMut<&P> for Grid<T, P, SIZE> {
     #[inline]
     fn index_mut(&mut self, pos: &P) -> &mut T {
         self.get_mut(pos)
@@ -456,11 +399,7 @@ impl<T: Default, P: PosT, const SIZE: usize> iter::FromIterator<T> for Grid<T, P
 
 // Extend
 
-impl<T, P: PosT, const SIZE: usize> iter::Extend<(P, T)> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<T, P: PosT, const SIZE: usize> iter::Extend<(P, T)> for Grid<T, P, SIZE> {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
@@ -472,11 +411,7 @@ where
     }
 }
 
-impl<'a, T: 'a + Copy, P: PosT, const SIZE: usize> iter::Extend<(P, &'a T)> for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<'a, T: 'a + Copy, P: PosT, const SIZE: usize> iter::Extend<(P, &'a T)> for Grid<T, P, SIZE> {
     #[inline]
     fn extend<I>(&mut self, iter: I)
     where
@@ -490,8 +425,6 @@ where
 
 impl<'a, T: 'a + Copy, P: PosT, const SIZE: usize> iter::Extend<&'a (P, T)> for Grid<T, P, SIZE>
 where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
     P: Copy,
 {
     #[inline]
@@ -570,11 +503,7 @@ pub fn display_fmt_helper(
 /// to print an ascii-like grid.
 /// It does that in one pass, and uses the padding parameter as the
 /// size to reserve for each member.
-impl<T: fmt::Display, P: PosT, const SIZE: usize> fmt::Display for Grid<T, P, SIZE>
-where
-    P::Xtype: Into<usize>,
-    P::Ytype: Into<usize>,
-{
+impl<T: fmt::Display, P: PosT, const SIZE: usize> fmt::Display for Grid<T, P, SIZE> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         display_fmt_helper(
             f,
