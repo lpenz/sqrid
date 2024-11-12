@@ -13,6 +13,7 @@ use std::fmt;
 use std::ops;
 
 use super::error::Error;
+use super::num::Num;
 
 /// Direction type.
 ///
@@ -319,73 +320,29 @@ impl<const D: bool> Iterator for DirIter<D> {
 
 /* Generic Tuple + Dir -> Result<Tuple, Error> */
 
-/// Numeric increment/decrement trait used to implement
-/// [`std::ops::Add`] between a tuple and a `Dir`.
-pub trait IncDecNum
-where
-    Self: std::marker::Sized,
-{
-    /// Return the argument incremented by 1, if possible; otherwise
-    /// return [`Error::OutOfBounds`]
-    fn inc(num: Self) -> Result<Self, Error>;
-    /// Return the argument decremented by 1, if possible; otherwise
-    /// return [`Error::OutOfBounds`]
-    fn dec(num: Self) -> Result<Self, Error>;
-}
-
-macro_rules! incdecnum_impl {
-    ($num_type:ty, $min:expr, $max:expr) => {
-        impl IncDecNum for $num_type {
-            #[inline]
-            fn inc(num: Self) -> Result<Self, Error> {
-                (num != $max).then(|| num + 1).ok_or(Error::OutOfBounds)
-            }
-            #[inline]
-            fn dec(num: Self) -> Result<Self, Error> {
-                (num != $min).then(|| num - 1).ok_or(Error::OutOfBounds)
-            }
-        }
-    };
-}
-
-incdecnum_impl!(usize, usize::MIN, usize::MAX);
-incdecnum_impl!(u8, u8::MIN, u8::MAX);
-incdecnum_impl!(u16, u16::MIN, u16::MAX);
-incdecnum_impl!(u32, u32::MIN, u32::MAX);
-incdecnum_impl!(u64, u64::MIN, u64::MAX);
-incdecnum_impl!(u128, u128::MIN, u128::MAX);
-incdecnum_impl!(isize, isize::MIN, isize::MAX);
-incdecnum_impl!(i8, i8::MIN, i8::MAX);
-incdecnum_impl!(i16, i16::MIN, i16::MAX);
-incdecnum_impl!(i32, i32::MIN, i32::MAX);
-incdecnum_impl!(i64, i64::MIN, i64::MAX);
-incdecnum_impl!(i128, i128::MIN, i128::MAX);
-
-impl<NumType> ops::Add<Dir> for (NumType, NumType)
-where
-    NumType: Copy + IncDecNum,
-{
+impl<NumType: Num> ops::Add<Dir> for (NumType, NumType) {
     type Output = Result<(NumType, NumType), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
         let (p0, p1) = self;
-        Ok(match rhs {
-            Dir::N => (p0, NumType::dec(p1)?),
-            Dir::NE => (NumType::inc(p0)?, NumType::dec(p1)?),
-            Dir::E => (NumType::inc(p0)?, p1),
-            Dir::SE => (NumType::inc(p0)?, NumType::inc(p1)?),
-            Dir::S => (p0, NumType::inc(p1)?),
-            Dir::SW => (NumType::dec(p0)?, NumType::inc(p1)?),
-            Dir::W => (NumType::dec(p0)?, p1),
-            Dir::NW => (NumType::dec(p0)?, NumType::dec(p1)?),
-        })
+        let (x_opt, y_opt) = match rhs {
+            Dir::N => (Some(p0), NumType::dec(p1)),
+            Dir::NE => (NumType::inc(p0), NumType::dec(p1)),
+            Dir::E => (NumType::inc(p0), Some(p1)),
+            Dir::SE => (NumType::inc(p0), NumType::inc(p1)),
+            Dir::S => (Some(p0), NumType::inc(p1)),
+            Dir::SW => (NumType::dec(p0), NumType::inc(p1)),
+            Dir::W => (NumType::dec(p0), Some(p1)),
+            Dir::NW => (NumType::dec(p0), NumType::dec(p1)),
+        };
+        Ok((
+            x_opt.ok_or(Error::OutOfBounds)?,
+            y_opt.ok_or(Error::OutOfBounds)?,
+        ))
     }
 }
 
-impl<NumType> ops::Add<Dir> for &(NumType, NumType)
-where
-    NumType: Copy + IncDecNum,
-{
+impl<NumType: Num> ops::Add<Dir> for &(NumType, NumType) {
     type Output = Result<(NumType, NumType), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
