@@ -98,8 +98,8 @@ pub trait PosT {
         Self: std::marker::Sized,
     {
         let t = pos.tuple();
-        let x = t.0.to_usize();
-        let y = t.1.to_usize();
+        let x: usize = t.0.try_into().map_err(|_| Error::OutOfBounds)?;
+        let y: usize = t.1.try_into().map_err(|_| Error::OutOfBounds)?;
         let x = x.try_into().map_err(|_| Error::OutOfBounds)?;
         let y = y.try_into().map_err(|_| Error::OutOfBounds)?;
         Self::new(x, y)
@@ -108,14 +108,18 @@ pub trait PosT {
     /// Return the width (x) supported by the position type
     #[inline]
     fn width() -> usize {
-        let w: usize = Self::XMAX.to_usize();
+        let Ok(w) = Self::XMAX.try_into() else {
+            panic!()
+        };
         w + 1
     }
 
     /// Return the height (y) supported by the position type
     #[inline]
     fn height() -> usize {
-        let h: usize = Self::YMAX.to_usize();
+        let Ok(h) = Self::YMAX.try_into() else {
+            panic!()
+        };
         h + 1
     }
 
@@ -179,12 +183,18 @@ pub trait PosT {
 
     /// Return the manhattan distance
     fn manhattan(&self, pos: &Self) -> usize {
-        let x1u: usize = self.x().to_usize();
-        let x2u: usize = pos.x().to_usize();
-        let y1u: usize = self.y().to_usize();
-        let y2u: usize = pos.y().to_usize();
-        let dx = if x1u > x2u { x1u - x2u } else { x2u - x1u };
-        let dy = if y1u > y2u { y1u - y2u } else { y2u - y1u };
+        let dx = if self.x() > pos.x() {
+            self.x() - pos.x()
+        } else {
+            pos.x() - self.x()
+        };
+        let dy = if self.y() > pos.y() {
+            self.y() - pos.y()
+        } else {
+            pos.y() - self.y()
+        };
+        let Ok(dx) = dx.try_into() else { panic!() };
+        let Ok(dy) = dy.try_into() else { panic!() };
         dx + dy
     }
 
@@ -206,7 +216,9 @@ pub trait PosT {
     /// Return a usize index corresponding to the position.
     #[inline]
     fn to_usize(&self) -> usize {
-        self.y().to_usize() * (Self::XMAX.to_usize() + 1) + self.x().to_usize()
+        let Ok(y) = self.y().try_into() else { panic!() };
+        let Ok(x) = self.x().try_into() else { panic!() };
+        y * Self::width() + x
     }
 
     /// Create a new position from the provided `usize`, if possible;
@@ -216,7 +228,7 @@ pub trait PosT {
     where
         Self: std::marker::Sized,
     {
-        let width = Self::XMAX.to_usize() + 1;
+        let width = Self::width();
         let x = (i % width).try_into().map_err(|_| Error::OutOfBounds)?;
         let y = (i / width).try_into().map_err(|_| Error::OutOfBounds)?;
         Self::new(x, y)
@@ -461,8 +473,8 @@ impl<P: PosT> Iterator for PosTIterRange<P> {
                 if p.x() < self.topleft.x() {
                     pos = P::new(self.topleft.x(), p.y()).ok();
                 } else if p.x() > self.botright.x() {
-                    let y: usize = p.y().to_usize() + 1;
-                    pos = P::new(self.topleft.x(), y.try_into().ok()?).ok();
+                    let y = p.y().inc()?;
+                    pos = P::new(self.topleft.x(), y).ok();
                 }
             }
             self.value = pos.filter(|p| p.y() <= self.botright.y());
@@ -472,13 +484,7 @@ impl<P: PosT> Iterator for PosTIterRange<P> {
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let xmin: usize = self.topleft.x().to_usize();
-        let xmax: usize = self.botright.x().to_usize();
-        let ymin: usize = self.topleft.x().to_usize();
-        let ymax: usize = self.botright.y().to_usize();
-        let xrange = xmax - xmin + 1;
-        let yrange = ymax - ymin + 1;
-        let size = xrange * yrange;
+        let size = P::width() * P::height();
         (size, Some(size))
     }
 }
@@ -495,9 +501,7 @@ impl<P: PosT> Iterator for PosTIterInX<P> {
     type Item = P;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.0.take() {
-            let mut y: usize = pos0.y().to_usize();
-            y += 1;
-            let y = y.try_into().ok()?;
+            let y = pos0.y().inc()?;
             self.0 = P::new(pos0.x(), y).ok();
             Some(pos0)
         } else {
@@ -521,9 +525,7 @@ impl<P: PosT> Iterator for PosTIterInY<P> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.0.take() {
-            let mut x: usize = pos0.x().to_usize();
-            x += 1;
-            let x = x.try_into().ok()?;
+            let x = pos0.x().inc()?;
             self.0 = P::new(x, pos0.y()).ok();
             Some(pos0)
         } else {

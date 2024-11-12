@@ -16,7 +16,6 @@ use std::iter;
 use std::ops;
 
 use super::error::Error;
-use super::int::Int;
 use super::pos::Pos;
 use super::postrait::PosT;
 
@@ -103,8 +102,11 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     /// Return a specific grid line as a reference to a slice
     #[inline]
     pub fn line(&self, lineno: P::Ytype) -> &[T] {
-        let width: usize = P::width();
-        let start = lineno.to_usize() * width;
+        let width = P::width();
+        let Ok(lineno) = lineno.try_into() else {
+            panic!()
+        };
+        let start = lineno * width;
         let end = start + width;
         &self.0[start..end]
     }
@@ -115,7 +117,10 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     #[inline]
     pub fn line_mut(&mut self, lineno: P::Ytype) -> &mut [T] {
         let width: usize = P::width();
-        let start = lineno.to_usize() * width;
+        let Ok(lineno) = lineno.try_into() else {
+            panic!()
+        };
+        let start = lineno * width;
         let end = start + width;
         &mut self.0[start..end]
     }
@@ -255,10 +260,14 @@ impl<T: Default, P: PosT, const SIZE: usize> TryFrom<Vec<Vec<T>>> for Grid<T, P,
         Ok(Self(
             std::array::from_fn(|i| {
                 let pos = P::tryfrom_usize(i).unwrap();
-                let t = pos.tuple();
-                let t = (t.0.to_usize(), t.1.to_usize());
-                if t.1 < vec.len() && t.0 < vec[t.1.to_usize()].len() {
-                    std::mem::take(&mut vec[t.1][t.0])
+                let Ok(x) = pos.x().try_into() else {
+                    return T::default();
+                };
+                let Ok(y) = pos.y().try_into() else {
+                    return T::default();
+                };
+                if y < vec.len() && x < vec[y].len() {
+                    std::mem::take(&mut vec[y][x])
                 } else {
                     T::default()
                 }

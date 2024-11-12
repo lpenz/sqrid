@@ -72,12 +72,6 @@ pub trait Int:
     + Min
     + Max
 {
-    /// Convert the number into a usize or panic
-    fn to_usize(self) -> usize {
-        let Ok(r) = self.try_into() else { panic!() };
-        r
-    }
-
     /// Return the value `1` of the implementing type
     fn one() -> Self {
         true.into()
