@@ -4,7 +4,7 @@
 
 use sqrid;
 use sqrid::Dir;
-use sqrid::Num;
+use sqrid::Int;
 
 use anyhow::Result;
 use std::convert::TryFrom;
@@ -196,7 +196,7 @@ fn test_addassign() -> Result<()> {
 
 fn do_test_add_dir<T>(origin: (T, T)) -> Result<()>
 where
-    T: Num,
+    T: Int,
     (T, T): From<Dir>,
 {
     for dir in Dir::iter::<true>() {
@@ -219,7 +219,7 @@ fn test_add_dir() -> Result<()> {
     Ok(())
 }
 
-fn do_test_cycle<T: Num>(start: (T, T)) -> Result<()> {
+fn do_test_cycle<T: Int>(start: (T, T)) -> Result<()> {
     let mut pos = start;
     for dir in Dir::iter::<true>() {
         pos = (pos + dir)?;

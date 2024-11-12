@@ -16,7 +16,7 @@ use std::iter;
 use std::ops;
 
 use super::error::Error;
-use super::num::Num;
+use super::int::Int;
 use super::pos::Pos;
 use super::postrait::PosT;
 

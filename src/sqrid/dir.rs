@@ -13,7 +13,7 @@ use std::fmt;
 use std::ops;
 
 use super::error::Error;
-use super::num::Num;
+use super::int::Int;
 
 /// Direction type.
 ///
@@ -320,20 +320,20 @@ impl<const D: bool> Iterator for DirIter<D> {
 
 /* Generic Tuple + Dir -> Result<Tuple, Error> */
 
-impl<NumType: Num> ops::Add<Dir> for (NumType, NumType) {
-    type Output = Result<(NumType, NumType), Error>;
+impl<IntType: Int> ops::Add<Dir> for (IntType, IntType) {
+    type Output = Result<(IntType, IntType), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
         let (p0, p1) = self;
         let (x_opt, y_opt) = match rhs {
-            Dir::N => (Some(p0), NumType::dec(p1)),
-            Dir::NE => (NumType::inc(p0), NumType::dec(p1)),
-            Dir::E => (NumType::inc(p0), Some(p1)),
-            Dir::SE => (NumType::inc(p0), NumType::inc(p1)),
-            Dir::S => (Some(p0), NumType::inc(p1)),
-            Dir::SW => (NumType::dec(p0), NumType::inc(p1)),
-            Dir::W => (NumType::dec(p0), Some(p1)),
-            Dir::NW => (NumType::dec(p0), NumType::dec(p1)),
+            Dir::N => (Some(p0), IntType::dec(p1)),
+            Dir::NE => (IntType::inc(p0), IntType::dec(p1)),
+            Dir::E => (IntType::inc(p0), Some(p1)),
+            Dir::SE => (IntType::inc(p0), IntType::inc(p1)),
+            Dir::S => (Some(p0), IntType::inc(p1)),
+            Dir::SW => (IntType::dec(p0), IntType::inc(p1)),
+            Dir::W => (IntType::dec(p0), Some(p1)),
+            Dir::NW => (IntType::dec(p0), IntType::dec(p1)),
         };
         Ok((
             x_opt.ok_or(Error::OutOfBounds)?,
@@ -342,8 +342,8 @@ impl<NumType: Num> ops::Add<Dir> for (NumType, NumType) {
     }
 }
 
-impl<NumType: Num> ops::Add<Dir> for &(NumType, NumType) {
-    type Output = Result<(NumType, NumType), Error>;
+impl<IntType: Int> ops::Add<Dir> for &(IntType, IntType) {
+    type Output = Result<(IntType, IntType), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
         (*self) + rhs

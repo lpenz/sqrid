@@ -2,9 +2,9 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
-//! num trait that concentrates required numeric traits
+//! int trait that concentrates required integer traits
 //!
-//! These are required for numbers that are used as coordinates.
+//! These are required for integers that are used as coordinates.
 
 use std::fmt::Debug;
 
@@ -26,15 +26,15 @@ where
     fn max() -> Self;
 }
 
-macro_rules! minmaxnum_impl {
-    ($num_type:ty, $min:expr, $max:expr) => {
-        impl Min for $num_type {
+macro_rules! minmaxint_impl {
+    ($int_type:ty, $min:expr, $max:expr) => {
+        impl Min for $int_type {
             #[inline]
             fn min() -> Self {
                 $min
             }
         }
-        impl Max for $num_type {
+        impl Max for $int_type {
             #[inline]
             fn max() -> Self {
                 $max
@@ -43,22 +43,22 @@ macro_rules! minmaxnum_impl {
     };
 }
 
-minmaxnum_impl!(usize, usize::MIN, usize::MAX);
-minmaxnum_impl!(u8, u8::MIN, u8::MAX);
-minmaxnum_impl!(u16, u16::MIN, u16::MAX);
-minmaxnum_impl!(u32, u32::MIN, u32::MAX);
-minmaxnum_impl!(u64, u64::MIN, u64::MAX);
-minmaxnum_impl!(u128, u128::MIN, u128::MAX);
-minmaxnum_impl!(isize, isize::MIN, isize::MAX);
-minmaxnum_impl!(i8, i8::MIN, i8::MAX);
-minmaxnum_impl!(i16, i16::MIN, i16::MAX);
-minmaxnum_impl!(i32, i32::MIN, i32::MAX);
-minmaxnum_impl!(i64, i64::MIN, i64::MAX);
-minmaxnum_impl!(i128, i128::MIN, i128::MAX);
+minmaxint_impl!(usize, usize::MIN, usize::MAX);
+minmaxint_impl!(u8, u8::MIN, u8::MAX);
+minmaxint_impl!(u16, u16::MIN, u16::MAX);
+minmaxint_impl!(u32, u32::MIN, u32::MAX);
+minmaxint_impl!(u64, u64::MIN, u64::MAX);
+minmaxint_impl!(u128, u128::MIN, u128::MAX);
+minmaxint_impl!(isize, isize::MIN, isize::MAX);
+minmaxint_impl!(i8, i8::MIN, i8::MAX);
+minmaxint_impl!(i16, i16::MIN, i16::MAX);
+minmaxint_impl!(i32, i32::MIN, i32::MAX);
+minmaxint_impl!(i64, i64::MIN, i64::MAX);
+minmaxint_impl!(i128, i128::MIN, i128::MAX);
 
-/// The num trait concentrates all the required traits for position
+/// The int trait concentrates all the required traits for position
 /// components.
-pub trait Num:
+pub trait Int:
     Debug
     + Default
     + Eq
@@ -94,7 +94,7 @@ pub trait Num:
     }
 }
 
-impl<T> Num for T where
+impl<T> Int for T where
     T: Debug
         + Default
         + Eq

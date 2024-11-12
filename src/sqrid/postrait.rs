@@ -5,16 +5,16 @@
 //! Position as a trait
 
 use super::error::Error;
-use super::num::Num;
+use super::int::Int;
 
 /// Position trait
 pub trait PosT {
     // User parameters:
 
     /// The type of the X coordinate
-    type Xtype: Num;
+    type Xtype: Int;
     /// The type of the Y coordinate
-    type Ytype: Num;
+    type Ytype: Int;
 
     /// Zero with the appropriate type
     const XMIN: Self::Xtype;
