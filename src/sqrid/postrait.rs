@@ -246,8 +246,16 @@ pub trait PosT {
     where
         Self: std::marker::Sized,
     {
-        let i = self.to_usize() + 1;
-        Self::tryfrom_usize(i).ok()
+        if let Some(x) = self.x().inc() {
+            if let Ok(pos) = Self::new(x, self.y()) {
+                return Some(pos);
+            }
+        }
+        if let Some(y) = self.y().inc() {
+            Self::new(Self::XMIN, y).ok()
+        } else {
+            None
+        }
     }
 
     /// Returns an iterator over valid X values
