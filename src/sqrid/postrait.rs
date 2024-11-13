@@ -7,6 +7,19 @@
 use super::error::Error;
 use super::int::Int;
 
+macro_rules! into_or_oob {
+    ($e:expr) => {
+        $e.try_into().map_err(|_| Error::OutOfBounds)
+    };
+}
+
+macro_rules! into_or_panic {
+    ($e:expr) => {{
+        let Ok(value) = $e.try_into() else { panic!() };
+        value
+    }};
+}
+
 /// Position trait
 pub trait PosT {
     // User parameters:
@@ -98,29 +111,23 @@ pub trait PosT {
         Self: std::marker::Sized,
     {
         let t = pos.tuple();
-        let x: usize = t.0.try_into().map_err(|_| Error::OutOfBounds)?;
-        let y: usize = t.1.try_into().map_err(|_| Error::OutOfBounds)?;
-        let x = x.try_into().map_err(|_| Error::OutOfBounds)?;
-        let y = y.try_into().map_err(|_| Error::OutOfBounds)?;
+        let x: usize = into_or_oob!(t.0)?;
+        let y: usize = into_or_oob!(t.1)?;
+        let x = into_or_oob!(x)?;
+        let y = into_or_oob!(y)?;
         Self::new(x, y)
     }
 
     /// Return the width (x) supported by the position type
     #[inline]
     fn width() -> usize {
-        let Ok(w) = Self::XMAX.try_into() else {
-            panic!()
-        };
-        w + 1
+        into_or_panic!(Self::XMAX) + 1
     }
 
     /// Return the height (y) supported by the position type
     #[inline]
     fn height() -> usize {
-        let Ok(h) = Self::YMAX.try_into() else {
-            panic!()
-        };
-        h + 1
+        into_or_panic!(Self::YMAX) + 1
     }
 
     /// Return the total dimension supported by the position type
@@ -193,9 +200,7 @@ pub trait PosT {
         } else {
             pos.y() - self.y()
         };
-        let Ok(dx) = dx.try_into() else { panic!() };
-        let Ok(dy) = dy.try_into() else { panic!() };
-        dx + dy
+        into_or_panic!(dx) + into_or_panic!(dy)
     }
 
     /// Check that the position is inside the provided limits
@@ -216,8 +221,8 @@ pub trait PosT {
     /// Return a usize index corresponding to the position.
     #[inline]
     fn to_usize(&self) -> usize {
-        let Ok(y) = self.y().try_into() else { panic!() };
-        let Ok(x) = self.x().try_into() else { panic!() };
+        let y = into_or_panic!(self.y());
+        let x = into_or_panic!(self.x());
         y * Self::width() + x
     }
 
@@ -229,8 +234,8 @@ pub trait PosT {
         Self: std::marker::Sized,
     {
         let width = Self::width();
-        let x = (i % width).try_into().map_err(|_| Error::OutOfBounds)?;
-        let y = (i / width).try_into().map_err(|_| Error::OutOfBounds)?;
+        let x = into_or_oob!(i % width)?;
+        let y = into_or_oob!(i / width)?;
         Self::new(x, y)
     }
 
@@ -249,8 +254,7 @@ pub trait PosT {
     fn iter_x() -> impl Iterator<Item = Self::Xtype> {
         (0..Self::WIDTH).map(|x| {
             // SAFE by construction
-            let Ok(x) = x.try_into() else { panic!() };
-            x
+            into_or_panic!(x)
         })
     }
 
@@ -258,8 +262,7 @@ pub trait PosT {
     fn iter_y() -> impl Iterator<Item = Self::Ytype> {
         (0..Self::HEIGHT).map(|y| {
             // SAFE by construction
-            let Ok(y) = y.try_into() else { panic!() };
-            y
+            into_or_panic!(y)
         })
     }
 
@@ -388,15 +391,15 @@ impl<P: PosT> PosTIter<P> {
         let height = P::height();
         if self.xfirst {
             let x = i % width;
-            let x: P::Xtype = x.try_into().map_err(|_| Error::OutOfBounds).unwrap();
+            let x: P::Xtype = into_or_panic!(x);
             let y = i / width;
-            let y: P::Ytype = y.try_into().map_err(|_| Error::OutOfBounds).unwrap();
+            let y: P::Ytype = into_or_panic!(y);
             P::new(x, y).unwrap()
         } else {
             let y = i % height;
-            let y: P::Ytype = y.try_into().map_err(|_| Error::OutOfBounds).unwrap();
+            let y: P::Ytype = into_or_panic!(y);
             let x = i / height;
-            let x: P::Xtype = x.try_into().map_err(|_| Error::OutOfBounds).unwrap();
+            let x: P::Xtype = into_or_panic!(x);
             P::new(x, y).unwrap()
         }
     }
