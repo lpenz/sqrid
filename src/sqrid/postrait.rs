@@ -21,7 +21,7 @@ macro_rules! into_or_panic {
 }
 
 /// Position trait
-pub trait PosT {
+pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     // User parameters:
 
     /// The type of the X coordinate
@@ -239,7 +239,7 @@ pub trait PosT {
         Self::new(x, y)
     }
 
-    /// Return the next position in sequence (English read sequence), or None
+    /// Return the next position horizontally (English read sequence), or None
     /// if `self` is the last one.
     #[inline]
     fn next(&self) -> Option<Self>
