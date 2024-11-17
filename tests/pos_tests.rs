@@ -224,7 +224,55 @@ fn test_iter_vertical() -> Result<()> {
 }
 
 #[test]
+fn test_iter_prev() -> Result<()> {
+    assert_eq!(Pos2::new_static::<0, 0>().prev(), None);
+    assert_eq!(
+        Pos2::new_static::<1, 0>().prev(),
+        Some(Pos2::new_static::<0, 0>())
+    );
+    assert_eq!(
+        Pos2::new_static::<0, 1>().prev(),
+        Some(Pos2::new_static::<1, 0>())
+    );
+    assert_eq!(
+        Pos2::new_static::<1, 1>().prev(),
+        Some(Pos2::new_static::<0, 1>())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_iter_prev_y() -> Result<()> {
+    assert_eq!(Pos2::new_static::<0, 0>().prev_y(), None);
+    assert_eq!(
+        Pos2::new_static::<0, 1>().prev_y(),
+        Some(Pos2::new_static::<0, 0>())
+    );
+    assert_eq!(
+        Pos2::new_static::<1, 0>().prev_y(),
+        Some(Pos2::new_static::<0, 1>())
+    );
+    assert_eq!(
+        Pos2::new_static::<1, 1>().prev_y(),
+        Some(Pos2::new_static::<1, 0>())
+    );
+    Ok(())
+}
+
+#[test]
 fn test_iter_back() -> Result<()> {
+    let mut iter = Pos2::iter();
+    assert_eq!(Some(Pos2::new_static::<0, 0>()), iter.next());
+    assert_eq!(Some(Pos2::new_static::<1, 1>()), iter.next_back());
+    assert_eq!(Some(Pos2::new_static::<0, 1>()), iter.next_back());
+    assert_eq!(Some(Pos2::new_static::<1, 0>()), iter.next());
+    assert_eq!(None, iter.next());
+    assert_eq!(None, iter.next_back());
+    Ok(())
+}
+
+#[test]
+fn test_iter_back2() -> Result<()> {
     let rev = Pos::iter()
         .collect::<Vec<_>>()
         .into_iter()

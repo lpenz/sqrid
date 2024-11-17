@@ -258,6 +258,63 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         }
     }
 
+    /// Return the next position vertically, or None
+    /// if `self` is the last one.
+    #[inline]
+    fn next_y(&self) -> Option<Self>
+    where
+        Self: std::marker::Sized,
+    {
+        if let Some(y) = self.y().inc() {
+            if let Ok(pos) = Self::new(self.x(), y) {
+                return Some(pos);
+            }
+        }
+        if let Some(x) = self.x().inc() {
+            Self::new(x, Self::YMIN).ok()
+        } else {
+            None
+        }
+    }
+
+    /// Return the previous position horizontally (English read sequence), or None
+    /// if `self` is the first one.
+    #[inline]
+    fn prev(&self) -> Option<Self>
+    where
+        Self: std::marker::Sized,
+    {
+        if let Some(x) = self.x().dec() {
+            if let Ok(pos) = Self::new(x, self.y()) {
+                return Some(pos);
+            }
+        }
+        if let Some(y) = self.y().dec() {
+            Self::new(Self::XMAX, y).ok()
+        } else {
+            None
+        }
+    }
+
+    /// Return the previous position vertically, or None
+    /// if `self` is the first one.
+    #[inline]
+    fn prev_y(&self) -> Option<Self>
+    where
+        Self: std::marker::Sized,
+    {
+        if let Some(y) = self.y().dec() {
+            if let Ok(pos) = Self::new(self.x(), y) {
+                return Some(pos);
+            }
+        }
+        if let Some(x) = self.x().dec() {
+            Self::new(x, Self::YMAX).ok()
+        } else {
+            None
+        }
+    }
+
     /// Returns an iterator over valid X values
     fn iter_x() -> impl Iterator<Item = Self::Xtype> {
         (0..Self::WIDTH).map(|x| {
@@ -367,18 +424,21 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
 /// Returns all position values of a certain type.
 #[derive(Debug, Clone, Copy)]
 pub struct PosTIter<P> {
-    cur: usize,
-    end: usize,
+    cur: Option<P>,
+    end: Option<P>,
     xfirst: bool,
     p: std::marker::PhantomData<P>,
 }
 
-impl<P: PosT> PosTIter<P> {
+impl<P> PosTIter<P>
+where
+    P: PosT,
+{
     /// Creates a position iterator structure for horizontal traversal.
     pub fn new_horizontal() -> Self {
         PosTIter {
-            cur: 0,
-            end: P::dimensions(),
+            cur: Some(P::first()),
+            end: Some(P::last()),
             xfirst: true,
             p: std::marker::PhantomData,
         }
@@ -387,28 +447,10 @@ impl<P: PosT> PosTIter<P> {
     /// Creates a Pos iterator structure for vertical traversal.
     pub fn new_vertical() -> Self {
         PosTIter {
-            cur: 0,
-            end: P::dimensions(),
+            cur: Some(P::first()),
+            end: Some(P::last()),
             xfirst: false,
             p: std::marker::PhantomData,
-        }
-    }
-
-    fn pos(&self, i: usize) -> P {
-        let width = P::width();
-        let height = P::height();
-        if self.xfirst {
-            let x = i % width;
-            let x: P::Xtype = into_or_panic!(x);
-            let y = i / width;
-            let y: P::Ytype = into_or_panic!(y);
-            P::new(x, y).unwrap()
-        } else {
-            let y = i % height;
-            let y: P::Ytype = into_or_panic!(y);
-            let x = i / height;
-            let x: P::Xtype = into_or_panic!(x);
-            P::new(x, y).unwrap()
         }
     }
 }
@@ -423,14 +465,18 @@ impl<P: PosT> Iterator for PosTIter<P> {
     type Item = P;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
+        let old = self.cur;
         if self.cur == self.end {
-            None
-        } else {
-            let old = self.cur;
-            self.cur += 1;
-            // SAFETY: "end" <= W*H and we we never go above
-            Some(self.pos(old))
+            self.cur = None;
+            self.end = None;
+        } else if let Some(cur) = self.cur {
+            if self.xfirst {
+                self.cur = cur.next();
+            } else {
+                self.cur = cur.next_y();
+            }
         }
+        old
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = P::dimensions();
@@ -441,13 +487,18 @@ impl<P: PosT> Iterator for PosTIter<P> {
 impl<P: PosT> DoubleEndedIterator for PosTIter<P> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.end == self.cur {
-            None
-        } else {
-            self.end -= 1;
-            // SAFETY: we start at W*H and only decrement
-            Some(self.pos(self.end))
+        let old = self.end;
+        if self.cur == self.end {
+            self.cur = None;
+            self.end = None;
+        } else if let Some(end) = self.end {
+            if self.xfirst {
+                self.end = end.prev();
+            } else {
+                self.end = end.prev_y();
+            }
         }
+        old
     }
 }
 
