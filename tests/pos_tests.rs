@@ -279,29 +279,37 @@ fn test_iter_back2() -> Result<()> {
         .rev()
         .collect::<Vec<_>>();
     assert_eq!(Pos::iter().rev().collect::<Vec<_>>(), rev);
-    let fullset = Pos2::iter().collect::<HashSet<_>>();
+    Ok(())
+}
+
+fn _test_iter_back<const XFIRST: bool>() -> Result<()> {
     // Check that we get fullset for all combinations of next and
     // next_back:
-    for vertical in [false, true] {
-        for mask in 0..15 {
-            let mut set = HashSet::new();
-            let mut iter = if vertical {
-                Pos2::iter_vertical()
+    let fullset = Pos2::iter().collect::<HashSet<_>>();
+    for mask in 0..15 {
+        let mut set = HashSet::new();
+        let mut iter = Pos2::iter_orientation::<XFIRST>();
+        for i in 0..Pos2::SIZE {
+            if ((1 << i) & mask) > 0 {
+                set.insert(iter.next().unwrap());
             } else {
-                Pos2::iter_horizontal()
-            };
-            for i in 0..Pos2::SIZE {
-                if ((1 << i) & mask) > 0 {
-                    set.insert(iter.next().unwrap());
-                } else {
-                    set.insert(iter.next_back().unwrap());
-                }
+                set.insert(iter.next_back().unwrap());
             }
-            assert_eq!(iter.next(), None);
-            assert_eq!(fullset, set);
         }
+        assert_eq!(iter.next(), None);
+        assert_eq!(fullset, set);
     }
     Ok(())
+}
+
+#[test]
+fn test_iter_back_horizontal() -> Result<()> {
+    _test_iter_back::<true>()
+}
+
+#[test]
+fn test_iter_back_vertical() -> Result<()> {
+    _test_iter_back::<false>()
 }
 
 #[test]

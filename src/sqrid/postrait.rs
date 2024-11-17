@@ -332,30 +332,40 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     }
 
     /// Return an iterator that returns all positions within the grid
+    /// dimensions in the given orientation - `true` for horizontally,
+    /// `false` for vertically.
+    fn iter_orientation<const XFIRST: bool>() -> PosTIter<XFIRST, Self>
+    where
+        Self: std::marker::Sized,
+    {
+        PosTIter::<XFIRST, Self>::default()
+    }
+
+    /// Return an iterator that returns all positions within the grid
     /// dimensions.
-    fn iter() -> PosTIter<Self>
+    fn iter() -> PosTIter<true, Self>
     where
         Self: std::marker::Sized,
     {
-        PosTIter::<Self>::new_horizontal()
+        Self::iter_orientation::<true>()
     }
 
     /// Return an iterator that returns all positions within the grid
     /// dimensions horizontally.
-    fn iter_horizontal() -> PosTIter<Self>
+    fn iter_horizontal() -> PosTIter<true, Self>
     where
         Self: std::marker::Sized,
     {
-        PosTIter::<Self>::new_horizontal()
+        Self::iter_orientation::<true>()
     }
 
     /// Return an iterator that returns all positions within the grid
-    /// dimensions horizontally.
-    fn iter_vertical() -> PosTIter<Self>
+    /// dimensions vertically.
+    fn iter_vertical() -> PosTIter<false, Self>
     where
         Self: std::marker::Sized,
     {
-        PosTIter::<Self>::new_vertical()
+        Self::iter_orientation::<false>()
     }
 
     /// Return an iterator that returns all positions within the grid
@@ -423,45 +433,23 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
 ///
 /// Returns all position values of a certain type.
 #[derive(Debug, Clone, Copy)]
-pub struct PosTIter<P> {
+pub struct PosTIter<const XFIRST: bool, P> {
     cur: Option<P>,
     end: Option<P>,
-    xfirst: bool,
     p: std::marker::PhantomData<P>,
 }
 
-impl<P> PosTIter<P>
-where
-    P: PosT,
-{
-    /// Creates a position iterator structure for horizontal traversal.
-    pub fn new_horizontal() -> Self {
-        PosTIter {
-            cur: Some(P::first()),
-            end: Some(P::last()),
-            xfirst: true,
-            p: std::marker::PhantomData,
-        }
-    }
-
-    /// Creates a Pos iterator structure for vertical traversal.
-    pub fn new_vertical() -> Self {
-        PosTIter {
-            cur: Some(P::first()),
-            end: Some(P::last()),
-            xfirst: false,
-            p: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<P: PosT> Default for PosTIter<P> {
+impl<const XFIRST: bool, P: PosT> Default for PosTIter<XFIRST, P> {
     fn default() -> Self {
-        Self::new_horizontal()
+        PosTIter {
+            cur: Some(P::first()),
+            end: Some(P::last()),
+            p: std::marker::PhantomData,
+        }
     }
 }
 
-impl<P: PosT> Iterator for PosTIter<P> {
+impl<const XFIRST: bool, P: PosT> Iterator for PosTIter<XFIRST, P> {
     type Item = P;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -470,7 +458,7 @@ impl<P: PosT> Iterator for PosTIter<P> {
             self.cur = None;
             self.end = None;
         } else if let Some(cur) = self.cur {
-            if self.xfirst {
+            if XFIRST {
                 self.cur = cur.next();
             } else {
                 self.cur = cur.next_y();
@@ -484,7 +472,7 @@ impl<P: PosT> Iterator for PosTIter<P> {
     }
 }
 
-impl<P: PosT> DoubleEndedIterator for PosTIter<P> {
+impl<const XFIRST: bool, P: PosT> DoubleEndedIterator for PosTIter<XFIRST, P> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         let old = self.end;
@@ -492,7 +480,7 @@ impl<P: PosT> DoubleEndedIterator for PosTIter<P> {
             self.cur = None;
             self.end = None;
         } else if let Some(end) = self.end {
-            if self.xfirst {
+            if XFIRST {
                 self.end = end.prev();
             } else {
                 self.end = end.prev_y();
