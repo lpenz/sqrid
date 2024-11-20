@@ -8,53 +8,53 @@
 
 use std::fmt::Debug;
 
-/// The smallest value that can be represented by this integer type.
-pub trait Min
+/// Provides checked integer addition.
+pub trait CheckedAdd
 where
     Self: std::marker::Sized,
 {
-    /// The smallest value that can be represented by this integer type.
-    fn min() -> Self;
+    /// Checked integer addition.
+    fn checked_add(self, rhs: Self) -> Option<Self>;
 }
 
-/// The largest value that can be represented by this integer type.
-pub trait Max
+/// Provides checked integer subtraction.
+pub trait CheckedSub
 where
     Self: std::marker::Sized,
 {
-    /// The largest value that can be represented by this integer type.
-    fn max() -> Self;
+    /// Checked integer subtraction.
+    fn checked_sub(self, rhs: Self) -> Option<Self>;
 }
 
-macro_rules! minmaxint_impl {
+macro_rules! inttraits_impl {
     ($int_type:ty, $min:expr, $max:expr) => {
-        impl Min for $int_type {
+        impl CheckedAdd for $int_type {
             #[inline]
-            fn min() -> Self {
-                $min
+            fn checked_add(self, rhs: Self) -> Option<Self> {
+                self.checked_add(rhs)
             }
         }
-        impl Max for $int_type {
+        impl CheckedSub for $int_type {
             #[inline]
-            fn max() -> Self {
-                $max
+            fn checked_sub(self, rhs: Self) -> Option<Self> {
+                self.checked_sub(rhs)
             }
         }
     };
 }
 
-minmaxint_impl!(usize, usize::MIN, usize::MAX);
-minmaxint_impl!(u8, u8::MIN, u8::MAX);
-minmaxint_impl!(u16, u16::MIN, u16::MAX);
-minmaxint_impl!(u32, u32::MIN, u32::MAX);
-minmaxint_impl!(u64, u64::MIN, u64::MAX);
-minmaxint_impl!(u128, u128::MIN, u128::MAX);
-minmaxint_impl!(isize, isize::MIN, isize::MAX);
-minmaxint_impl!(i8, i8::MIN, i8::MAX);
-minmaxint_impl!(i16, i16::MIN, i16::MAX);
-minmaxint_impl!(i32, i32::MIN, i32::MAX);
-minmaxint_impl!(i64, i64::MIN, i64::MAX);
-minmaxint_impl!(i128, i128::MIN, i128::MAX);
+inttraits_impl!(usize, usize::MIN, usize::MAX);
+inttraits_impl!(u8, u8::MIN, u8::MAX);
+inttraits_impl!(u16, u16::MIN, u16::MAX);
+inttraits_impl!(u32, u32::MIN, u32::MAX);
+inttraits_impl!(u64, u64::MIN, u64::MAX);
+inttraits_impl!(u128, u128::MIN, u128::MAX);
+inttraits_impl!(isize, isize::MIN, isize::MAX);
+inttraits_impl!(i8, i8::MIN, i8::MAX);
+inttraits_impl!(i16, i16::MIN, i16::MAX);
+inttraits_impl!(i32, i32::MIN, i32::MAX);
+inttraits_impl!(i64, i64::MIN, i64::MAX);
+inttraits_impl!(i128, i128::MIN, i128::MAX);
 
 /// The int trait concentrates all the required traits for position
 /// components.
@@ -67,10 +67,8 @@ pub trait Int:
     + TryInto<usize>
     + TryFrom<usize>
     + From<bool>
-    + std::ops::Add<Output = Self>
-    + std::ops::Sub<Output = Self>
-    + Min
-    + Max
+    + CheckedAdd
+    + CheckedSub
 {
     /// Return the value `1` of the implementing type
     fn one() -> Self {
@@ -79,12 +77,12 @@ pub trait Int:
 
     /// Increment value if possible; otherwise return `None`
     fn inc(self) -> Option<Self> {
-        (self != Self::max()).then(|| self + Self::one())
+        self.checked_add(Self::one())
     }
 
     /// Decrement value if possible; otherwise return `None`
     fn dec(self) -> Option<Self> {
-        (self != Self::min()).then(|| self - Self::one())
+        self.checked_sub(Self::one())
     }
 }
 
@@ -97,9 +95,7 @@ impl<T> Int for T where
         + TryInto<usize>
         + TryFrom<usize>
         + From<bool>
-        + std::ops::Add<Output = Self>
-        + std::ops::Sub<Output = Self>
-        + Min
-        + Max
+        + CheckedAdd
+        + CheckedSub
 {
 }

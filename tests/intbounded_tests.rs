@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid::intbounded::UIntBounded;
+use sqrid::CheckedAdd;
 
 type UIB = UIntBounded<0, 20, u8>;
 
@@ -15,5 +16,5 @@ fn test_basic() {
     assert_eq!(i5, i5);
     assert_ne!(i5 < i5, true);
     assert_ne!(i5 > i5, true);
-    assert_eq!(i5 + i5, UIB::new(10).unwrap());
+    assert_eq!(i5.checked_add(i5), UIB::new(10).ok());
 }

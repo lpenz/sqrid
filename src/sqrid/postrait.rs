@@ -6,6 +6,7 @@
 
 use super::error::Error;
 use super::int::Int;
+use crate::sqrid::int::CheckedSub;
 
 macro_rules! into_or_oob {
     ($e:expr) => {
@@ -176,7 +177,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     where
         Self: std::marker::Sized,
     {
-        Self::new(Self::XMAX - self.x(), self.y()).unwrap()
+        Self::new(Self::XMAX.checked_sub(self.x()).unwrap(), self.y()).unwrap()
     }
 
     /// Flip the coordinate horizontally
@@ -185,20 +186,20 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     where
         Self: std::marker::Sized,
     {
-        Self::new(self.x(), Self::YMAX - self.y()).unwrap()
+        Self::new(self.x(), Self::YMAX.checked_sub(self.y()).unwrap()).unwrap()
     }
 
     /// Return the manhattan distance
     fn manhattan(&self, pos: &Self) -> usize {
         let dx = if self.x() > pos.x() {
-            self.x() - pos.x()
+            self.x().checked_sub(pos.x()).unwrap()
         } else {
-            pos.x() - self.x()
+            pos.x().checked_sub(self.x()).unwrap()
         };
         let dy = if self.y() > pos.y() {
-            self.y() - pos.y()
+            self.y().checked_sub(pos.y()).unwrap()
         } else {
-            pos.y() - self.y()
+            pos.y().checked_sub(self.y()).unwrap()
         };
         into_or_panic!(dx) + into_or_panic!(dy)
     }

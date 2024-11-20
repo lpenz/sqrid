@@ -8,7 +8,7 @@
 
 use super::error::Error;
 use super::int::Int;
-use super::int::{Max, Min};
+use super::int::{CheckedAdd, CheckedSub};
 
 /// A bounded unsigned integer
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -43,37 +43,17 @@ impl<const MIN: usize, const MAX: usize, Inner: Int> UIntBounded<MIN, MAX, Inner
     }
 }
 
-impl<const MIN: usize, const MAX: usize, Inner: Int> Min for UIntBounded<MIN, MAX, Inner> {
+impl<const MIN: usize, const MAX: usize, Inner: Int> CheckedAdd for UIntBounded<MIN, MAX, Inner> {
     #[inline]
-    fn min() -> Self {
-        UIntBounded(into_or_panic!(MIN))
+    fn checked_add(self, other: Self) -> Option<Self> {
+        Some(Self(self.0.checked_add(other.0)?))
     }
 }
 
-impl<const MIN: usize, const MAX: usize, Inner: Int> Max for UIntBounded<MIN, MAX, Inner> {
+impl<const MIN: usize, const MAX: usize, Inner: Int> CheckedSub for UIntBounded<MIN, MAX, Inner> {
     #[inline]
-    fn max() -> Self {
-        UIntBounded(into_or_panic!(MAX))
-    }
-}
-
-impl<const MIN: usize, const MAX: usize, Inner: Int> std::ops::Add
-    for UIntBounded<MIN, MAX, Inner>
-{
-    type Output = UIntBounded<MIN, MAX, Inner>;
-    #[inline]
-    fn add(self, other: Self) -> Self {
-        Self(self.0 + other.0)
-    }
-}
-
-impl<const MIN: usize, const MAX: usize, Inner: Int> std::ops::Sub
-    for UIntBounded<MIN, MAX, Inner>
-{
-    type Output = UIntBounded<MIN, MAX, Inner>;
-    #[inline]
-    fn sub(self, other: Self) -> Self {
-        Self(self.0 - other.0)
+    fn checked_sub(self, other: Self) -> Option<Self> {
+        Some(Self(self.0.checked_sub(other.0)?))
     }
 }
 
