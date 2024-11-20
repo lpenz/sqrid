@@ -8,33 +8,25 @@
 
 use std::fmt::Debug;
 
-/// Provides checked integer addition.
-pub trait CheckedAdd
+/// Trait that provides functions already present in all int types but
+/// that are not covered by any trait.
+pub trait IntExt
 where
     Self: std::marker::Sized,
 {
     /// Checked integer addition.
     fn checked_add(self, rhs: Self) -> Option<Self>;
-}
-
-/// Provides checked integer subtraction.
-pub trait CheckedSub
-where
-    Self: std::marker::Sized,
-{
     /// Checked integer subtraction.
     fn checked_sub(self, rhs: Self) -> Option<Self>;
 }
 
-macro_rules! inttraits_impl {
-    ($int_type:ty, $min:expr, $max:expr) => {
-        impl CheckedAdd for $int_type {
+macro_rules! intext_impl {
+    ($int_type:ty) => {
+        impl IntExt for $int_type {
             #[inline]
             fn checked_add(self, rhs: Self) -> Option<Self> {
                 self.checked_add(rhs)
             }
-        }
-        impl CheckedSub for $int_type {
             #[inline]
             fn checked_sub(self, rhs: Self) -> Option<Self> {
                 self.checked_sub(rhs)
@@ -43,32 +35,23 @@ macro_rules! inttraits_impl {
     };
 }
 
-inttraits_impl!(usize, usize::MIN, usize::MAX);
-inttraits_impl!(u8, u8::MIN, u8::MAX);
-inttraits_impl!(u16, u16::MIN, u16::MAX);
-inttraits_impl!(u32, u32::MIN, u32::MAX);
-inttraits_impl!(u64, u64::MIN, u64::MAX);
-inttraits_impl!(u128, u128::MIN, u128::MAX);
-inttraits_impl!(isize, isize::MIN, isize::MAX);
-inttraits_impl!(i8, i8::MIN, i8::MAX);
-inttraits_impl!(i16, i16::MIN, i16::MAX);
-inttraits_impl!(i32, i32::MIN, i32::MAX);
-inttraits_impl!(i64, i64::MIN, i64::MAX);
-inttraits_impl!(i128, i128::MIN, i128::MAX);
+intext_impl!(usize);
+intext_impl!(u8);
+intext_impl!(u16);
+intext_impl!(u32);
+intext_impl!(u64);
+intext_impl!(u128);
+intext_impl!(isize);
+intext_impl!(i8);
+intext_impl!(i16);
+intext_impl!(i32);
+intext_impl!(i64);
+intext_impl!(i128);
 
 /// The int trait concentrates all the required traits for position
 /// components.
 pub trait Int:
-    Debug
-    + Default
-    + Eq
-    + PartialOrd
-    + Copy
-    + TryInto<usize>
-    + TryFrom<usize>
-    + From<bool>
-    + CheckedAdd
-    + CheckedSub
+    Debug + Default + Eq + PartialOrd + Copy + TryInto<usize> + TryFrom<usize> + From<bool> + IntExt
 {
     /// Return the value `1` of the implementing type
     fn one() -> Self {
@@ -95,7 +78,6 @@ impl<T> Int for T where
         + TryInto<usize>
         + TryFrom<usize>
         + From<bool>
-        + CheckedAdd
-        + CheckedSub
+        + IntExt
 {
 }

@@ -8,7 +8,7 @@
 
 use super::error::Error;
 use super::int::Int;
-use super::int::{CheckedAdd, CheckedSub};
+use super::int::IntExt;
 
 /// A bounded unsigned integer
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -43,17 +43,14 @@ impl<const MIN: usize, const MAX: usize, Inner: Int> UIntBounded<MIN, MAX, Inner
     }
 }
 
-impl<const MIN: usize, const MAX: usize, Inner: Int> CheckedAdd for UIntBounded<MIN, MAX, Inner> {
+impl<const MIN: usize, const MAX: usize, Inner: Int> IntExt for UIntBounded<MIN, MAX, Inner> {
     #[inline]
     fn checked_add(self, other: Self) -> Option<Self> {
-        Some(Self(self.0.checked_add(other.0)?))
+        self.0.checked_add(other.0).map(|v| Self(v))
     }
-}
-
-impl<const MIN: usize, const MAX: usize, Inner: Int> CheckedSub for UIntBounded<MIN, MAX, Inner> {
     #[inline]
     fn checked_sub(self, other: Self) -> Option<Self> {
-        Some(Self(self.0.checked_sub(other.0)?))
+        self.0.checked_sub(other.0).map(|v| Self(v))
     }
 }
 

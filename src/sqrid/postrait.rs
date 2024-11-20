@@ -6,7 +6,7 @@
 
 use super::error::Error;
 use super::int::Int;
-use crate::sqrid::int::CheckedSub;
+use crate::sqrid::int::IntExt;
 
 macro_rules! into_or_oob {
     ($e:expr) => {

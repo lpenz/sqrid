@@ -3,7 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid::intbounded::UIntBounded;
-use sqrid::CheckedAdd;
+use sqrid::IntExt;
 
 type UIB = UIntBounded<0, 20, u8>;
 
