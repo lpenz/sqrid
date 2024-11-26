@@ -7,9 +7,9 @@
 //! These are required for integers that are used as coordinates.
 
 use super::error::Error;
-use super::int::IntExt;
 
 use std::convert::TryFrom;
+use std::fmt::Debug;
 
 macro_rules! into_or_oob {
     ($e:expr) => {
@@ -17,7 +17,81 @@ macro_rules! into_or_oob {
     };
 }
 
-macro_rules! intbounded_impl {
+/// Trait that provides functions already present in all int types but
+/// that are not covered by any trait.
+pub trait IntExt
+where
+    Self: std::marker::Sized,
+{
+    /// Checked integer addition.
+    fn checked_add(self, rhs: Self) -> Option<Self>;
+    /// Checked integer subtraction.
+    fn checked_sub(self, rhs: Self) -> Option<Self>;
+}
+
+macro_rules! intext_impl {
+    ($int_type:ty) => {
+        impl IntExt for $int_type {
+            #[inline]
+            fn checked_add(self, rhs: Self) -> Option<Self> {
+                self.checked_add(rhs)
+            }
+            #[inline]
+            fn checked_sub(self, rhs: Self) -> Option<Self> {
+                self.checked_sub(rhs)
+            }
+        }
+    };
+}
+
+intext_impl!(usize);
+intext_impl!(u8);
+intext_impl!(u16);
+intext_impl!(u32);
+intext_impl!(u64);
+intext_impl!(u128);
+intext_impl!(isize);
+intext_impl!(i8);
+intext_impl!(i16);
+intext_impl!(i32);
+intext_impl!(i64);
+intext_impl!(i128);
+
+/// The int trait concentrates all the required traits for position
+/// components.
+pub trait Int:
+    Debug + Default + Eq + PartialOrd + Copy + TryInto<usize> + TryFrom<usize> + From<bool> + IntExt
+{
+    /// Return the value `1` of the implementing type
+    fn one() -> Self {
+        true.into()
+    }
+
+    /// Increment value if possible; otherwise return `None`
+    fn inc(self) -> Option<Self> {
+        self.checked_add(Self::one())
+    }
+
+    /// Decrement value if possible; otherwise return `None`
+    fn dec(self) -> Option<Self> {
+        self.checked_sub(Self::one())
+    }
+}
+
+impl<T> Int for T where
+    T: Debug
+        + Default
+        + Eq
+        + PartialOrd
+        + Copy
+        + TryInto<usize>
+        + TryFrom<usize>
+        + From<bool>
+        + IntExt
+{
+}
+
+macro_rules! boundedint_impl {
     ($name:ident, $type:ty) => {
         impl<const MIN: $type, const MAX: $type> $name<MIN, MAX> {
             /// Create a new bounded int with the given value in it, if it's within bounds
@@ -114,49 +188,49 @@ macro_rules! intbounded_impl {
 /// A bounded u8
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct U8Bounded<const MIN: u8, const MAX: u8>(pub u8);
-intbounded_impl!(U8Bounded, u8);
+boundedint_impl!(U8Bounded, u8);
 
 /// A bounded u16
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct U16Bounded<const MIN: u16, const MAX: u16>(pub u16);
-intbounded_impl!(U16Bounded, u16);
+boundedint_impl!(U16Bounded, u16);
 
 /// A bounded u32
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct U32Bounded<const MIN: u32, const MAX: u32>(pub u32);
-intbounded_impl!(U32Bounded, u32);
+boundedint_impl!(U32Bounded, u32);
 
 /// A bounded u64
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct U64Bounded<const MIN: u64, const MAX: u64>(pub u64);
-intbounded_impl!(U64Bounded, u64);
+boundedint_impl!(U64Bounded, u64);
 
 /// A bounded u128
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct U128Bounded<const MIN: u128, const MAX: u128>(pub u128);
-intbounded_impl!(U128Bounded, u128);
+boundedint_impl!(U128Bounded, u128);
 
 /// A bounded i8
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct I8Bounded<const MIN: i8, const MAX: i8>(pub i8);
-intbounded_impl!(I8Bounded, i8);
+boundedint_impl!(I8Bounded, i8);
 
 /// A bounded i16
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct I16Bounded<const MIN: i16, const MAX: i16>(pub i16);
-intbounded_impl!(I16Bounded, i16);
+boundedint_impl!(I16Bounded, i16);
 
 /// A bounded i32
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct I32Bounded<const MIN: i32, const MAX: i32>(pub i32);
-intbounded_impl!(I32Bounded, i32);
+boundedint_impl!(I32Bounded, i32);
 
 /// A bounded i64
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct I64Bounded<const MIN: i64, const MAX: i64>(pub i64);
-intbounded_impl!(I64Bounded, i64);
+boundedint_impl!(I64Bounded, i64);
 
 /// A bounded i128
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct I128Bounded<const MIN: i128, const MAX: i128>(pub i128);
-intbounded_impl!(I128Bounded, i128);
+boundedint_impl!(I128Bounded, i128);

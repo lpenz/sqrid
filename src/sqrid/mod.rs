@@ -17,11 +17,8 @@ pub use self::base::*;
 pub mod error;
 pub use self::error::*;
 
-pub mod int;
-pub use self::int::*;
-
-pub mod intbounded;
-pub use self::intbounded::*;
+pub mod boundedint;
+pub use self::boundedint::*;
 
 pub mod postrait;
 pub use self::postrait::*;

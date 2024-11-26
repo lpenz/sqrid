@@ -2,8 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
-use sqrid::intbounded::*;
-use sqrid::Int;
+use sqrid::boundedint::*;
 
 macro_rules! or_panic {
     ($e:expr) => {{

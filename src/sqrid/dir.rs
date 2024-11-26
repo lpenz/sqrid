@@ -12,8 +12,8 @@ use std::convert;
 use std::fmt;
 use std::ops;
 
+use super::boundedint::Int;
 use super::error::Error;
-use super::int::Int;
 
 /// Direction type.
 ///

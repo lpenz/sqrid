@@ -4,9 +4,9 @@
 
 //! Position as a trait
 
+use super::boundedint::Int;
+use super::boundedint::IntExt;
 use super::error::Error;
-use super::int::Int;
-use crate::sqrid::int::IntExt;
 
 macro_rules! into_or_oob {
     ($e:expr) => {
