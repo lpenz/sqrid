@@ -12,7 +12,7 @@ use std::convert;
 use std::fmt;
 use std::ops;
 
-use super::boundedint::Int;
+use super::boundedint::BoundedInt;
 use super::error::Error;
 
 /// Direction type.
@@ -320,7 +320,7 @@ impl<const D: bool> Iterator for DirIter<D> {
 
 /* Generic Tuple + Dir -> Result<Tuple, Error> */
 
-impl<IntType: Int> ops::Add<Dir> for (IntType, IntType) {
+impl<IntType: BoundedInt> ops::Add<Dir> for (IntType, IntType) {
     type Output = Result<(IntType, IntType), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
@@ -342,7 +342,7 @@ impl<IntType: Int> ops::Add<Dir> for (IntType, IntType) {
     }
 }
 
-impl<IntType: Int> ops::Add<Dir> for &(IntType, IntType) {
+impl<IntType: BoundedInt> ops::Add<Dir> for &(IntType, IntType) {
     type Output = Result<(IntType, IntType), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {

@@ -4,8 +4,7 @@
 
 //! Position as a trait
 
-use super::boundedint::Int;
-use super::boundedint::IntExt;
+use super::boundedint::BoundedInt;
 use super::error::Error;
 
 macro_rules! into_or_oob {
@@ -26,9 +25,9 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     // User parameters:
 
     /// The type of the X coordinate
-    type Xtype: Int;
+    type Xtype: BoundedInt;
     /// The type of the Y coordinate
-    type Ytype: Int;
+    type Ytype: BoundedInt;
 
     /// Zero with the appropriate type
     const XMIN: Self::Xtype;
