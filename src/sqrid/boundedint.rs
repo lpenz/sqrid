@@ -19,13 +19,36 @@ macro_rules! into_or_oob {
 
 /// Trait for bounded integer types.
 ///
-/// It concentrates all functions we need in this create, for both
-/// regular integer types and from the custom bounded integer types.
+/// It concentrates all functions we need in this create, for both regular integer types and
+/// from the custom bounded integer types.
 pub trait BoundedInt:
-    Debug + Default + Eq + PartialOrd + Copy + TryInto<usize> + TryFrom<usize> + From<bool>
+    Debug
+    + Default
+    + Eq
+    + PartialOrd
+    + Copy
+    + From<bool>
+    + TryInto<usize>
+    + TryFrom<usize>
+    + TryFrom<u8>
+    + TryFrom<u16>
+    + TryFrom<u32>
+    + TryFrom<u64>
+    + TryFrom<u128>
+    + TryFrom<i8>
+    + TryFrom<i16>
+    + TryFrom<i32>
+    + TryFrom<i64>
+    + TryFrom<i128>
 where
     Self: std::marker::Sized,
 {
+    /// Type of the inner value if one exists; use Self for fundamental types
+    type Inner;
+
+    /// Extract the inner value
+    fn into_inner(self) -> Self::Inner;
+
     /// Checked integer addition.
     fn checked_add(self, rhs: Self) -> Option<Self>;
 
@@ -49,13 +72,15 @@ where
 }
 
 macro_rules! boundedint_impl {
-    ($int_type:ty) => {
-        impl BoundedInt for $int_type {
-            #[inline]
+    ($type:ty) => {
+        impl BoundedInt for $type {
+            type Inner = $type;
+            fn into_inner(self) -> Self::Inner {
+                self
+            }
             fn checked_add(self, rhs: Self) -> Option<Self> {
                 self.checked_add(rhs)
             }
-            #[inline]
             fn checked_sub(self, rhs: Self) -> Option<Self> {
                 self.checked_sub(rhs)
             }
@@ -77,6 +102,17 @@ boundedint_impl!(i16);
 boundedint_impl!(i32);
 boundedint_impl!(i64);
 boundedint_impl!(i128);
+
+macro_rules! boundedint_impl_tryfrom {
+    ($name:ident, $type:ty, $into:ty) => {
+        impl<const MIN: $type, const MAX: $type> TryFrom<$into> for $name<MIN, MAX> {
+            type Error = super::error::Error;
+            fn try_from(value: $into) -> Result<Self, Self::Error> {
+                Self::new(into_or_oob!(value)?)
+            }
+        }
+    };
+}
 
 /// Create a type for each existing integer that allows us to define
 /// arbitrary bounds
@@ -119,14 +155,18 @@ macro_rules! boundedint_type_create {
         }
 
         impl<const MIN: $type, const MAX: $type> BoundedInt for $name<MIN, MAX> {
-            #[inline]
+            type Inner = $type;
+
+            fn into_inner(self) -> Self::Inner {
+                self.0
+            }
+
             fn checked_add(self, other: Self) -> Option<Self> {
                 self.0
                     .checked_add(other.0)
                     .map(|v| Self(v))
                     .filter(|v| Self(MIN) <= *v && *v <= Self(MAX))
             }
-            #[inline]
             fn checked_sub(self, other: Self) -> Option<Self> {
                 self.0
                     .checked_sub(other.0)
@@ -135,43 +175,36 @@ macro_rules! boundedint_type_create {
             }
         }
 
-        impl<const MIN: $type, const MAX: $type> TryFrom<$type> for $name<MIN, MAX> {
-            type Error = super::error::Error;
-            #[inline]
-            fn try_from(value: $type) -> Result<Self, Self::Error> {
-                Self::new(value)
-            }
-        }
-
         impl<const MIN: $type, const MAX: $type> From<$name<MIN, MAX>> for $type {
-            #[inline]
             fn from(value: $name<MIN, MAX>) -> $type {
                 value.into_inner()
             }
         }
 
         impl<const MIN: $type, const MAX: $type> From<bool> for $name<MIN, MAX> {
-            #[inline]
             fn from(value: bool) -> Self {
                 $name(value.into())
             }
         }
 
-        impl<const MIN: $type, const MAX: $type> TryFrom<usize> for $name<MIN, MAX> {
+        impl<const MIN: $type, const MAX: $type> TryFrom<$name<MIN, MAX>> for usize {
             type Error = super::error::Error;
-            #[inline]
-            fn try_from(value: usize) -> Result<Self, Self::Error> {
-                Ok($name(into_or_oob!(value)?))
+            fn try_from(value: $name<MIN, MAX>) -> Result<Self, Self::Error> {
+                Ok(into_or_oob!(value.into_inner())?)
             }
         }
 
-        impl<const MIN: $type, const MAX: $type> TryFrom<$name<MIN, MAX>> for usize {
-            type Error = super::error::Error;
-            #[inline]
-            fn try_from(value: $name<MIN, MAX>) -> Result<Self, Self::Error> {
-                Ok(into_or_oob!(value)?)
-            }
-        }
+        boundedint_impl_tryfrom!($name, $type, usize);
+        boundedint_impl_tryfrom!($name, $type, u8);
+        boundedint_impl_tryfrom!($name, $type, u16);
+        boundedint_impl_tryfrom!($name, $type, u32);
+        boundedint_impl_tryfrom!($name, $type, u64);
+        boundedint_impl_tryfrom!($name, $type, u128);
+        boundedint_impl_tryfrom!($name, $type, i8);
+        boundedint_impl_tryfrom!($name, $type, i16);
+        boundedint_impl_tryfrom!($name, $type, i32);
+        boundedint_impl_tryfrom!($name, $type, i64);
+        boundedint_impl_tryfrom!($name, $type, i128);
     };
 }
 

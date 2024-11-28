@@ -15,12 +15,16 @@ macro_rules! or_panic {
     }};
 }
 
-fn _test_boundedint_trait_basic<T: BoundedInt, const UNSIGNED: bool>() {
+fn _test_boundedint_trait_basic<T: BoundedInt, const UNSIGNED: bool>()
+where
+    usize: TryFrom<T>,
+{
     let i5 = or_panic!(T::try_from(5));
     assert!(i5 == i5);
     assert!(i5 >= i5);
     assert!(i5 <= i5);
     assert_eq!(i5, i5);
+    assert_eq!(or_panic!(usize::try_from(i5)), 5);
     assert_ne!(i5 < i5, true);
     assert_ne!(i5 > i5, true);
     assert_eq!(i5.checked_add(i5), Some(or_panic!(T::try_from(10))));
@@ -68,14 +72,26 @@ fn test_basic_bounded_iint() {
     _test_boundedint_trait_basic::<BoundedI128<0, 20>, false>();
 }
 
+type BI8 = BoundedI8<-1, 5>;
+
 #[test]
 fn test_bounded_type() {
-    assert_eq!(
-        BoundedI8::<-1, 5>::new(2).unwrap(),
-        BoundedI8::<-1, 5>::new_static::<2>()
-    );
-    assert_eq!(BoundedI8::<-1, 5>::new_unwrap(2).into_inner(), 2);
-    assert_eq!(BoundedI8::<-1, 5>::new(-2), Err(Error::OutOfBounds));
-    assert!(BoundedI8::<-1, 5>::new(5).is_ok());
-    assert!(catch_unwind(|| BoundedI8::<-1, 5>::new_unwrap(6)).is_err());
+    let two = BI8::new_static::<2>();
+    // Test into_inner:
+    assert_eq!(two.into_inner(), 2_i8);
+    // Test constructor:
+    assert_eq!(BI8::new(2), Ok(two));
+    assert_eq!(BI8::new_unwrap(2), two);
+    // Test constructor errors:
+    assert_eq!(BI8::new(-2), Err(Error::OutOfBounds));
+    assert_eq!(BI8::try_from(6), Err(Error::OutOfBounds));
+    assert!(catch_unwind(|| BI8::new_unwrap(6)).is_err());
+    // Test conversion:
+    assert_eq!(BI8::try_from(2_i32), Ok(two));
+    assert_eq!(BI8::try_from(2_u64), Ok(two));
+    assert_eq!(i8::from(two), 2_i8);
+    // Test conversion failure:
+    assert_eq!(BI8::try_from(6_i32), Err(Error::OutOfBounds));
+    // Test try_into usize:
+    assert_eq!(usize::try_from(two), Ok(2_usize));
 }
