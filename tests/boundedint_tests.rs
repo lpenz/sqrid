@@ -75,10 +75,11 @@ fn test_basic_bounded_iint() {
 type BI8 = BoundedI8<-1, 5>;
 
 #[test]
-fn test_bounded_type() {
+fn test_bounded_type_construction() {
     let two = BI8::new_static::<2>();
     // Test into_inner:
     assert_eq!(two.into_inner(), 2_i8);
+    assert_eq!(two.as_ref(), &2_i8);
     // Test constructor:
     assert_eq!(BI8::new(2), Ok(two));
     assert_eq!(BI8::new_unwrap(2), two);
@@ -94,4 +95,26 @@ fn test_bounded_type() {
     assert_eq!(BI8::try_from(6_i32), Err(Error::OutOfBounds));
     // Test try_into usize:
     assert_eq!(usize::try_from(two), Ok(2_usize));
+}
+
+#[test]
+fn test_bounded_type_iter() {
+    // Test iter
+    let answer = (-1..6).map(|i| BI8::new(i).unwrap()).collect::<Vec<_>>();
+    assert_eq!(BI8::iter().collect::<Vec<_>>(), answer);
+    assert_eq!(
+        BI8::iter().rev().collect::<Vec<_>>(),
+        answer.iter().copied().rev().collect::<Vec<_>>()
+    );
+    let mut v = vec![];
+    let mut it = BI8::iter();
+    for i in 0..answer.len() {
+        if i % 2 == 0 {
+            v.push(it.next().unwrap());
+        } else {
+            v.push(it.next_back().unwrap());
+        }
+    }
+    v.sort();
+    assert_eq!(v, answer);
 }

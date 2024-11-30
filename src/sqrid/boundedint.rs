@@ -43,11 +43,19 @@ pub trait BoundedInt:
 where
     Self: std::marker::Sized,
 {
-    /// Type of the inner value if one exists; use Self for fundamental types
+    /// The smallest value that can be represented by this integer type.
+    const MIN: Self;
+    /// The largest value that can be represented by this integer type.
+    const MAX: Self;
+
+    /// Type of the inner value if one exists; use Self for fundamental types.
     type Inner;
 
-    /// Extract the inner value
+    /// Extract the inner value.
     fn into_inner(self) -> Self::Inner;
+
+    /// Get a reference to the inner value.
+    fn as_ref(&self) -> &Self::Inner;
 
     /// Checked integer addition.
     fn checked_add(self, rhs: Self) -> Option<Self>;
@@ -55,28 +63,38 @@ where
     /// Checked integer subtraction.
     fn checked_sub(self, rhs: Self) -> Option<Self>;
 
-    /// Return the value `1` of the implementing type
+    /// Return the value `1` of the implementing type.
     fn one() -> Self {
         true.into()
     }
 
-    /// Increment value if possible; otherwise return `None`
+    /// Increment value if possible; otherwise return `None`.
     fn inc(self) -> Option<Self> {
         self.checked_add(Self::one())
     }
 
-    /// Decrement value if possible; otherwise return `None`
+    /// Decrement value if possible; otherwise return `None`.
     fn dec(self) -> Option<Self> {
         self.checked_sub(Self::one())
+    }
+
+    /// Return an iterator for all values of this `BoundedInt` type.
+    fn iter() -> BoundedIntIterator<Self> {
+        BoundedIntIterator::new(Self::MIN, Self::MAX)
     }
 }
 
 macro_rules! boundedint_impl {
     ($type:ty) => {
         impl BoundedInt for $type {
+            const MIN: Self = <$type>::MIN;
+            const MAX: Self = <$type>::MAX;
             type Inner = $type;
             fn into_inner(self) -> Self::Inner {
                 self
+            }
+            fn as_ref(&self) -> &Self::Inner {
+                &self
             }
             fn checked_add(self, rhs: Self) -> Option<Self> {
                 self.checked_add(rhs)
@@ -102,6 +120,54 @@ boundedint_impl!(i16);
 boundedint_impl!(i32);
 boundedint_impl!(i64);
 boundedint_impl!(i128);
+
+// Iterator
+
+/// Iterator for implementors of [`BoundedInt`].
+#[derive(Debug)]
+pub struct BoundedIntIterator<T: BoundedInt> {
+    /// Current start
+    pub start: Option<T>,
+    /// Current end
+    pub end: Option<T>,
+}
+
+impl<T: BoundedInt> BoundedIntIterator<T> {
+    /// Create a new iterator for an implementor of [`BoundedInt`].
+    pub fn new(start: T, end: T) -> BoundedIntIterator<T> {
+        BoundedIntIterator {
+            start: Some(start),
+            end: Some(end),
+        }
+    }
+}
+
+impl<T: BoundedInt> Iterator for BoundedIntIterator<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let value = self.start;
+        if self.start == self.end {
+            self.start = None;
+            self.end = None;
+        } else if let Some(start) = self.start {
+            self.start = start.inc();
+        }
+        value
+    }
+}
+
+impl<T: BoundedInt> DoubleEndedIterator for BoundedIntIterator<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let value = self.end;
+        if self.start == self.end {
+            self.start = None;
+            self.end = None;
+        } else if let Some(end) = self.end {
+            self.end = end.dec();
+        }
+        value
+    }
+}
 
 macro_rules! boundedint_impl_tryfrom {
     ($name:ident, $type:ty, $into:ty) => {
@@ -155,10 +221,15 @@ macro_rules! boundedint_type_create {
         }
 
         impl<const MIN: $type, const MAX: $type> BoundedInt for $name<MIN, MAX> {
-            type Inner = $type;
+            const MIN: Self = Self::new_static::<MIN>();
+            const MAX: Self = Self::new_static::<MAX>();
 
+            type Inner = $type;
             fn into_inner(self) -> Self::Inner {
                 self.0
+            }
+            fn as_ref(&self) -> &Self::Inner {
+                &self.0
             }
 
             fn checked_add(self, other: Self) -> Option<Self> {
