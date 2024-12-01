@@ -320,20 +320,19 @@ impl<const D: bool> Iterator for DirIter<D> {
 
 /* Generic Tuple + Dir -> Result<Tuple, Error> */
 
-impl<IntType: BoundedInt> ops::Add<Dir> for (IntType, IntType) {
-    type Output = Result<(IntType, IntType), Error>;
-    #[inline]
+impl<T: BoundedInt, U: BoundedInt> ops::Add<Dir> for (T, U) {
+    type Output = Result<(T, U), Error>;
     fn add(self, rhs: Dir) -> Self::Output {
         let (p0, p1) = self;
         let (x_opt, y_opt) = match rhs {
-            Dir::N => (Some(p0), IntType::dec(p1)),
-            Dir::NE => (IntType::inc(p0), IntType::dec(p1)),
-            Dir::E => (IntType::inc(p0), Some(p1)),
-            Dir::SE => (IntType::inc(p0), IntType::inc(p1)),
-            Dir::S => (Some(p0), IntType::inc(p1)),
-            Dir::SW => (IntType::dec(p0), IntType::inc(p1)),
-            Dir::W => (IntType::dec(p0), Some(p1)),
-            Dir::NW => (IntType::dec(p0), IntType::dec(p1)),
+            Dir::N => (Some(p0), U::dec(p1)),
+            Dir::NE => (T::inc(p0), U::dec(p1)),
+            Dir::E => (T::inc(p0), Some(p1)),
+            Dir::SE => (T::inc(p0), U::inc(p1)),
+            Dir::S => (Some(p0), U::inc(p1)),
+            Dir::SW => (T::dec(p0), U::inc(p1)),
+            Dir::W => (T::dec(p0), Some(p1)),
+            Dir::NW => (T::dec(p0), U::dec(p1)),
         };
         Ok((
             x_opt.ok_or(Error::OutOfBounds)?,
@@ -342,8 +341,8 @@ impl<IntType: BoundedInt> ops::Add<Dir> for (IntType, IntType) {
     }
 }
 
-impl<IntType: BoundedInt> ops::Add<Dir> for &(IntType, IntType) {
-    type Output = Result<(IntType, IntType), Error>;
+impl<T: BoundedInt, U: BoundedInt> ops::Add<Dir> for &(T, U) {
+    type Output = Result<(T, U), Error>;
     #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
         (*self) + rhs

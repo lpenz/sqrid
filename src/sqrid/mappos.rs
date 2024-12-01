@@ -127,7 +127,7 @@ where
     Ok(Vec::from(ret))
 }
 
-/* Add camfrom_into_path to Sqrid */
+/* Add camefrom_into_path to Sqrid */
 
 impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
     Sqrid<W, H, D, WORDS, SIZE>
