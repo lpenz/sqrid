@@ -10,7 +10,7 @@ use sqrid::Dir;
 use anyhow::anyhow;
 use anyhow::Result;
 
-type Sqrid = sqrid::sqrid_create!(30, 15, false);
+type Sqrid = sqrid::sqrid_create!(29, 14, false);
 type Pos = sqrid::pos_create!(Sqrid);
 type GridDir = sqrid::grid_create!(Sqrid, Option<Dir>);
 type Gridbool = sqrid::gridbool_create!(Sqrid);
@@ -22,7 +22,7 @@ fn walls_from_str(wallstr: &Vec<&str>) -> (Gridbool, Pos, Pos) {
     for y in 0..Pos::HEIGHT {
         for x in 0..Pos::WIDTH {
             let c = wallstr[y as usize].as_bytes()[x as usize] as char;
-            let pos = Pos::tryfrom_tuple((x, y)).unwrap();
+            let pos = Pos::new(x, y).unwrap();
             walls.set(&pos, c == '#');
             if c == 'T' {
                 start = pos;

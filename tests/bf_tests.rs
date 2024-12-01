@@ -7,9 +7,9 @@ use sqrid;
 use anyhow::Result;
 use std::convert::TryFrom;
 
-type Pos = sqrid::Pos<3, 3>;
+type Pos = sqrid::Pos<2, 2>;
 type Sqrid = sqrid::sqrid_create!(Pos, false);
-type Pos2 = sqrid::Pos<256, 256>;
+type Pos2 = sqrid::Pos<255, 255>;
 type Sqrid2 = sqrid::sqrid_create!(Pos2, false);
 
 fn sumfunc(pos: Pos, dir: sqrid::Dir) -> Option<Pos> {

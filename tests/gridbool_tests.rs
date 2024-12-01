@@ -10,16 +10,16 @@ use sqrid::postrait::PosT;
 
 use anyhow::Result;
 
-type Pos1 = sqrid::Pos<4, 8>;
+type Pos1 = sqrid::Pos<3, 7>;
 type Gbool1 = sqrid::gridbool_create!(Pos1);
 
-type Pos2 = sqrid::Pos<11, 3>;
+type Pos2 = sqrid::Pos<10, 2>;
 type Gbool2 = sqrid::Gridbool<Pos2, 2>;
 
-type Pos5 = sqrid::Pos<5, 5>;
+type Pos5 = sqrid::Pos<4, 4>;
 type Gbool5 = sqrid::Gridbool<Pos5, 1>;
 
-type PosScale = sqrid::Pos<2000, 2000>;
+type PosScale = sqrid::Pos<1999, 1999>;
 type GridboolScale = sqrid::gridbool_create!(PosScale);
 
 type _PosMax = sqrid::Pos<0xffff, 0xffff>;

@@ -40,7 +40,8 @@ macro_rules! impl_assert {
 macro_rules! grid_create {
     ($sqrid: ty, $member: ty) => {
         $crate::Grid<$member, $crate::pos_create!($sqrid),
-                     { (<$sqrid>::WIDTH as usize * <$sqrid>::HEIGHT as usize) }>
+        { ((<$sqrid>::XMAX as usize + 1) *
+           (<$sqrid>::YMAX as usize + 1)) }>
     };
 }
 

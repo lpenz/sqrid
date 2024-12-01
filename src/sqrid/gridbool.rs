@@ -39,7 +39,7 @@ macro_rules! impl_assert {
 macro_rules! gridbool_create {
     ($sqrid: ty) => {
         $crate::Gridbool<$crate::pos_create!($sqrid),
-        { (((<$sqrid>::WIDTH as usize) * (<$sqrid>::HEIGHT as usize) + 31) / 32) }>
+        { (((<$sqrid>::XMAX as usize + 1) * (<$sqrid>::YMAX as usize + 1) + 31) / 32) }>
     };
 }
 
@@ -149,10 +149,7 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
     /// Iterate over all `true`/`false` values in the `Gridbool`.
     #[inline]
     pub fn iter(&self) -> impl iter::Iterator<Item = bool> + '_ {
-        (0..(P::WIDTH * P::HEIGHT)).map(move |i| {
-            let (byte, bit) = Self::byte_bit(i);
-            self.0[byte] & bit != 0
-        })
+        P::iter().map(|pos| self.get(&pos))
     }
 
     /// Iterate over all coordinates and corresponding `true`/`false` values.
@@ -222,12 +219,12 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
 }
 
 // Rotations are only available for "square" gridbools
-impl<const W: u16, const WORDS: usize> Gridbool<Pos<W, W>, WORDS> {
+impl<const XYMAX: u16, const WORDS: usize> Gridbool<Pos<XYMAX, XYMAX>, WORDS> {
     /// Rotate all elements 90 degrees clockwise
     pub fn rotate_cw(&mut self) {
-        for y in 0..W / 2 {
-            for x in y..W - 1 - y {
-                let pos0 = Pos::<W, W>::try_from((x, y)).unwrap();
+        for y in 0..XYMAX / 2 {
+            for x in y..XYMAX - y {
+                let pos0 = Pos::<XYMAX, XYMAX>::try_from((x, y)).unwrap();
                 let pos1 = pos0.rotate_cw();
                 let pos2 = pos1.rotate_cw();
                 let pos3 = pos2.rotate_cw();
@@ -246,9 +243,9 @@ impl<const W: u16, const WORDS: usize> Gridbool<Pos<W, W>, WORDS> {
     }
     /// Rotate all elements 90 degrees counterclockwise
     pub fn rotate_cc(&mut self) {
-        for y in 0..W / 2 {
-            for x in y..W - 1 - y {
-                let pos0 = Pos::<W, W>::try_from((x, y)).unwrap();
+        for y in 0..XYMAX / 2 {
+            for x in y..XYMAX - y {
+                let pos0 = Pos::<XYMAX, XYMAX>::try_from((x, y)).unwrap();
                 let pos1 = pos0.rotate_cw();
                 let pos2 = pos1.rotate_cw();
                 let pos3 = pos2.rotate_cw();
@@ -343,8 +340,8 @@ impl<P: PosT, const WORDS: usize> fmt::Display for Gridbool<P, WORDS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         grid::display_fmt_helper(
             f,
-            P::WIDTH,
-            P::HEIGHT,
+            P::width(),
+            P::height(),
             self.iter().map(|b| (if b { "#" } else { "." }).to_string()),
         )
     }

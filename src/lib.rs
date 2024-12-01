@@ -88,13 +88,13 @@
 //! Usage example:
 //!
 //! ```rust
-//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Sqrid = sqrid::sqrid_create!(2, 2, false);
 //! type Pos = sqrid::pos_create!(Sqrid);
 //! type Grid = sqrid::grid_create!(Sqrid, i32);
 //!
 //! // The grid create macro above is currently equivalent to:
 //! type Grid2 = sqrid::Grid<i32, Pos,
-//!                          { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
+//!                          { ((Sqrid::XMAX as usize + 1) * (Sqrid::YMAX as usize + 1)) }>;
 //!
 //! // We can create grids from iterators via `collect`:
 //! let mut gridnums = (0..9).collect::<Grid>();

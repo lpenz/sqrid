@@ -12,14 +12,14 @@ use anyhow::anyhow;
 use anyhow::Result;
 use std::convert::TryFrom;
 
-type Pos = sqrid::Pos<5, 3>;
+type Pos = sqrid::Pos<4, 2>;
 type Grid = sqrid::Grid<i32, Pos, 15>;
 type _PosScale = sqrid::Pos<0xffff, 0xffff>;
 type _GridScale = sqrid::grid_create!(_PosScale, i32);
 
-type Pos3 = sqrid::Pos<3, 3>;
+type Pos3 = sqrid::Pos<2, 2>;
 type Grid3 = sqrid::grid_create!(Pos3, i32);
-type Pos5 = sqrid::Pos<5, 5>;
+type Pos5 = sqrid::Pos<4, 4>;
 type Grid5 = sqrid::grid_create!(Pos5, i32);
 
 #[test]
@@ -143,8 +143,8 @@ fn test_from_vecvec() -> Result<()> {
 fn test_line_mut() -> Result<()> {
     let mut grid = Grid::default();
     grid.extend(Pos::iter().map(|pos| (pos, <(i32, i32)>::from(pos).1)));
-    assert_eq!(grid.line(1), [1, 1, 1, 1, 1]);
-    assert_eq!(grid.line_mut(2), [2, 2, 2, 2, 2]);
+    assert_eq!(grid.line(1.try_into()?), [1, 1, 1, 1, 1]);
+    assert_eq!(grid.line_mut(2.try_into()?), [2, 2, 2, 2, 2]);
     grid.as_mut()[0] = 7;
     assert_eq!(
         grid.as_ref(),

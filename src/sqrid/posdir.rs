@@ -8,41 +8,73 @@
 //! Interaction between [`Pos`] and [`Dir`]
 
 use std::cmp::Ordering::{Equal, Greater, Less};
-use std::convert::TryFrom;
 use std::ops;
 
+use super::boundedint;
 use super::dir::Dir;
 use super::error::Error;
 use super::pos::Pos;
+use super::postrait::PosT;
 
-impl<const W: u16, const H: u16> ops::Add<Dir> for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> ops::Add<Dir> for Pos<XMAX, YMAX>
+where
+    (
+        boundedint::BoundedU16<0, XMAX>,
+        boundedint::BoundedU16<0, YMAX>,
+    ): ops::Add<
+        Dir,
+        Output = Result<
+            (
+                boundedint::BoundedU16<0, XMAX>,
+                boundedint::BoundedU16<0, YMAX>,
+            ),
+            Error,
+        >,
+    >,
+{
     type Output = Result<Self, Error>;
-    #[inline]
     fn add(self, rhs: Dir) -> Self::Output {
-        Pos::try_from((self.0 + rhs)?)
+        Ok(Self::from((self.0 + rhs)?))
     }
 }
 
-impl<const W: u16, const H: u16> ops::Add<Dir> for &Pos<W, H> {
-    type Output = Result<Pos<W, H>, Error>;
-    #[inline]
+impl<const XMAX: u16, const YMAX: u16> ops::Add<Dir> for &Pos<XMAX, YMAX>
+where
+    (
+        boundedint::BoundedU16<0, XMAX>,
+        boundedint::BoundedU16<0, YMAX>,
+    ): ops::Add<
+        Dir,
+        Output = Result<
+            (
+                boundedint::BoundedU16<0, XMAX>,
+                boundedint::BoundedU16<0, YMAX>,
+            ),
+            Error,
+        >,
+    >,
+{
+    type Output = Result<Pos<XMAX, YMAX>, Error>;
     fn add(self, rhs: Dir) -> Self::Output {
-        Pos::try_from((self.0 + rhs)?)
+        Ok(Pos::<XMAX, YMAX>::from((self.0 + rhs)?))
     }
 }
 
 /// Function that adds a pos and a dir, for usage where a function is
 /// more ergonomic.
-pub fn pos_dir_add<const W: u16, const H: u16>(
-    pos: Pos<W, H>,
+pub fn pos_dir_add<const XMAX: u16, const YMAX: u16>(
+    pos: Pos<XMAX, YMAX>,
     dir: Dir,
-) -> Result<Pos<W, H>, Error> {
+) -> Result<Pos<XMAX, YMAX>, Error> {
     pos + dir
 }
 
 /// Function that adds a pos and a dir, for usage where a function
 /// that returns an `Option<Pos>` is more ergonomic.
-pub fn pos_dir_add_ok<const W: u16, const H: u16>(pos: Pos<W, H>, dir: Dir) -> Option<Pos<W, H>> {
+pub fn pos_dir_add_ok<const XMAX: u16, const YMAX: u16>(
+    pos: Pos<XMAX, YMAX>,
+    dir: Dir,
+) -> Option<Pos<XMAX, YMAX>> {
     (pos + dir).ok()
 }
 
@@ -50,10 +82,7 @@ pub fn pos_dir_add_ok<const W: u16, const H: u16>(pos: Pos<W, H>, dir: Dir) -> O
 ///
 /// Returns `Some(Dir)` unless `src` == `dst`, in which case we return
 /// `None`.
-pub fn direction_to<const W: u16, const H: u16, const D: bool>(
-    src: &Pos<W, H>,
-    dst: &Pos<W, H>,
-) -> Option<Dir> {
+pub fn direction_to<P: PosT, const D: bool>(src: &P, dst: &P) -> Option<Dir> {
     let tsrc = src.tuple();
     let tdst = dst.tuple();
     if D {

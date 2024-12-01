@@ -14,6 +14,8 @@
 use std::convert;
 use std::fmt;
 
+use super::boundedint::BoundedInt;
+use super::boundedint::BoundedU16;
 use super::error::Error;
 use super::postrait::PosT;
 
@@ -71,7 +73,7 @@ use super::postrait::PosT;
 ///   const POS : Pos = Pos::new_static::<3, 30>();
 ///   ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Pos<const WIDTH: u16, const HEIGHT: u16>(pub (u16, u16));
+pub struct Pos<const XMAX: u16, const YMAX: u16>(pub (BoundedU16<0, XMAX>, BoundedU16<0, YMAX>));
 
 /// Helper macro to a [`Pos`] type from an [`super::base::Sqrid`].
 ///
@@ -83,53 +85,75 @@ pub struct Pos<const WIDTH: u16, const HEIGHT: u16>(pub (u16, u16));
 #[macro_export]
 macro_rules! pos_create {
     ($sqrid: ty) => {
-        $crate::Pos::<{ <$sqrid>::WIDTH }, { <$sqrid>::HEIGHT }>
+        $crate::Pos::<{ <$sqrid>::XMAX }, { <$sqrid>::YMAX }>
     };
 }
 
-impl<const W: u16, const H: u16> Pos<W, H> {
-    /// Width of the grid: exclusive max of the x coordinate.
-    pub const WIDTH: u16 = W;
+impl<const XMAX: u16, const YMAX: u16> Pos<XMAX, YMAX> {
+    /// Max x value
+    pub const XMAX: u16 = XMAX;
+    /// Max y value
+    pub const YMAX: u16 = YMAX;
 
+    /// Width of the grid: exclusive max of the x coordinate.
+    pub const WIDTH: u16 = XMAX + 1;
     /// Height of the grid: exclusive max of the y coordinate.
-    pub const HEIGHT: u16 = H;
+    pub const HEIGHT: u16 = YMAX + 1;
 
     /// Size of the grid, i.e. how many squares.
-    pub const SIZE: usize = W as usize * H as usize;
+    pub const SIZE: usize = Self::WIDTH as usize * Self::HEIGHT as usize;
 
     /// Coordinates of the first element of the grid: `(0, 0)`.
     /// Also known as origin.
-    pub const FIRST: Pos<W, H> = Pos((0, 0));
+    pub const FIRST: Pos<XMAX, YMAX> = Pos((
+        BoundedU16::<0, XMAX>::new_static::<0>(),
+        BoundedU16::<0, YMAX>::new_static::<0>(),
+    ));
 
     /// Coordinates of the last element of the grid.
-    pub const LAST: Pos<W, H> = Pos((W - 1, H - 1));
+    pub const LAST: Pos<XMAX, YMAX> = Pos((
+        BoundedU16::<0, XMAX>::new_static::<XMAX>(),
+        BoundedU16::<0, YMAX>::new_static::<YMAX>(),
+    ));
 
     /// Center the (approximate) center coordinate.
-    pub const CENTER: Pos<W, H> = Pos((W / 2, H / 2));
+    pub const CENTER: Pos<XMAX, YMAX> = Pos((
+        BoundedU16::<0, XMAX>::new_unwrap(XMAX / 2),
+        BoundedU16::<0, YMAX>::new_unwrap(YMAX / 2),
+    ));
 
     /// Coordinates of the top-left coordinate.
-    pub const TOP_LEFT: Pos<W, H> = Pos((0, 0));
+    pub const TOP_LEFT: Pos<XMAX, YMAX> = Self::FIRST;
     /// Coordinates of the top-right coordinate.
-    pub const TOP_RIGHT: Pos<W, H> = Pos((W - 1, 0));
+    pub const TOP_RIGHT: Pos<XMAX, YMAX> = Pos((
+        BoundedU16::<0, XMAX>::new_static::<XMAX>(),
+        BoundedU16::<0, YMAX>::new_static::<0>(),
+    ));
     /// Coordinates of the bottom-left coordinate.
-    pub const BOTTOM_LEFT: Pos<W, H> = Pos((0, H - 1));
+    pub const BOTTOM_LEFT: Pos<XMAX, YMAX> = Pos((
+        BoundedU16::<0, XMAX>::new_static::<0>(),
+        BoundedU16::<0, YMAX>::new_static::<YMAX>(),
+    ));
     /// Coordinates of the bottom-right coordinate.
-    pub const BOTTOM_RIGHT: Pos<W, H> = Pos((W - 1, H - 1));
+    pub const BOTTOM_RIGHT: Pos<XMAX, YMAX> = Self::LAST;
 
     /// Create a new [`Pos`] instance; returns error if a coordinate is
     /// out-of-bounds.
     pub const fn new(x: u16, y: u16) -> Result<Self, Error> {
-        if x >= W || y >= H {
-            Err(Error::OutOfBounds)
-        } else {
-            Ok(Pos((x, y)))
-        }
+        let Ok(x) = BoundedU16::<0, XMAX>::new(x) else {
+            return Err(Error::OutOfBounds);
+        };
+        let Ok(y) = BoundedU16::<0, YMAX>::new(y) else {
+            return Err(Error::OutOfBounds);
+        };
+        Ok(Pos((x, y)))
     }
 
     /// Create a new [`Pos`] instance, supports being called in const
     /// context; panics if a coordinate is out-of-bounds.
     pub const fn new_unwrap(x: u16, y: u16) -> Self {
-        assert!(x < W && y < H);
+        let x = BoundedU16::<0, XMAX>::new_unwrap(x);
+        let y = BoundedU16::<0, YMAX>::new_unwrap(y);
         Pos((x, y))
     }
 
@@ -141,45 +165,53 @@ impl<const W: u16, const H: u16> Pos<W, H> {
     /// const POS : sqrid::Pos<5,5> = sqrid::Pos::<5,5>::new_static::<9,9>();
     /// ```
     pub const fn new_static<const X: u16, const Y: u16>() -> Self {
-        assert!(X < W && Y < H);
-        Self((X, Y))
+        Self((
+            BoundedU16::<0, XMAX>::new_static::<X>(),
+            BoundedU16::<0, YMAX>::new_static::<Y>(),
+        ))
     }
 
     /// Returns the x coordinate
     #[inline]
     pub const fn x(&self) -> u16 {
-        self.0 .0
+        self.0 .0.into_inner()
     }
 
     /// Returns the y coordinate
     #[inline]
     pub const fn y(&self) -> u16 {
-        self.0 .1
+        self.0 .1.into_inner()
     }
 
     /// Return the corresponding `(u16, u16)` tuple.
     #[inline]
     pub const fn tuple(&self) -> (u16, u16) {
-        self.0
+        (self.x(), self.y())
     }
 }
 
 // Rotations are only available for "square" grid coordinates
-impl<const W: u16> Pos<W, W> {
+impl<const XYMAX: u16> Pos<XYMAX, XYMAX> {
     /// Rotate the square grid coordinate 90 degrees clockwise
     #[inline]
-    pub fn rotate_cw(&self) -> Pos<W, W> {
-        Pos((W - 1 - self.y(), self.x()))
+    pub fn rotate_cw(&self) -> Pos<XYMAX, XYMAX> {
+        Pos((
+            BoundedU16::<0, XYMAX>::new_unwrap(XYMAX - self.y()),
+            self.0 .0,
+        ))
     }
 
     /// Rotate the square grid coordinate 90 degrees counter-clockwise
     #[inline]
-    pub fn rotate_cc(&self) -> Pos<W, W> {
-        Pos((self.y(), W - 1 - self.x()))
+    pub fn rotate_cc(&self) -> Pos<XYMAX, XYMAX> {
+        Pos((
+            self.0 .1,
+            BoundedU16::<0, XYMAX>::new_unwrap(XYMAX - self.x()),
+        ))
     }
 }
 
-impl<const W: u16, const H: u16> fmt::Display for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> fmt::Display for Pos<XMAX, YMAX> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({},{})", self.x(), self.y())
     }
@@ -187,35 +219,47 @@ impl<const W: u16, const H: u16> fmt::Display for Pos<W, H> {
 
 // TryFrom / Into tuple
 
-impl<const W: u16, const H: u16> convert::TryFrom<&(u16, u16)> for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> convert::From<(BoundedU16<0, XMAX>, BoundedU16<0, YMAX>)>
+    for Pos<XMAX, YMAX>
+{
+    fn from(xy: (BoundedU16<0, XMAX>, BoundedU16<0, YMAX>)) -> Self {
+        Pos(xy)
+    }
+}
+
+impl<const XMAX: u16, const YMAX: u16> convert::From<&(BoundedU16<0, XMAX>, BoundedU16<0, YMAX>)>
+    for Pos<XMAX, YMAX>
+{
+    fn from(xy: &(BoundedU16<0, XMAX>, BoundedU16<0, YMAX>)) -> Self {
+        Pos(*xy)
+    }
+}
+
+impl<const XMAX: u16, const YMAX: u16> convert::TryFrom<&(u16, u16)> for Pos<XMAX, YMAX> {
     type Error = Error;
     #[inline]
     fn try_from(xy: &(u16, u16)) -> Result<Self, Self::Error> {
-        Pos::tryfrom_tuple(*xy)
+        Pos::new(xy.0, xy.1)
     }
 }
 
-impl<const W: u16, const H: u16> convert::TryFrom<(u16, u16)> for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> convert::TryFrom<(u16, u16)> for Pos<XMAX, YMAX> {
     type Error = Error;
     #[inline]
     fn try_from(xy: (u16, u16)) -> Result<Self, Self::Error> {
-        Pos::tryfrom_tuple(xy)
+        Pos::new(xy.0, xy.1)
     }
 }
 
-impl<const W: u16, const H: u16> convert::TryFrom<&(i32, i32)> for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> convert::TryFrom<&(i32, i32)> for Pos<XMAX, YMAX> {
     type Error = Error;
     #[inline]
     fn try_from(xy: &(i32, i32)) -> Result<Self, Self::Error> {
-        if xy.0 < 0 || xy.1 < 0 || xy.0 >= W as i32 || xy.1 >= H as i32 {
-            Err(Error::OutOfBounds)
-        } else {
-            Ok(Pos((xy.0 as u16, xy.1 as u16)))
-        }
+        Pos::new(xy.0 as u16, xy.1 as u16)
     }
 }
 
-impl<const W: u16, const H: u16> convert::TryFrom<(i32, i32)> for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> convert::TryFrom<(i32, i32)> for Pos<XMAX, YMAX> {
     type Error = Error;
     #[inline]
     fn try_from(xy: (i32, i32)) -> Result<Self, Self::Error> {
@@ -223,75 +267,71 @@ impl<const W: u16, const H: u16> convert::TryFrom<(i32, i32)> for Pos<W, H> {
     }
 }
 
-impl<const W: u16, const H: u16> From<&Pos<W, H>> for (u16, u16) {
+impl<const XMAX: u16, const YMAX: u16> From<&Pos<XMAX, YMAX>> for (u16, u16) {
     #[inline]
-    fn from(pos: &Pos<W, H>) -> Self {
+    fn from(pos: &Pos<XMAX, YMAX>) -> Self {
         pos.tuple()
     }
 }
 
-impl<const W: u16, const H: u16> From<Pos<W, H>> for (u16, u16) {
+impl<const XMAX: u16, const YMAX: u16> From<Pos<XMAX, YMAX>> for (u16, u16) {
     #[inline]
-    fn from(pos: Pos<W, H>) -> Self {
+    fn from(pos: Pos<XMAX, YMAX>) -> Self {
         pos.tuple()
     }
 }
 
-impl<const W: u16, const H: u16> From<&Pos<W, H>> for (i32, i32) {
+impl<const XMAX: u16, const YMAX: u16> From<&Pos<XMAX, YMAX>> for (i32, i32) {
     #[inline]
-    fn from(pos: &Pos<W, H>) -> Self {
+    fn from(pos: &Pos<XMAX, YMAX>) -> Self {
         (pos.x() as i32, pos.y() as i32)
     }
 }
 
-impl<const W: u16, const H: u16> From<Pos<W, H>> for (i32, i32) {
+impl<const XMAX: u16, const YMAX: u16> From<Pos<XMAX, YMAX>> for (i32, i32) {
     #[inline]
-    fn from(pos: Pos<W, H>) -> Self {
+    fn from(pos: Pos<XMAX, YMAX>) -> Self {
         <(i32, i32)>::from(&pos)
     }
 }
 
 // TryFrom / Into usize index
 
-impl<const W: u16, const H: u16> convert::TryFrom<usize> for Pos<W, H> {
+impl<const XMAX: u16, const YMAX: u16> convert::TryFrom<usize> for Pos<XMAX, YMAX> {
     type Error = Error;
     #[inline]
     fn try_from(i: usize) -> Result<Self, Self::Error> {
-        Pos::<W, H>::tryfrom_usize(i)
+        Pos::<XMAX, YMAX>::tryfrom_usize(i)
     }
 }
 
-impl<const W: u16, const H: u16> From<&Pos<W, H>> for usize {
+impl<const XMAX: u16, const YMAX: u16> From<&Pos<XMAX, YMAX>> for usize {
     #[inline]
-    fn from(pos: &Pos<W, H>) -> Self {
+    fn from(pos: &Pos<XMAX, YMAX>) -> Self {
         pos.to_usize()
     }
 }
 
-impl<const W: u16, const H: u16> From<Pos<W, H>> for usize {
+impl<const XMAX: u16, const YMAX: u16> From<Pos<XMAX, YMAX>> for usize {
     #[inline]
-    fn from(pos: Pos<W, H>) -> Self {
+    fn from(pos: Pos<XMAX, YMAX>) -> Self {
         pos.to_usize()
     }
 }
 
 /* Implement PosT */
 
-impl<const W: u16, const H: u16> PosT for Pos<W, H> {
-    type Xtype = u16;
-    type Ytype = u16;
-    const XMIN: Self::Xtype = 0;
-    const YMIN: Self::Ytype = 0;
-    const XMAX: Self::Xtype = W - 1;
-    const YMAX: Self::Ytype = H - 1;
-    const WIDTH: usize = W as usize;
-    const HEIGHT: usize = H as usize;
-    fn tryfrom_tuple(xy: (u16, u16)) -> Result<Self, Error> {
-        if xy.0 >= W || xy.1 >= H {
-            Err(Error::OutOfBounds)
-        } else {
-            Ok(Pos(xy))
-        }
+impl<const XMAX: u16, const YMAX: u16> PosT for Pos<XMAX, YMAX> {
+    type Xtype = BoundedU16<0, XMAX>;
+    type Ytype = BoundedU16<0, YMAX>;
+    const XMIN: Self::Xtype = Self::Xtype::MIN;
+    const YMIN: Self::Ytype = Self::Ytype::MIN;
+    const XMAX: Self::Xtype = Self::Xtype::MAX;
+    const YMAX: Self::Ytype = Self::Ytype::MAX;
+    const WIDTH: usize = XMAX as usize + 1;
+    const HEIGHT: usize = YMAX as usize + 1;
+    fn tryfrom_tuple(xy: (Self::Xtype, Self::Ytype)) -> Result<Self, Error> {
+        Ok(Pos(xy))
     }
     fn into_tuple(self) -> (Self::Xtype, Self::Ytype) {
         self.0

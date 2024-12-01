@@ -26,7 +26,7 @@
 //! Example of recommended usage:
 //!
 //! ```
-//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Sqrid = sqrid::sqrid_create!(2, 2, false);
 //! type Pos = sqrid::pos_create!(Sqrid);
 //!
 //! for (distance, vecPosDir) in
@@ -63,7 +63,7 @@
 //! Example of recommended usage:
 //!
 //! ```
-//! type Sqrid = sqrid::sqrid_create!(3, 3, false);
+//! type Sqrid = sqrid::sqrid_create!(2, 2, false);
 //! type Pos = sqrid::pos_create!(Sqrid);
 //!
 //! // Generate the grid of "came from" directions from bottom-right to

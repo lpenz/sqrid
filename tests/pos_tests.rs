@@ -9,9 +9,9 @@ use anyhow::{anyhow, Result};
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-type Pos = sqrid::Pos<6, 7>;
-type Pos2 = sqrid::Pos<2, 2>;
-type Pos5 = sqrid::Pos<5, 5>;
+type Pos = sqrid::Pos<5, 6>;
+type Pos2 = sqrid::Pos<1, 1>;
+type Pos5 = sqrid::Pos<4, 4>;
 
 #[test]
 fn test_basic() -> Result<()> {
@@ -40,8 +40,11 @@ fn test_usize() -> Result<()> {
 fn test_tryfrom_pos() -> Result<()> {
     assert_eq!(Pos::tryfrom_pos(Pos2::FIRST)?, Pos::try_from(0_usize)?);
     assert_eq!(Pos::tryfrom_pos(Pos5::FIRST)?, Pos::try_from(0_usize)?);
-    assert_eq!(Pos::tryfrom_pos(Pos2::LAST)?, Pos::tryfrom_tuple((1, 1))?);
-    assert_eq!(Pos::tryfrom_pos(Pos5::LAST)?, Pos::tryfrom_tuple((4, 4))?);
+    assert_eq!(
+        Pos::tryfrom_pos(Pos2::LAST)?,
+        Pos::tryfrom_tuple((1.try_into()?, 1.try_into()?))?
+    );
+    assert_eq!(Pos::tryfrom_pos(Pos5::LAST)?, Pos::new(4, 4)?);
     assert!(Pos2::tryfrom_pos(Pos::LAST).is_err());
     Ok(())
 }
@@ -75,24 +78,24 @@ fn test_iter() -> Result<()> {
 
 #[test]
 fn test_iter_in_xy() -> Result<()> {
-    let ally = Pos::iter_in_x(0)
+    let ally = Pos::iter_in_x(0.try_into()?)
         .ok_or(anyhow!("iter_in_x error"))?
         .collect::<Vec<_>>();
     assert_eq!(ally.len(), Pos::HEIGHT as usize);
     for x in 0..Pos::WIDTH {
-        let posx1 = Pos::iter_in_x(x)
+        let posx1 = Pos::iter_in_x(x.try_into()?)
             .ok_or(anyhow!("iter_in_x error"))?
             .collect::<Vec<_>>();
         for (y, pos) in (0..Pos::HEIGHT).zip(posx1) {
             assert_eq!(pos.tuple(), (x, y));
         }
     }
-    let allx = Pos::iter_in_y(0)
+    let allx = Pos::iter_in_y(0.try_into()?)
         .ok_or(anyhow!("iter_in_y error"))?
         .collect::<Vec<_>>();
     assert_eq!(allx.len(), Pos::WIDTH as usize);
     for y in 0..Pos::HEIGHT {
-        let posy1 = Pos::iter_in_y(y)
+        let posy1 = Pos::iter_in_y(y.try_into()?)
             .ok_or(anyhow!("iter_in_y error"))?
             .collect::<Vec<_>>();
         for (x, pos) in (0..Pos::WIDTH).zip(posy1) {
@@ -105,12 +108,12 @@ fn test_iter_in_xy() -> Result<()> {
 #[test]
 fn test_max() -> Result<()> {
     type Pos = sqrid::Pos<0x7fff, 0x7fff>;
-    assert_eq!(Pos::SIZE, 0x7fff * 0x7fff);
-    assert_eq!(usize::from(&Pos::LAST), 0x7fff * 0x7fff - 1);
-    assert_eq!(Pos::new(0x7ffe, 0x7ffe)?, Pos::LAST);
-    assert_eq!(Pos::try_from((0x7ffe, 0x7ffe)), Ok(Pos::LAST));
+    assert_eq!(Pos::SIZE, (0x7fff + 1) * (0x7fff + 1));
+    assert_eq!(usize::from(&Pos::LAST), (0x7fff + 1) * (0x7fff + 1) - 1);
+    assert_eq!(Pos::new(0x7fff, 0x7fff)?, Pos::LAST);
+    assert_eq!(Pos::try_from((0x7fff, 0x7fff)), Ok(Pos::LAST));
     assert_eq!(Pos::try_from(usize::from(Pos::LAST)), Ok(Pos::LAST));
-    let prevlast = Pos::new_static::<0x7ffd, 0x7ffe>();
+    let prevlast = Pos::new_static::<0x7ffe, 0x7fff>();
     assert_eq!(prevlast.next(), Some(Pos::LAST));
     Ok(())
 }

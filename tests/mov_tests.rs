@@ -9,7 +9,7 @@ use anyhow::Result;
 
 #[test]
 fn test_sum_none() -> Result<()> {
-    type Pos = sqrid::Pos<1, 1>;
+    type Pos = sqrid::Pos<0, 0>;
     let center = Pos::default();
     for dir in Dir::iter::<true>() {
         assert!((center + dir).is_err());
@@ -19,7 +19,7 @@ fn test_sum_none() -> Result<()> {
 
 #[test]
 fn test_sum_some() -> Result<()> {
-    type Pos = sqrid::Pos<3, 3>;
+    type Pos = sqrid::Pos<2, 2>;
     let center = Pos::new_static::<1, 1>();
     let neighs = Dir::iter::<true>()
         .filter_map(|dir| (center + dir).ok())

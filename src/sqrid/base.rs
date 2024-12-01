@@ -17,8 +17,13 @@
 /// ease the creation of the other entites and use of algorithms like
 /// BFS.
 #[derive(Debug, Copy, Clone, Default)]
-pub struct Sqrid<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
-{}
+pub struct Sqrid<
+    const XMAX: u16,
+    const YMAX: u16,
+    const D: bool,
+    const WORDS: usize,
+    const SIZE: usize,
+> {}
 
 /// Creates the a [`Sqrid`] type from the provided parameters: width,
 /// height and diagonals
@@ -36,32 +41,32 @@ pub struct Sqrid<const W: u16, const H: u16, const D: bool, const WORDS: usize, 
 /// ```
 #[macro_export]
 macro_rules! sqrid_create {
-    ($width: expr, $height: expr, $diags: expr) => {
+    ($xmax: expr, $ymax: expr, $diags: expr) => {
         $crate::Sqrid::<
-            { $width },
-            { $height },
+            { $xmax },
+            { $ymax },
             $diags,
-            { ((($width as usize) * ($height as usize)) / 32 + 1) },
-            { ($width as usize) * ($height as usize) },
+            { ((($xmax as usize + 1) * ($ymax as usize + 1)) / 32 + 1) },
+            { ($xmax as usize + 1) * ($ymax as usize + 1) },
         >
     };
     ($postype: ty, $diags: expr) => {
         $crate::Sqrid::<
-            { <$postype>::WIDTH },
-            { <$postype>::HEIGHT },
+            { <$postype>::XMAX },
+            { <$postype>::YMAX },
             $diags,
-            { (((<$postype>::WIDTH as usize) * (<$postype>::HEIGHT as usize)) / 32 + 1) },
-            { (<$postype>::WIDTH as usize) * (<$postype>::HEIGHT as usize) },
+            { (((<$postype>::XMAX as usize + 1) * (<$postype>::YMAX as usize + 1)) / 32 + 1) },
+            { (<$postype>::XMAX as usize + 1) * (<$postype>::YMAX as usize + 1) },
         >
     };
 }
 
-impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
-    Sqrid<W, H, D, WORDS, SIZE>
+impl<const XMAX: u16, const YMAX: u16, const D: bool, const WORDS: usize, const SIZE: usize>
+    Sqrid<XMAX, YMAX, D, WORDS, SIZE>
 {
-    /// Width of the grid: exclusive max of the x coordinate.
-    pub const WIDTH: u16 = W;
+    /// Xmax of the grid: exclusive max of the x coordinate.
+    pub const XMAX: u16 = XMAX;
 
-    /// Height of the grid: exclusive max of the y coordinate.
-    pub const HEIGHT: u16 = H;
+    /// Ymax of the grid: exclusive max of the y coordinate.
+    pub const YMAX: u16 = YMAX;
 }

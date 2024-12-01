@@ -112,7 +112,7 @@ where
         return Err(Error::DestinationUnreachable);
     }
     // Maximum iterations is the number of coordinates
-    let mut maxiter = P::WIDTH * P::HEIGHT + 1;
+    let mut maxiter = P::width() * P::width() + 1;
     while &pos != orig {
         let dir = map.get(&pos).ok_or(Error::InvalidMovement)?;
         ret.push_front(-dir);
@@ -129,8 +129,8 @@ where
 
 /* Add camefrom_into_path to Sqrid */
 
-impl<const W: u16, const H: u16, const D: bool, const WORDS: usize, const SIZE: usize>
-    Sqrid<W, H, D, WORDS, SIZE>
+impl<const XMAX: u16, const YMAX: u16, const D: bool, const WORDS: usize, const SIZE: usize>
+    Sqrid<XMAX, YMAX, D, WORDS, SIZE>
 {
     /// See [`camefrom_into_path`]
     pub fn camefrom_into_path<P, MapPosDir>(

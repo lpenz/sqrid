@@ -317,18 +317,12 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
 
     /// Returns an iterator over valid X values
     fn iter_x() -> impl Iterator<Item = Self::Xtype> {
-        (0..Self::WIDTH).map(|x| {
-            // SAFE by construction
-            into_or_panic!(x)
-        })
+        Self::Xtype::iter()
     }
 
     /// Returns an iterator over valid Y values
     fn iter_y() -> impl Iterator<Item = Self::Ytype> {
-        (0..Self::HEIGHT).map(|y| {
-            // SAFE by construction
-            into_or_panic!(y)
-        })
+        Self::Ytype::iter()
     }
 
     /// Return an iterator that returns all positions within the grid
@@ -551,8 +545,7 @@ impl<P: PosT> Iterator for PosTIterInX<P> {
     type Item = P;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.0.take() {
-            let y = pos0.y().inc()?;
-            self.0 = P::new(pos0.x(), y).ok();
+            self.0 = pos0.y().inc().and_then(|y| P::new(pos0.x(), y).ok());
             Some(pos0)
         } else {
             None
@@ -575,8 +568,7 @@ impl<P: PosT> Iterator for PosTIterInY<P> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(pos0) = self.0.take() {
-            let x = pos0.x().inc()?;
-            self.0 = P::new(x, pos0.y()).ok();
+            self.0 = pos0.x().inc().and_then(|x| P::new(x, pos0.y()).ok());
             Some(pos0)
         } else {
             None
