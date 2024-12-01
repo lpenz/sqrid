@@ -26,6 +26,7 @@ pub trait BoundedInt:
     + Default
     + Eq
     + PartialOrd
+    + Ord
     + Copy
     + From<bool>
     + TryInto<usize>
@@ -215,7 +216,7 @@ macro_rules! boundedint_type_create {
             }
 
             /// Deconstructs an $name and returns the the inner value
-            pub fn into_inner(self) -> $type {
+            pub const fn into_inner(self) -> $type {
                 self.0
             }
         }
