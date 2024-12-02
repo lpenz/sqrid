@@ -34,6 +34,7 @@ where
     if UNSIGNED {
         assert_eq!(T::default().dec(), None);
     }
+    assert_eq!(format!("{}", i5), "5");
 }
 
 #[test]

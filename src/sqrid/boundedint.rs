@@ -32,6 +32,7 @@ macro_rules! into_or_oob {
 /// possible value.
 pub trait BoundedInt:
     Debug
+    + std::fmt::Display
     + Default
     + Eq
     + PartialOrd
@@ -255,6 +256,12 @@ macro_rules! boundedint_type_create {
                     .checked_sub(other.0)
                     .map(|v| Self(v))
                     .filter(|v| Self(MIN) <= *v && *v <= Self(MAX))
+            }
+        }
+
+        impl<const MIN: $type, const MAX: $type> std::fmt::Display for $name<MIN, MAX> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
             }
         }
 
