@@ -2,9 +2,18 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
-//! int trait that concentrates required integer traits
+//! Bounded integers modules.
 //!
-//! These are required for integers that are used as coordinates.
+//! All integer types have a minimum and a maximum value. The [`BoundedInt`] trait generalizes
+//! this concept and allows us to create integers with custom bounds. The trait is implemented
+//! for all builtin integer types.
+//!
+//! This module also implements a custom type for each one of the builtin integers that supports
+//! min and max as constant type parameters, such as [`BoundedU8`], [`BoundedI32`], etc.
+//!
+//! This module also provides the generic [`BoundedIntIterator`] iterator.
+//!
+//! This trait is used to internal coordinate types more generic and provide safety.
 
 use super::error::Error;
 
@@ -19,8 +28,8 @@ macro_rules! into_or_oob {
 
 /// Trait for bounded integer types.
 ///
-/// It concentrates all functions we need in this create, for both regular integer types and
-/// from the custom bounded integer types.
+/// It's implemented by default for all builtin integer types, as they all have a min and a max
+/// possible value.
 pub trait BoundedInt:
     Debug
     + Default
@@ -171,6 +180,9 @@ impl<T: BoundedInt> DoubleEndedIterator for BoundedIntIterator<T> {
     }
 }
 
+// Bounded integer types with const type parameters
+
+/// Implement a conversion from a standard integer type
 macro_rules! boundedint_impl_tryfrom {
     ($name:ident, $type:ty, $into:ty) => {
         impl<const MIN: $type, const MAX: $type> TryFrom<$into> for $name<MIN, MAX> {
@@ -182,13 +194,11 @@ macro_rules! boundedint_impl_tryfrom {
     };
 }
 
-/// Create a type for each existing integer that allows us to define
-/// arbitrary bounds
+/// Create a type for each existing integer that allows us to define arbitrary bounds
 macro_rules! boundedint_type_create {
     ($name:ident, $type:ty) => {
         impl<const MIN: $type, const MAX: $type> $name<MIN, MAX> {
-            /// Create a new bounded int with the given value in it,
-            /// if it's within bounds
+            /// Create a new bounded int with the given value in it, if it's within bounds
             pub const fn new(v: $type) -> Result<Self, Error> {
                 if v < MIN || v > MAX {
                     Err(Error::OutOfBounds)
@@ -197,8 +207,8 @@ macro_rules! boundedint_type_create {
                 }
             }
 
-            /// Create a new bounded int with the given value in it;
-            /// panics if the value is not within bounds
+            /// Create a new bounded int with the given value in it; panics if the value is not
+            /// within bounds
             pub const fn new_unwrap(v: $type) -> Self {
                 assert!(v >= MIN && v <= MAX);
                 Self(v)
