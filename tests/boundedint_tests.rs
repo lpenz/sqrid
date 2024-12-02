@@ -72,7 +72,7 @@ fn test_basic_bounded_iint() {
     _test_boundedint_trait_basic::<BoundedI128<0, 20>, false>();
 }
 
-type BI8 = BoundedI8<-1, 5>;
+type BI8 = BoundedI8<-2, 5>;
 
 #[test]
 fn test_bounded_type_construction() {
@@ -84,7 +84,7 @@ fn test_bounded_type_construction() {
     assert_eq!(BI8::new(2), Ok(two));
     assert_eq!(BI8::new_unwrap(2), two);
     // Test constructor errors:
-    assert_eq!(BI8::new(-2), Err(Error::OutOfBounds));
+    assert_eq!(BI8::new(-3), Err(Error::OutOfBounds));
     assert_eq!(BI8::try_from(6), Err(Error::OutOfBounds));
     assert!(catch_unwind(|| BI8::new_unwrap(6)).is_err());
     // Test conversion:
@@ -100,7 +100,12 @@ fn test_bounded_type_construction() {
 #[test]
 fn test_bounded_type_iter() {
     // Test iter
-    let answer = (-1..6).map(|i| BI8::new(i).unwrap()).collect::<Vec<_>>();
+    let mut it = BI8::iter();
+    assert_eq!(it.next(), BI8::try_from(-2).ok());
+    assert_eq!(it.next(), BI8::try_from(-1).ok());
+    assert_eq!(it.next_back(), BI8::try_from(5).ok());
+    assert_eq!(it.next_back(), BI8::try_from(4).ok());
+    let answer = (-2..6).map(|i| BI8::new(i).unwrap()).collect::<Vec<_>>();
     assert_eq!(BI8::iter().collect::<Vec<_>>(), answer);
     assert_eq!(
         BI8::iter().rev().collect::<Vec<_>>(),

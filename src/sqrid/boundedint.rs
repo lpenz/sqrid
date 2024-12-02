@@ -36,6 +36,7 @@ pub trait BoundedInt:
     + TryFrom<u32>
     + TryFrom<u64>
     + TryFrom<u128>
+    + TryFrom<isize>
     + TryFrom<i8>
     + TryFrom<i16>
     + TryFrom<i32>
@@ -272,6 +273,7 @@ macro_rules! boundedint_type_create {
         boundedint_impl_tryfrom!($name, $type, u32);
         boundedint_impl_tryfrom!($name, $type, u64);
         boundedint_impl_tryfrom!($name, $type, u128);
+        boundedint_impl_tryfrom!($name, $type, isize);
         boundedint_impl_tryfrom!($name, $type, i8);
         boundedint_impl_tryfrom!($name, $type, i16);
         boundedint_impl_tryfrom!($name, $type, i32);
@@ -304,6 +306,11 @@ boundedint_type_create!(BoundedU64, u64);
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedU128<const MIN: u128, const MAX: u128>(pub u128);
 boundedint_type_create!(BoundedU128, u128);
+
+/// A bounded isize
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct BoundedIsize<const MIN: isize, const MAX: isize>(pub isize);
+boundedint_type_create!(BoundedIsize, isize);
 
 /// A bounded i8
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
