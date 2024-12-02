@@ -419,6 +419,46 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
             Err(Error::Empty)
         }
     }
+
+    /// Rotate the square grid coordinate 90 degrees clockwise
+    fn rotate_cw(&self) -> Self
+    where
+        // We have to be able to subtract the inner types, and generate Xtype and Ytype from the
+        // crossed inners.
+        <<Self as PosT>::Ytype as BoundedInt>::Inner:
+            std::ops::Sub<Output = <<Self as PosT>::Ytype as BoundedInt>::Inner>,
+        Self::Xtype: TryFrom<<<Self as PosT>::Ytype as BoundedInt>::Inner>,
+        Self::Ytype: TryFrom<<<Self as PosT>::Xtype as BoundedInt>::Inner>,
+    {
+        let x = Self::Ytype::MAX.into_inner() - self.y().into_inner();
+        let Ok(x) = Self::Xtype::try_from(x) else {
+            panic!();
+        };
+        let Ok(y) = Self::Ytype::try_from(self.x().into_inner()) else {
+            panic!();
+        };
+        Self::new(x, y).unwrap()
+    }
+
+    /// Rotate the square grid coordinate 90 degrees counter-clockwise
+    fn rotate_cc(&self) -> Self
+    where
+        // We have to be able to subtract the inner types, and generate Xtype and Ytype from the
+        // crossed inners.
+        <<Self as PosT>::Xtype as BoundedInt>::Inner:
+            std::ops::Sub<Output = <<Self as PosT>::Xtype as BoundedInt>::Inner>,
+        Self::Xtype: TryFrom<<<Self as PosT>::Ytype as BoundedInt>::Inner>,
+        Self::Ytype: TryFrom<<<Self as PosT>::Xtype as BoundedInt>::Inner>,
+    {
+        let Ok(x) = Self::Xtype::try_from(self.y().into_inner()) else {
+            panic!();
+        };
+        let y = Self::Xtype::MAX.into_inner() - self.x().into_inner();
+        let Ok(y) = Self::Ytype::try_from(y) else {
+            panic!();
+        };
+        Self::new(x, y).unwrap()
+    }
 }
 
 /* PosTIter */

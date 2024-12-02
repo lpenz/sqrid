@@ -190,27 +190,6 @@ impl<const XMAX: u16, const YMAX: u16> Pos<XMAX, YMAX> {
     }
 }
 
-// Rotations are only available for "square" grid coordinates
-impl<const XYMAX: u16> Pos<XYMAX, XYMAX> {
-    /// Rotate the square grid coordinate 90 degrees clockwise
-    #[inline]
-    pub fn rotate_cw(&self) -> Pos<XYMAX, XYMAX> {
-        Pos((
-            BoundedU16::<0, XYMAX>::new_unwrap(XYMAX - self.y()),
-            self.0 .0,
-        ))
-    }
-
-    /// Rotate the square grid coordinate 90 degrees counter-clockwise
-    #[inline]
-    pub fn rotate_cc(&self) -> Pos<XYMAX, XYMAX> {
-        Pos((
-            self.0 .1,
-            BoundedU16::<0, XYMAX>::new_unwrap(XYMAX - self.x()),
-        ))
-    }
-}
-
 impl<const XMAX: u16, const YMAX: u16> fmt::Display for Pos<XMAX, YMAX> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({},{})", self.x(), self.y())
