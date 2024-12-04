@@ -169,7 +169,6 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     pub fn flip_h(&mut self) {
         for y in P::iter_y() {
             for x in 0..P::width() / 2 {
-                let Ok(x) = x.try_into() else { panic!() };
                 let pos1 = P::new(x, y).unwrap();
                 let pos2 = pos1.flip_h();
                 self.0.swap(pos1.to_usize(), pos2.to_usize());
@@ -180,7 +179,6 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
     /// Flip all elements vertically.
     pub fn flip_v(&mut self) {
         for y in 0..P::height() / 2 {
-            let Ok(y) = y.try_into() else { panic!() };
             for x in P::iter_x() {
                 let pos1 = P::new(x, y).unwrap();
                 let pos2 = pos1.flip_v();

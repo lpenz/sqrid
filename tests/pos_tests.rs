@@ -40,10 +40,7 @@ fn test_usize() -> Result<()> {
 fn test_tryfrom_pos() -> Result<()> {
     assert_eq!(Pos::tryfrom_pos(Pos2::FIRST)?, Pos::try_from(0_usize)?);
     assert_eq!(Pos::tryfrom_pos(Pos5::FIRST)?, Pos::try_from(0_usize)?);
-    assert_eq!(
-        Pos::tryfrom_pos(Pos2::LAST)?,
-        Pos::tryfrom_tuple((1.try_into()?, 1.try_into()?))?
-    );
+    assert_eq!(Pos::tryfrom_pos(Pos2::LAST)?, Pos::try_from((1, 1))?);
     assert_eq!(Pos::tryfrom_pos(Pos5::LAST)?, Pos::new(4, 4)?);
     assert!(Pos2::tryfrom_pos(Pos::LAST).is_err());
     Ok(())

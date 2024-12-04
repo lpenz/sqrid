@@ -7,12 +7,6 @@
 use super::boundedint::BoundedInt;
 use super::error::Error;
 
-macro_rules! into_or_oob {
-    ($e:expr) => {
-        $e.try_into().map_err(|_| Error::OutOfBounds)
-    };
-}
-
 macro_rules! into_or_panic {
     ($e:expr) => {{
         let Ok(value) = $e.try_into() else { panic!() };
@@ -39,20 +33,17 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
 
     /// Create a new Pos with the given parameters
     #[inline]
-    fn new(x: Self::Xtype, y: Self::Ytype) -> Result<Self, Error>
+    fn new<X, Y>(x: X, y: Y) -> Result<Self, Error>
     where
+        X: BoundedInt,
+        Y: BoundedInt,
+        Self::Xtype: TryFrom<X>,
+        Self::Ytype: TryFrom<Y>,
         Self: std::marker::Sized,
     {
+        let x = Self::Xtype::try_from(x).map_err(|_| Error::OutOfBounds)?;
+        let y = Self::Ytype::try_from(y).map_err(|_| Error::OutOfBounds)?;
         Ok(Self::new_((x, y)))
-    }
-
-    /// Create a position from a tuple
-    #[inline]
-    fn tryfrom_tuple(xy: (Self::Xtype, Self::Ytype)) -> Result<Self, Error>
-    where
-        Self: std::marker::Sized,
-    {
-        Ok(Self::new_(xy))
     }
 
     /// Return the corresponding tuple
@@ -97,16 +88,16 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
 
     /// Create a position from another position
     #[inline]
-    fn tryfrom_pos<P: PosT>(pos: P) -> Result<Self, Error>
+    fn tryfrom_pos<P>(pos: P) -> Result<Self, Error>
     where
+        P: PosT,
+        Self::Xtype: TryFrom<<P::Xtype as BoundedInt>::Inner>,
+        Self::Ytype: TryFrom<<P::Ytype as BoundedInt>::Inner>,
+        <P::Xtype as BoundedInt>::Inner: BoundedInt,
+        <P::Ytype as BoundedInt>::Inner: BoundedInt,
         Self: std::marker::Sized,
     {
-        let t = pos.tuple();
-        let x: usize = into_or_oob!(t.0)?;
-        let y: usize = into_or_oob!(t.1)?;
-        let x = into_or_oob!(x)?;
-        let y = into_or_oob!(y)?;
-        Ok(Self::new_((x, y)))
+        Self::new(pos.x().into_inner(), pos.y().into_inner())
     }
 
     /// Return the width (x) supported by the position type
@@ -225,9 +216,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         Self: std::marker::Sized,
     {
         let width = Self::width();
-        let x = into_or_oob!(i % width)?;
-        let y = into_or_oob!(i / width)?;
-        Self::new(x, y)
+        Self::new(i % width, i / width)
     }
 
     /// Return the next position horizontally (English read sequence), or None
@@ -374,10 +363,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
                         ),
                     )
                 });
-            Ok((
-                Self::tryfrom_tuple(tl_tuple)?,
-                Self::tryfrom_tuple(br_tuple)?,
-            ))
+            Ok((Self::new_(tl_tuple), Self::new_(br_tuple)))
         } else {
             Err(Error::Empty)
         }
