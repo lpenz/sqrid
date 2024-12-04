@@ -5,7 +5,7 @@
 use sqrid;
 use sqrid::postrait::PosT;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
@@ -78,26 +78,18 @@ fn test_iter() -> Result<()> {
 
 #[test]
 fn test_iter_in_xy() -> Result<()> {
-    let ally = Pos::iter_in_x(0.try_into()?)
-        .ok_or(anyhow!("iter_in_x error"))?
-        .collect::<Vec<_>>();
+    let ally = Pos::iter_in_x(0.try_into()?).collect::<Vec<_>>();
     assert_eq!(ally.len(), Pos::HEIGHT as usize);
     for x in 0..Pos::WIDTH {
-        let posx1 = Pos::iter_in_x(x.try_into()?)
-            .ok_or(anyhow!("iter_in_x error"))?
-            .collect::<Vec<_>>();
+        let posx1 = Pos::iter_in_x(x.try_into()?).collect::<Vec<_>>();
         for (y, pos) in (0..Pos::HEIGHT).zip(posx1) {
             assert_eq!(pos.tuple(), (x, y));
         }
     }
-    let allx = Pos::iter_in_y(0.try_into()?)
-        .ok_or(anyhow!("iter_in_y error"))?
-        .collect::<Vec<_>>();
+    let allx = Pos::iter_in_y(0.try_into()?).collect::<Vec<_>>();
     assert_eq!(allx.len(), Pos::WIDTH as usize);
     for y in 0..Pos::HEIGHT {
-        let posy1 = Pos::iter_in_y(y.try_into()?)
-            .ok_or(anyhow!("iter_in_y error"))?
-            .collect::<Vec<_>>();
+        let posy1 = Pos::iter_in_y(y.try_into()?).collect::<Vec<_>>();
         for (x, pos) in (0..Pos::WIDTH).zip(posy1) {
             assert_eq!(pos.tuple(), (x, y));
         }

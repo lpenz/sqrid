@@ -29,39 +29,30 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     /// The type of the Y coordinate
     type Ytype: BoundedInt;
 
-    /// Zero with the appropriate type
-    const XMIN: Self::Xtype;
-    /// Zero with the appropriate type
-    const YMIN: Self::Ytype;
-    /// Width - 1
-    const XMAX: Self::Xtype;
-    /// Height - 1
-    const YMAX: Self::Ytype;
     /// Width
     const WIDTH: usize;
     /// Height
     const HEIGHT: usize;
 
+    /// Internal `new_` that creates the `Pos` type from the provided tuple.
+    fn new_(xy: (Self::Xtype, Self::Ytype)) -> Self;
+
     /// Create a new Pos with the given parameters
-    ///
-    /// You can either define [`PosT::new`] or [`PosT::tryfrom_tuple`]
     #[inline]
     fn new(x: Self::Xtype, y: Self::Ytype) -> Result<Self, Error>
     where
         Self: std::marker::Sized,
     {
-        Self::tryfrom_tuple((x, y))
+        Ok(Self::new_((x, y)))
     }
 
     /// Create a position from a tuple
-    ///
-    /// You can either define [`PosT::new`] or [`PosT::tryfrom_tuple`]
     #[inline]
     fn tryfrom_tuple(xy: (Self::Xtype, Self::Ytype)) -> Result<Self, Error>
     where
         Self: std::marker::Sized,
     {
-        Self::new(xy.0, xy.1)
+        Ok(Self::new_(xy))
     }
 
     /// Return the corresponding tuple
@@ -115,19 +106,19 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         let y: usize = into_or_oob!(t.1)?;
         let x = into_or_oob!(x)?;
         let y = into_or_oob!(y)?;
-        Self::new(x, y)
+        Ok(Self::new_((x, y)))
     }
 
     /// Return the width (x) supported by the position type
     #[inline]
     fn width() -> usize {
-        into_or_panic!(Self::XMAX) + 1
+        into_or_panic!(Self::Xtype::MAX) + 1
     }
 
     /// Return the height (y) supported by the position type
     #[inline]
     fn height() -> usize {
-        into_or_panic!(Self::YMAX) + 1
+        into_or_panic!(Self::Ytype::MAX) + 1
     }
 
     /// Return the total dimension supported by the position type
@@ -142,7 +133,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     where
         Self: std::marker::Sized,
     {
-        Self::new(Self::XMIN, Self::YMIN).unwrap()
+        Self::new_((Self::Xtype::MIN, Self::Ytype::MIN))
     }
 
     /// Last coordinate, bottom right
@@ -151,23 +142,23 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     where
         Self: std::marker::Sized,
     {
-        Self::new(Self::XMAX, Self::YMAX).unwrap()
+        Self::new_((Self::Xtype::MAX, Self::Ytype::MAX))
     }
 
     /// Return true if self is a corner of the grid.
     #[inline]
     fn is_corner(&self) -> bool {
-        (self.x() == Self::XMIN || self.x() == Self::XMAX)
-            && (self.y() == Self::YMIN || self.y() == Self::YMAX)
+        (self.x() == Self::Xtype::MIN || self.x() == Self::Xtype::MAX)
+            && (self.y() == Self::Ytype::MIN || self.y() == Self::Ytype::MAX)
     }
 
     /// Return true if self is on the side of the grid.
     #[inline]
     fn is_side(&self) -> bool {
-        self.x() == Self::XMIN
-            || self.x() == Self::XMAX
-            || self.y() == Self::YMIN
-            || self.y() == Self::YMAX
+        self.x() == Self::Xtype::MIN
+            || self.x() == Self::Xtype::MAX
+            || self.y() == Self::Ytype::MIN
+            || self.y() == Self::Ytype::MAX
     }
 
     /// Flip the coordinate vertically
@@ -176,7 +167,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     where
         Self: std::marker::Sized,
     {
-        Self::new(Self::XMAX.checked_sub(self.x()).unwrap(), self.y()).unwrap()
+        Self::new(Self::Xtype::MAX.checked_sub(self.x()).unwrap(), self.y()).unwrap()
     }
 
     /// Flip the coordinate horizontally
@@ -185,7 +176,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     where
         Self: std::marker::Sized,
     {
-        Self::new(self.x(), Self::YMAX.checked_sub(self.y()).unwrap()).unwrap()
+        Self::new(self.x(), Self::Ytype::MAX.checked_sub(self.y()).unwrap()).unwrap()
     }
 
     /// Return the manhattan distance
@@ -247,15 +238,9 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         Self: std::marker::Sized,
     {
         if let Some(x) = self.x().inc() {
-            if let Ok(pos) = Self::new(x, self.y()) {
-                return Some(pos);
-            }
+            return Some(Self::new_((x, self.y())));
         }
-        if let Some(y) = self.y().inc() {
-            Self::new(Self::XMIN, y).ok()
-        } else {
-            None
-        }
+        self.y().inc().map(|y| Self::new_((Self::Xtype::MIN, y)))
     }
 
     /// Return the next position vertically, or None
@@ -266,15 +251,9 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         Self: std::marker::Sized,
     {
         if let Some(y) = self.y().inc() {
-            if let Ok(pos) = Self::new(self.x(), y) {
-                return Some(pos);
-            }
+            return Some(Self::new_((self.x(), y)));
         }
-        if let Some(x) = self.x().inc() {
-            Self::new(x, Self::YMIN).ok()
-        } else {
-            None
-        }
+        self.x().inc().map(|x| Self::new_((x, Self::Ytype::MIN)))
     }
 
     /// Return the previous position horizontally (English read sequence), or None
@@ -285,15 +264,9 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         Self: std::marker::Sized,
     {
         if let Some(x) = self.x().dec() {
-            if let Ok(pos) = Self::new(x, self.y()) {
-                return Some(pos);
-            }
+            return Some(Self::new_((x, self.y())));
         }
-        if let Some(y) = self.y().dec() {
-            Self::new(Self::XMAX, y).ok()
-        } else {
-            None
-        }
+        self.y().dec().map(|y| Self::new_((Self::Xtype::MAX, y)))
     }
 
     /// Return the previous position vertically, or None
@@ -304,15 +277,9 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         Self: std::marker::Sized,
     {
         if let Some(y) = self.y().dec() {
-            if let Ok(pos) = Self::new(self.x(), y) {
-                return Some(pos);
-            }
+            return Some(Self::new_((self.x(), y)));
         }
-        if let Some(x) = self.x().dec() {
-            Self::new(x, Self::YMAX).ok()
-        } else {
-            None
-        }
+        self.x().dec().map(|x| Self::new_((x, Self::Ytype::MAX)))
     }
 
     /// Returns an iterator over valid X values
@@ -372,23 +339,19 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
     }
 
     /// Return an iterator that returns all positions in a column.
-    fn iter_in_x(x: Self::Xtype) -> Option<PosTIterInX<Self>>
+    fn iter_in_x(x: Self::Xtype) -> PosTIterInX<Self>
     where
         Self: std::marker::Sized,
     {
-        Self::new(x, Default::default())
-            .map(|p| PosTIterInX::<Self>(Some(p)))
-            .ok()
+        PosTIterInX::<Self>(Some(Self::new_((x, Default::default()))))
     }
 
     /// Return an iterator that returns all positions in a line.
-    fn iter_in_y(y: Self::Ytype) -> Option<PosTIterInY<Self>>
+    fn iter_in_y(y: Self::Ytype) -> PosTIterInY<Self>
     where
         Self: std::marker::Sized,
     {
-        Self::new(Default::default(), y)
-            .map(|p| PosTIterInY::<Self>(Some(p)))
-            .ok()
+        PosTIterInY::<Self>(Some(Self::new_((Default::default(), y))))
     }
 
     /// Calculate a top-left and a bottom-right Pos's that contains all iterated points.
@@ -437,7 +400,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         let Ok(y) = Self::Ytype::try_from(self.x().into_inner()) else {
             panic!();
         };
-        Self::new(x, y).unwrap()
+        Self::new_((x, y))
     }
 
     /// Rotate the square grid coordinate 90 degrees counter-clockwise
@@ -457,7 +420,7 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
         let Ok(y) = Self::Ytype::try_from(y) else {
             panic!();
         };
-        Self::new(x, y).unwrap()
+        Self::new_((x, y))
     }
 }
 
@@ -627,14 +590,10 @@ macro_rules! postrait_integer_impl {
         impl PosT for ($xtype, $ytype) {
             type Xtype = $xtype;
             type Ytype = $ytype;
-            const XMIN: Self::Xtype = <$xtype>::MIN;
-            const YMIN: Self::Ytype = <$ytype>::MIN;
-            const XMAX: Self::Xtype = <$xtype>::MAX;
-            const YMAX: Self::Ytype = <$ytype>::MAX;
             const WIDTH: usize = { <$xtype>::MAX as isize - <$xtype>::MIN as isize } as usize;
             const HEIGHT: usize = { <$ytype>::MAX as isize - <$ytype>::MIN as isize } as usize;
-            fn tryfrom_tuple(xy: ($xtype, $ytype)) -> Result<Self, Error> {
-                Ok(xy)
+            fn new_(xy: ($xtype, $ytype)) -> Self {
+                xy
             }
             fn into_tuple(self) -> (Self::Xtype, Self::Ytype) {
                 self

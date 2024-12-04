@@ -14,7 +14,6 @@
 use std::convert;
 use std::fmt;
 
-use super::boundedint::BoundedInt;
 use super::boundedint::BoundedU16;
 use super::error::Error;
 use super::postrait::PosT;
@@ -303,14 +302,10 @@ impl<const XMAX: u16, const YMAX: u16> From<Pos<XMAX, YMAX>> for usize {
 impl<const XMAX: u16, const YMAX: u16> PosT for Pos<XMAX, YMAX> {
     type Xtype = BoundedU16<0, XMAX>;
     type Ytype = BoundedU16<0, YMAX>;
-    const XMIN: Self::Xtype = Self::Xtype::MIN;
-    const YMIN: Self::Ytype = Self::Ytype::MIN;
-    const XMAX: Self::Xtype = Self::Xtype::MAX;
-    const YMAX: Self::Ytype = Self::Ytype::MAX;
     const WIDTH: usize = XMAX as usize + 1;
     const HEIGHT: usize = YMAX as usize + 1;
-    fn tryfrom_tuple(xy: (Self::Xtype, Self::Ytype)) -> Result<Self, Error> {
-        Ok(Pos(xy))
+    fn new_(xy: (Self::Xtype, Self::Ytype)) -> Self {
+        Pos(xy)
     }
     fn into_tuple(self) -> (Self::Xtype, Self::Ytype) {
         self.0
