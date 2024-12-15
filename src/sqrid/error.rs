@@ -21,6 +21,8 @@ pub enum Error {
     /// Attempted to create a [`super::Dir`] instance with a tuple
     /// that doesn't represent a unitary direction.
     InvalidDirection,
+    /// Attempted to parse a [`super::Dir`] from an invalid character.
+    DirParseError,
     /// A [`super::Pos`] + [`super::Dir`] operation unexpectedly failed.
     InvalidMovement,
     /// An unexpected coordinate loop has been detected.
@@ -38,6 +40,7 @@ impl fmt::Display for Error {
         match self {
             Error::OutOfBounds => write!(f, "value is out-of-bounds"),
             Error::InvalidDirection => write!(f, "invalid direction for Dir"),
+            Error::DirParseError => write!(f, "character doesn't represent a valid Dir"),
             Error::InvalidMovement => write!(f, "invalid movement (Pos+Dir)"),
             Error::Loop => write!(f, "unexpected loop detected"),
             Error::DestinationUnreachable => write!(f, "destination unreachable"),

@@ -132,6 +132,19 @@ fn test_names() -> Result<()> {
     );
     assert_eq!(iter.next().map(|dir| dir.name_cardinal()), Some("SE"));
     assert_eq!(iter.next().map(|dir| dir.name_utf8()), Some("\u{2193}"));
+    for d in Dir::iter::<true>() {
+        assert_eq!(Dir::try_from(d.name_ascii_char()), Ok(d));
+        assert_eq!(d.name_ascii().parse::<Dir>(), Ok(d));
+        assert_eq!(Dir::try_from(d.name_utf8_char()), Ok(d));
+        assert_eq!(d.name_utf8().parse::<Dir>(), Ok(d));
+    }
+    for d in Dir::iter::<false>() {
+        assert_eq!(
+            Dir::try_from(d.name_cardinal().chars().next().unwrap()),
+            Ok(d)
+        );
+        assert_eq!(d.name_cardinal().parse::<Dir>(), Ok(d));
+    }
     Ok(())
 }
 

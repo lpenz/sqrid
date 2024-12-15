@@ -11,6 +11,7 @@
 use std::convert;
 use std::fmt;
 use std::ops;
+use std::str::FromStr;
 
 use super::boundedint::BoundedInt;
 use super::error::Error;
@@ -250,6 +251,51 @@ tuple_conv_i_impl!(i16);
 tuple_conv_i_impl!(i32);
 tuple_conv_i_impl!(i64);
 tuple_conv_i_impl!(i128);
+
+impl convert::TryFrom<char> for Dir {
+    type Error = Error;
+    fn try_from(c: char) -> Result<Self, Self::Error> {
+        match c {
+            'N' => Ok(Dir::N),
+            'E' => Ok(Dir::E),
+            'S' => Ok(Dir::S),
+            'W' => Ok(Dir::W),
+            'n' => Ok(Dir::N),
+            'e' => Ok(Dir::E),
+            's' => Ok(Dir::S),
+            'w' => Ok(Dir::W),
+            '\u{2191}' => Ok(Dir::N),
+            '\u{2197}' => Ok(Dir::NE),
+            '\u{2192}' => Ok(Dir::E),
+            '\u{2198}' => Ok(Dir::SE),
+            '\u{2193}' => Ok(Dir::S),
+            '\u{2199}' => Ok(Dir::SW),
+            '\u{2190}' => Ok(Dir::W),
+            '\u{2196}' => Ok(Dir::NW),
+            '^' => Ok(Dir::N),
+            '7' => Ok(Dir::NE),
+            '>' => Ok(Dir::E),
+            '\\' => Ok(Dir::SE),
+            'v' => Ok(Dir::S),
+            'L' => Ok(Dir::SW),
+            '<' => Ok(Dir::W),
+            '`' => Ok(Dir::NW),
+            _ => Err(Error::DirParseError),
+        }
+    }
+}
+
+impl FromStr for Dir {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut chars = s.chars();
+        let c = chars.next().ok_or(Error::DirParseError)?;
+        if chars.next().is_some() {
+            return Err(Error::DirParseError);
+        }
+        Dir::try_from(c)
+    }
+}
 
 impl<T> convert::TryFrom<(T, T)> for Dir
 where
