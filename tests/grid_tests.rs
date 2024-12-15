@@ -140,6 +140,15 @@ fn test_from_vecvec() -> Result<()> {
 }
 
 #[test]
+fn test_extend_from_vecvec() -> Result<()> {
+    let v = vec![vec![1, 2, 3], vec![4, 5], vec![6]];
+    let mut grid = Grid3::default();
+    grid.extend_from_vecvec(v)?;
+    assert_eq!(grid.as_ref(), &[1, 2, 3, 4, 5, 0, 6, 0, 0]);
+    Ok(())
+}
+
+#[test]
 fn test_line_mut() -> Result<()> {
     let mut grid = Grid::default();
     grid.extend(Pos::iter().map(|pos| (pos, <(i32, i32)>::from(pos).1)));

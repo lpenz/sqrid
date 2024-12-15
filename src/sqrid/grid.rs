@@ -186,6 +186,17 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
             }
         }
     }
+
+    /// Set values from nested vectors
+    pub fn extend_from_vecvec(&mut self, v: Vec<Vec<T>>) -> Result<(), Error> {
+        for (y, line) in v.into_iter().enumerate() {
+            for (x, c) in line.into_iter().enumerate() {
+                let p = P::new(x as u16, y as u16)?;
+                self[p] = c;
+            }
+        }
+        Ok(())
+    }
 }
 
 // Rotations are only available for "square" grids
