@@ -86,6 +86,17 @@ pub trait PosT: std::fmt::Debug + Default + Eq + PartialOrd + Copy {
 
     // Provided methods:
 
+    /// Return the corresponding inner tuple
+    #[inline]
+    fn inner_tuple(
+        self,
+    ) -> (
+        <Self::Xtype as BoundedInt>::Inner,
+        <Self::Ytype as BoundedInt>::Inner,
+    ) {
+        (self.x().into_inner(), self.y().into_inner())
+    }
+
     /// Create a position from another position
     #[inline]
     fn tryfrom_pos<P>(pos: P) -> Result<Self, Error>

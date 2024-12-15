@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid;
+use sqrid::boundedint::BoundedU16;
 use sqrid::postrait::PosT;
 
 use anyhow::Result;
@@ -18,6 +19,8 @@ fn test_basic() -> Result<()> {
     let q1 = Pos::try_from((2_u16, 3_u16))?;
     println!("{:?} {}", q1, q1);
     assert_eq!((2_u16, 3_u16), q1.into());
+    assert_eq!((2_u16, 3_u16), q1.into());
+    assert_eq!((2_u16, 3_u16), q1.inner_tuple());
     let q2 = Pos::try_from(&(3_u16, 4_u16))?;
     assert_eq!((3_u16, 4_u16), (&q2).into());
     let q3 = Pos::try_from(&(5_u16, 6_u16));
@@ -33,6 +36,18 @@ fn test_basic() -> Result<()> {
 fn test_usize() -> Result<()> {
     assert_eq!(Pos::FIRST, Pos::try_from(0_usize)?);
     assert_eq!(usize::from(Pos::LAST), Pos::SIZE - 1);
+    Ok(())
+}
+
+#[test]
+fn test_pos_tuple() -> Result<()> {
+    let b0 = BoundedU16::new_static::<0>();
+    // This comes from the Pos type:
+    assert_eq!(Pos2::FIRST.tuple(), (0, 0));
+    // This comes from the PosT trait:
+    assert_eq!(Pos2::first().tuple(), (0, 0));
+    assert_eq!(Pos2::FIRST.into_tuple(), (b0, b0));
+    assert_eq!(Pos2::FIRST.inner_tuple(), (0, 0));
     Ok(())
 }
 
