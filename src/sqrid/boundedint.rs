@@ -259,6 +259,12 @@ macro_rules! boundedint_type_create {
             }
         }
 
+        impl<const MIN: $type, const MAX: $type> std::fmt::Debug for $name<MIN, MAX> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+
         impl<const MIN: $type, const MAX: $type> std::fmt::Display for $name<MIN, MAX> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", self.0)
@@ -300,56 +306,56 @@ macro_rules! boundedint_type_create {
 }
 
 /// A bounded u8
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedU8<const MIN: u8, const MAX: u8>(pub u8);
 boundedint_type_create!(BoundedU8, u8);
 
 /// A bounded u16
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedU16<const MIN: u16, const MAX: u16>(pub u16);
 boundedint_type_create!(BoundedU16, u16);
 
 /// A bounded u32
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedU32<const MIN: u32, const MAX: u32>(pub u32);
 boundedint_type_create!(BoundedU32, u32);
 
 /// A bounded u64
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedU64<const MIN: u64, const MAX: u64>(pub u64);
 boundedint_type_create!(BoundedU64, u64);
 
 /// A bounded u128
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedU128<const MIN: u128, const MAX: u128>(pub u128);
 boundedint_type_create!(BoundedU128, u128);
 
 /// A bounded isize
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedIsize<const MIN: isize, const MAX: isize>(pub isize);
 boundedint_type_create!(BoundedIsize, isize);
 
 /// A bounded i8
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedI8<const MIN: i8, const MAX: i8>(pub i8);
 boundedint_type_create!(BoundedI8, i8);
 
 /// A bounded i16
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedI16<const MIN: i16, const MAX: i16>(pub i16);
 boundedint_type_create!(BoundedI16, i16);
 
 /// A bounded i32
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedI32<const MIN: i32, const MAX: i32>(pub i32);
 boundedint_type_create!(BoundedI32, i32);
 
 /// A bounded i64
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedI64<const MIN: i64, const MAX: i64>(pub i64);
 boundedint_type_create!(BoundedI64, i64);
 
 /// A bounded i128
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct BoundedI128<const MIN: i128, const MAX: i128>(pub i128);
 boundedint_type_create!(BoundedI128, i128);
