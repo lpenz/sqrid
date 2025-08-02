@@ -475,11 +475,7 @@ pub fn display_fmt_helper(
     // Column labels as a vec of vec of chars, which we will
     // output vertically:
     let str_x = (0..w)
-        .map(|i| {
-            format!("{:width$}", i, width = ndigits_x)
-                .chars()
-                .collect::<Vec<_>>()
-        })
+        .map(|i| format!("{i:ndigits_x$}").chars().collect::<Vec<_>>())
         .collect::<Vec<_>>();
     // Print the column labels; we do this both on top and on the
     // bottom of the grid:
@@ -505,7 +501,7 @@ pub fn display_fmt_helper(
                     f.write_str("\n")?;
                 }
                 // Print the line number as a label:
-                f.write_fmt(format_args!("{:width$} ", y, width = ndigits_y))?;
+                f.write_fmt(format_args!("{y:ndigits_y$} "))?;
                 last_y = y;
             }
             let s = it.next().unwrap();
@@ -528,7 +524,7 @@ impl<T: fmt::Display, P: PosT, const SIZE: usize> fmt::Display for Grid<T, P, SI
             f,
             P::width(),
             P::height(),
-            self.iter().map(|v| format!("{}", v)),
+            self.iter().map(|v| format!("{v}")),
         )
     }
 }
