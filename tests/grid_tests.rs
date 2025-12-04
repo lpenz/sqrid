@@ -8,8 +8,8 @@ use std::hash::{Hash, Hasher};
 use sqrid;
 use sqrid::postrait::PosT;
 
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 use std::convert::TryFrom;
 
 type Pos = sqrid::Pos<4, 2>;

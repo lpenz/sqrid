@@ -48,13 +48,13 @@ use std::cmp::Reverse;
 use std::collections;
 use std::collections::BinaryHeap;
 
-use super::camefrom_into_path;
-use super::postrait::PosT;
 use super::Dir;
 use super::Error;
 use super::Grid;
 use super::MapPos;
 use super::Sqrid;
+use super::camefrom_into_path;
+use super::postrait::PosT;
 
 /* AstarIterator **************************************************************/
 
@@ -113,12 +113,12 @@ where
             let pos = mov.0;
             for dir in Dir::iter::<D>() {
                 let newcost = self.cost.get(&pos) + 1;
-                if let Some(next_pos) = (self.go)(pos, dir) {
-                    if newcost < *self.cost.get(&next_pos) {
-                        self.cost.set(next_pos, newcost);
-                        let priority = Reverse(newcost + next_pos.manhattan(&self.dest));
-                        self.frontier.push((priority, (next_pos, -dir)));
-                    }
+                if let Some(next_pos) = (self.go)(pos, dir)
+                    && newcost < *self.cost.get(&next_pos)
+                {
+                    self.cost.set(next_pos, newcost);
+                    let priority = Reverse(newcost + next_pos.manhattan(&self.dest));
+                    self.frontier.push((priority, (next_pos, -dir)));
                 }
             }
             Some(mov)

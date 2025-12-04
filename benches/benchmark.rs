@@ -4,7 +4,7 @@
 
 #![warn(rust_2018_idioms)]
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 fn mov_mutual() {
     type Pos = sqrid::Pos<256, 257>;

@@ -78,7 +78,6 @@
 use std::collections;
 use std::mem;
 
-use super::camefrom_into_path;
 use super::Dir;
 use super::Error;
 use super::Grid;
@@ -87,6 +86,7 @@ use super::MapPos;
 use super::PosT;
 use super::SetPos;
 use super::Sqrid;
+use super::camefrom_into_path;
 
 /* BfIterator *****************************************************************/
 

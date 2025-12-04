@@ -356,11 +356,7 @@ impl<const D: bool> Iterator for DirIter<D> {
         }
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
-        if D {
-            (8, Some(8))
-        } else {
-            (4, Some(4))
-        }
+        if D { (8, Some(8)) } else { (4, Some(4)) }
     }
 }
 

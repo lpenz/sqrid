@@ -173,13 +173,13 @@ impl<const XMAX: u16, const YMAX: u16> Pos<XMAX, YMAX> {
     /// Returns the x coordinate
     #[inline]
     pub const fn x(&self) -> u16 {
-        self.0 .0.into_inner()
+        self.0.0.into_inner()
     }
 
     /// Returns the y coordinate
     #[inline]
     pub const fn y(&self) -> u16 {
-        self.0 .1.into_inner()
+        self.0.1.into_inner()
     }
 
     /// Return the corresponding `(u16, u16)` tuple.
@@ -314,9 +314,9 @@ impl<const XMAX: u16, const YMAX: u16> PosT for Pos<XMAX, YMAX> {
         self.0
     }
     fn x(&self) -> Self::Xtype {
-        self.0 .0
+        self.0.0
     }
     fn y(&self) -> Self::Ytype {
-        self.0 .1
+        self.0.1
     }
 }

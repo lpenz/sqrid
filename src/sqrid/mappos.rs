@@ -17,11 +17,11 @@
 
 use std::collections;
 
+use super::Sqrid;
 use super::dir::Dir;
 use super::error::Error;
 use super::grid::Grid;
 use super::postrait::PosT;
-use super::Sqrid;
 
 /* MapPos */
 

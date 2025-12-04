@@ -22,15 +22,15 @@ where
         boundedint::BoundedU16<0, XMAX>,
         boundedint::BoundedU16<0, YMAX>,
     ): ops::Add<
-        Dir,
-        Output = Result<
-            (
-                boundedint::BoundedU16<0, XMAX>,
-                boundedint::BoundedU16<0, YMAX>,
-            ),
-            Error,
+            Dir,
+            Output = Result<
+                (
+                    boundedint::BoundedU16<0, XMAX>,
+                    boundedint::BoundedU16<0, YMAX>,
+                ),
+                Error,
+            >,
         >,
-    >,
 {
     type Output = Result<Self, Error>;
     fn add(self, rhs: Dir) -> Self::Output {
@@ -44,15 +44,15 @@ where
         boundedint::BoundedU16<0, XMAX>,
         boundedint::BoundedU16<0, YMAX>,
     ): ops::Add<
-        Dir,
-        Output = Result<
-            (
-                boundedint::BoundedU16<0, XMAX>,
-                boundedint::BoundedU16<0, YMAX>,
-            ),
-            Error,
+            Dir,
+            Output = Result<
+                (
+                    boundedint::BoundedU16<0, XMAX>,
+                    boundedint::BoundedU16<0, YMAX>,
+                ),
+                Error,
+            >,
         >,
-    >,
 {
     type Output = Result<Pos<XMAX, YMAX>, Error>;
     fn add(self, rhs: Dir) -> Self::Output {

@@ -55,13 +55,13 @@ use std::cmp::Reverse;
 use std::collections;
 use std::collections::BinaryHeap;
 
-use super::camefrom_into_path;
-use super::postrait::PosT;
 use super::Dir;
 use super::Error;
 use super::Grid;
 use super::MapPos;
 use super::Sqrid;
+use super::camefrom_into_path;
+use super::postrait::PosT;
 
 /// The type for the cost of a step inside a path
 pub type Cost = usize;

@@ -3,12 +3,12 @@
 // file 'LICENSE', which is part of this source code package.
 
 use sqrid;
+use sqrid::Dir;
 use sqrid::postrait::PosT;
 use sqrid::ucs::Cost;
-use sqrid::Dir;
 
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 
 type Sqrid = sqrid::sqrid_create!(29, 14, false);
 type Pos = sqrid::pos_create!(Sqrid);
