@@ -240,7 +240,7 @@ impl<T, const W: u16, const SIZE: usize> Grid<T, Pos<W, W>, SIZE> {
 impl<T: Default, P: PosT, const SIZE: usize> Default for Grid<T, P, SIZE> {
     fn default() -> Self {
         Self(
-            std::array::from_fn(|_| (T::default())),
+            std::array::from_fn(|_| T::default()),
             std::marker::PhantomData,
         )
     }
