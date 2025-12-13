@@ -27,10 +27,14 @@ pub enum Error {
     InvalidMovement,
     /// An unexpected coordinate loop has been detected.
     Loop,
-    /// A search algorithm unexpectedly could no reach the destination
+    /// A search algorithm unexpectedly could no reach the destination.
     DestinationUnreachable,
-    /// An empty list or iterator was passed where one was not expected
+    /// An empty list or iterator was passed where one was not expected.
     Empty,
+    /// When building from an iterator, the iterator didn't return enough items.
+    IteratorTooShort(usize, usize),
+    /// When building from an iterator, the iterator had extra items.
+    IteratorTooLong(usize),
 }
 
 impl error::Error for Error {}
@@ -45,6 +49,12 @@ impl fmt::Display for Error {
             Error::Loop => write!(f, "unexpected loop detected"),
             Error::DestinationUnreachable => write!(f, "destination unreachable"),
             Error::Empty => write!(f, "empty list of iterator"),
+            Error::IteratorTooShort(n, total) => {
+                write!(f, "iterator too short, got {}/{} items", n, total)
+            }
+            Error::IteratorTooLong(n) => {
+                write!(f, "iterator too long, expected at most {} items", n)
+            }
         }
     }
 }

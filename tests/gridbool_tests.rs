@@ -6,6 +6,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 use sqrid;
+use sqrid::error::Error;
 use sqrid::postrait::PosT;
 
 use anyhow::Result;
@@ -183,5 +184,22 @@ fn test_traits() -> Result<()> {
     let mut s = DefaultHasher::new();
     g0.hash(&mut s);
     let _ = s.finish();
+    Ok(())
+}
+
+#[test]
+fn test_from_iter() -> Result<()> {
+    let g0 = Gbool5::from_iter_bool((0..25).map(|_| true))?;
+    assert!(g0.iter().all(|v| v));
+    let g1 = Gbool5::from_iter((0..25).map(|_| true));
+    assert_eq!(g0, g1);
+    assert_eq!(
+        Gbool5::from_iter_bool((0..20).map(|_| true)),
+        Err(Error::IteratorTooShort(20, 25))
+    );
+    assert_eq!(
+        Gbool5::from_iter_bool((0..26).map(|_| true)),
+        Err(Error::IteratorTooLong(25))
+    );
     Ok(())
 }

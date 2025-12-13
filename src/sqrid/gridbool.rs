@@ -14,6 +14,7 @@ use std::fmt;
 use std::iter;
 use std::ops;
 
+use super::error::Error;
 use super::grid;
 use super::pos::Pos;
 use super::postrait::PosT;
@@ -214,6 +215,26 @@ impl<P: PosT, const WORDS: usize> Gridbool<P, WORDS> {
             }
         }
     }
+
+    /// Create a Gridbool from an iterator that yields the right amount of booleans.
+    pub fn from_iter_bool<It>(iter: It) -> Result<Self, Error>
+    where
+        It: iter::IntoIterator<Item = bool>,
+    {
+        let mut gb = Self::ALL_FALSE;
+        let mut it = iter.into_iter();
+        for pos in P::iter() {
+            if let Some(value) = it.next() {
+                gb.set(&pos, value);
+            } else {
+                return Err(Error::IteratorTooShort(pos.to_usize(), P::dimensions()));
+            }
+        }
+        if it.next().is_some() {
+            return Err(Error::IteratorTooLong(P::dimensions()));
+        }
+        Ok(gb)
+    }
 }
 
 // Rotations are only available for "square" gridbools
@@ -318,17 +339,12 @@ impl<P: PosT, const WORDS: usize> iter::FromIterator<bool> for Gridbool<P, WORDS
     where
         I: iter::IntoIterator<Item = bool>,
     {
-        let mut gb = Gridbool::<P, WORDS>::ALL_FALSE;
-        let mut it = iter.into_iter();
-        for pos in P::iter() {
-            if let Some(value) = it.next() {
-                gb.set(&pos, value);
-            } else {
-                panic!("iterator too short for gridbool type");
+        match Self::from_iter_bool(iter) {
+            Ok(gb) => gb,
+            Err(e) => {
+                panic!("{}", e);
             }
         }
-        assert!(it.next().is_none(), "iterator too long for grid type");
-        gb
     }
 }
 
