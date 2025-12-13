@@ -197,6 +197,52 @@ impl<T, P: PosT, const SIZE: usize> Grid<T, P, SIZE> {
         }
         Ok(())
     }
+
+    /// Creates a Grid from an iterator that returns items
+    pub fn from_iter_values<It>(iter: It) -> Result<Self, Error>
+    where
+        It: iter::IntoIterator<Item = T>,
+        T: Default,
+    {
+        let mut g = Self::default();
+        let mut it = iter.into_iter();
+        let mut i = 0;
+        for item in &mut g.0[..] {
+            if let Some(fromiter) = it.next() {
+                *item = fromiter;
+                i += 1;
+            } else {
+                return Err(Error::IteratorTooShort(i, P::dimensions()));
+            }
+        }
+        if it.next().is_some() {
+            return Err(Error::IteratorTooLong(P::dimensions()));
+        }
+        Ok(g)
+    }
+
+    /// Creates a Grid from an iterator that returns references
+    pub fn from_iter_ref<'a, It>(iter: It) -> Result<Self, Error>
+    where
+        It: iter::IntoIterator<Item = &'a T>,
+        T: 'a + Clone + Default,
+    {
+        let mut g = Self::default();
+        let mut it = iter.into_iter();
+        let mut i = 0;
+        for item in &mut g.0[..] {
+            if let Some(fromiter) = it.next() {
+                *item = fromiter.clone();
+                i += 1;
+            } else {
+                return Err(Error::IteratorTooShort(i, P::dimensions()));
+            }
+        }
+        if it.next().is_some() {
+            return Err(Error::IteratorTooLong(P::dimensions()));
+        }
+        Ok(g)
+    }
 }
 
 // Rotations are only available for "square" grids
@@ -370,7 +416,7 @@ impl<T, P: PosT, const SIZE: usize> IntoIterator for Grid<T, P, SIZE> {
 ///
 /// Assumes we are getting exactly all grid elements; it panics
 /// otherwise.
-impl<'a, T: 'a + Copy + Default, P: PosT, const SIZE: usize> iter::FromIterator<&'a T>
+impl<'a, T: 'a + Clone + Default, P: PosT, const SIZE: usize> iter::FromIterator<&'a T>
     for Grid<T, P, SIZE>
 {
     #[inline]
@@ -378,17 +424,12 @@ impl<'a, T: 'a + Copy + Default, P: PosT, const SIZE: usize> iter::FromIterator<
     where
         I: iter::IntoIterator<Item = &'a T>,
     {
-        let mut g = Self::default();
-        let mut it = iter.into_iter();
-        for item in &mut g.0[..] {
-            if let Some(fromiter) = it.next() {
-                *item = *fromiter;
-            } else {
-                panic!("iterator too short for grid type");
+        match Self::from_iter_ref(iter) {
+            Ok(g) => g,
+            Err(e) => {
+                panic!("{}", e);
             }
         }
-        assert!(it.next().is_none(), "iterator too long for grid type");
-        g
     }
 }
 
@@ -402,17 +443,12 @@ impl<T: Default, P: PosT, const SIZE: usize> iter::FromIterator<T> for Grid<T, P
     where
         I: iter::IntoIterator<Item = T>,
     {
-        let mut g = Self::default();
-        let mut it = iter.into_iter();
-        for item in &mut g.0[..] {
-            if let Some(fromiter) = it.next() {
-                *item = fromiter;
-            } else {
-                panic!("iterator too short for grid type");
+        match Self::from_iter_values(iter) {
+            Ok(g) => g,
+            Err(e) => {
+                panic!("{}", e);
             }
         }
-        assert!(it.next().is_none(), "iterator too long for grid type");
-        g
     }
 }
 

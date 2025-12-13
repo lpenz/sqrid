@@ -6,6 +6,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 use sqrid;
+use sqrid::error::Error;
 use sqrid::postrait::PosT;
 
 use anyhow::Result;
@@ -296,6 +297,24 @@ fn test_rotate_cc() -> Result<()> {
     assert_eq!(
         grid.iter().cloned().collect::<Vec<_>>(),
         (1..=25).collect::<Vec<_>>()
+    );
+    Ok(())
+}
+
+#[test]
+fn test_from_iter() -> Result<()> {
+    let g0 = Grid::from_iter_values(0..15)?;
+    let v = Vec::from_iter(0..15);
+    assert_eq!(g0.iter().cloned().collect::<Vec<_>>(), v);
+    let g1 = Grid::from_iter_ref(v.iter())?;
+    assert_eq!(g0, g1);
+    assert_eq!(
+        Grid::from_iter_values(0..14),
+        Err(Error::IteratorTooShort(14, 15))
+    );
+    assert_eq!(
+        Grid::from_iter_values(0..16),
+        Err(Error::IteratorTooLong(15))
     );
     Ok(())
 }
