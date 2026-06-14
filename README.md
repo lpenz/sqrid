@@ -85,13 +85,13 @@ underlying array with `as_ref` (see [`std::convert::AsRef`]) and
 Usage example:
 
 ```rust
-type Sqrid = sqrid::sqrid_create!(3, 3, false);
+type Sqrid = sqrid::sqrid_create!(2, 2, false);
 type Pos = sqrid::pos_create!(Sqrid);
 type Grid = sqrid::grid_create!(Sqrid, i32);
 
 // The grid create macro above is currently equivalent to:
-type Grid2 = sqrid::Grid<i32, { Sqrid::WIDTH }, { Sqrid::HEIGHT },
-                              { (Sqrid::WIDTH * Sqrid::HEIGHT) as usize }>;
+type Grid2 = sqrid::Grid<i32, Pos,
+                         { ((Sqrid::XMAX as usize + 1) * (Sqrid::YMAX as usize + 1)) }>;
 
 // We can create grids from iterators via `collect`:
 let mut gridnums = (0..9).collect::<Grid>();
@@ -134,6 +134,7 @@ Usage example:
 type Sqrid = sqrid::sqrid_create!(3, 3, false);
 type Pos = sqrid::pos_create!(Sqrid);
 type Gridbool = sqrid::gridbool_create!(Sqrid);
+use sqrid::PosT;
 
 // We can create a gridbool from a Pos iterator via `collect`:
 let mut gb = Pos::iter().filter(|pos| pos.is_corner()).collect::<Gridbool>();
@@ -194,7 +195,7 @@ Example usage:
 type Sqrid = sqrid::sqrid_create!(3, 3, false);
 type Pos = sqrid::pos_create!(Sqrid);
 
-for (pos, dir) in Sqrid::bf_iter(sqrid::mov_eval, &Pos::CENTER)
+for (pos, dir) in Sqrid::bf_iter(sqrid::pos_dir_add_ok, &Pos::CENTER)
                 .flatten() {
     println!("breadth-first pos {} from {}", pos, dir);
 }
@@ -218,7 +219,7 @@ type Pos = sqrid::pos_create!(Sqrid);
 // Generate the grid of "came from" directions from bottom-right to
 // top-left:
 if let Ok((goal, path)) = Sqrid::bfs_path(
-                              sqrid::mov_eval, &Pos::TOP_LEFT,
+                              sqrid::pos_dir_add_ok, &Pos::TOP_LEFT,
                               |pos| pos == Pos::BOTTOM_RIGHT) {
     println!("goal: {}, path: {:?}", goal, path);
 }
@@ -239,7 +240,7 @@ type Pos = sqrid::pos_create!(Sqrid);
 
 // Generate the grid of "came from" directions from bottom-right to
 // top-left:
-if let Ok(path) = Sqrid::astar_path(sqrid::mov_eval, &Pos::TOP_LEFT,
+if let Ok(path) = Sqrid::astar_path(sqrid::pos_dir_add_ok, &Pos::TOP_LEFT,
                                     &Pos::BOTTOM_RIGHT) {
     println!("path: {:?}", path);
 }
