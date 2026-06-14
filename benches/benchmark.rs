@@ -5,25 +5,20 @@
 #![warn(rust_2018_idioms)]
 
 use criterion::{Criterion, criterion_group, criterion_main};
+use sqrid::PosT;
 
 fn mov_mutual() {
     type Pos = sqrid::Pos<256, 257>;
     for pos in Pos::iter() {
         for dir in sqrid::Dir::iter::<true>() {
             if let Ok(pos2) = pos + dir {
-                let found = sqrid::Dir::iter::<true>()
-                    .filter(|dir| pos2 + *dir == Ok(pos))
-                    .next()
-                    .is_some();
+                let found = sqrid::Dir::iter::<true>().any(|dir| pos2 + dir == Ok(pos));
                 assert!(found);
             }
         }
         for dir in sqrid::Dir::iter::<false>() {
             if let Ok(pos2) = pos + dir {
-                let found = sqrid::Dir::iter::<false>()
-                    .filter(|dir| pos2 + *dir == Ok(pos))
-                    .next()
-                    .is_some();
+                let found = sqrid::Dir::iter::<false>().any(|dir| pos2 + dir == Ok(pos));
                 assert!(found);
             }
         }
@@ -32,7 +27,7 @@ fn mov_mutual() {
 
 fn grid_index() {
     type Pos = sqrid::Pos<256, 257>;
-    type Grid = sqrid::Grid<usize, 256, 257, { 256 * 257 }>;
+    type Grid = sqrid::Grid<usize, Pos, { 257 * 258 }>;
     let mut g = Grid::default();
     for pos in Pos::iter() {
         g[pos] = pos.to_usize();
@@ -100,7 +95,7 @@ fn astar_data() -> Vec<(Pos, Pos, Gridbool)> {
 fn astar_search(pars: &[(Pos, Pos, Gridbool)]) {
     for par in pars {
         let _ = Astar::astar_path(
-            |pos, dir| sqrid::mov_eval(pos, dir).filter(|pos| !par.2.get(pos)),
+            |pos, dir| sqrid::pos_dir_add_ok(pos, dir).filter(|pos| !par.2.get(pos)),
             &par.0,
             &par.1,
         );
